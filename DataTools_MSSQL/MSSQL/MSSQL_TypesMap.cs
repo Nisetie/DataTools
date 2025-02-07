@@ -80,6 +80,17 @@ namespace DataTools.MSSQL
             return "nvarchar";
         }
 
+        public static Type GetNetType(string sqlType)
+        {
+            sqlType = sqlType.ToLower();
+            foreach (var el in _mapping)
+            {
+                if (sqlType == el.sqltype)
+                    return el.netType;
+            }
+            return null;
+        }
+
         public static bool IsNumber(string sqlType)
         {
             return _numbers.Contains(sqlType);
