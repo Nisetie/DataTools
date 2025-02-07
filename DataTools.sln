@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.12.35514.174
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools", "DataTools\DataTools.csproj", "{77C597F2-C9E9-4E2E-B003-F58095AF4A05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL", "DataTools_MSSQL\DataTools_MSSQL.csproj", "{524962B5-961D-4290-A8AB-9F14F00B6AD9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQL", "DataTools_PostgreSQL\DataTools_PostgreSQL.csproj", "{4336FFB5-4536-4FBC-B475-5D32A7516400}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLite", "DataTools_SQLite\DataTools_SQLite.csproj", "{FAA1A502-999B-41B8-A54E-991C48E9F5F9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Tests", "DataTools_Tests\DataTools_Tests.csproj", "{1EB2AC6E-9B5F-48D2-85F7-6A39F5AD8ACE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Benchmarks", "DataTools_Benchmarks\DataTools_Benchmarks.csproj", "{1BA6017C-B197-4988-9514-556AB5A44E01}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77C597F2-C9E9-4E2E-B003-F58095AF4A05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C597F2-C9E9-4E2E-B003-F58095AF4A05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77C597F2-C9E9-4E2E-B003-F58095AF4A05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77C597F2-C9E9-4E2E-B003-F58095AF4A05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{524962B5-961D-4290-A8AB-9F14F00B6AD9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{524962B5-961D-4290-A8AB-9F14F00B6AD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{524962B5-961D-4290-A8AB-9F14F00B6AD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{524962B5-961D-4290-A8AB-9F14F00B6AD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4336FFB5-4536-4FBC-B475-5D32A7516400}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4336FFB5-4536-4FBC-B475-5D32A7516400}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4336FFB5-4536-4FBC-B475-5D32A7516400}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4336FFB5-4536-4FBC-B475-5D32A7516400}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAA1A502-999B-41B8-A54E-991C48E9F5F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAA1A502-999B-41B8-A54E-991C48E9F5F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAA1A502-999B-41B8-A54E-991C48E9F5F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAA1A502-999B-41B8-A54E-991C48E9F5F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1EB2AC6E-9B5F-48D2-85F7-6A39F5AD8ACE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1EB2AC6E-9B5F-48D2-85F7-6A39F5AD8ACE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1EB2AC6E-9B5F-48D2-85F7-6A39F5AD8ACE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1EB2AC6E-9B5F-48D2-85F7-6A39F5AD8ACE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BA6017C-B197-4988-9514-556AB5A44E01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BA6017C-B197-4988-9514-556AB5A44E01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BA6017C-B197-4988-9514-556AB5A44E01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BA6017C-B197-4988-9514-556AB5A44E01}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,21 @@
+﻿using DataTools.DML;
+using System.Collections.Generic;
+
+namespace DataTools.Interfaces
+{
+    public interface IDataSource
+    {
+        void Initialize(IDataContext dataContext);
+        void Execute(SqlExpression query);
+        object ExecuteScalar(SqlExpression query);
+
+        /// <summary>
+        /// Запрос возвращает коллекций массивов (строк данных), где
+        /// каждый элемент либо Null, либо имеет значение.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <returns></returns>
+        IEnumerable<object[]> ExecuteWithResult(SqlExpression query);
+    }
+}
+
