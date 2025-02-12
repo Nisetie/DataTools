@@ -7,6 +7,7 @@ using DataTools.Interfaces;
 using DataTools.MSSQL;
 using DataTools.PostgreSQL;
 using DataTools.SQLite;
+using System.Data.Entity.Infrastructure;
 
 namespace DataTools_Tests
 {
@@ -928,6 +929,93 @@ as
     return (select * from dbo.TestModel where id = @i);
 ");
         }
+
+
+        [Test]
+        public void GetMetadata()
+        {
+            string _query = @"
+with primaryKeys as (
+    select top 100 percent
+        tc.CONSTRAINT_CATALOG
+        ,tc.CONSTRAINT_NAME
+        ,ccu.TABLE_NAME
+        ,ccu.TABLE_SCHEMA
+        ,ccu.COLUMN_NAME 
+    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu on tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
+    where tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    order by tc.CONSTRAINT_NAME, ccu.TABLE_CATALOG, ccu.TABLE_SCHEMA, ccu.TABLE_NAME, ccu.COLUMN_NAME
+)
+,[unique] as (
+    select top 100 percent
+        tc.CONSTRAINT_CATALOG
+        ,tc.CONSTRAINT_NAME
+        ,ccu.TABLE_NAME
+        ,ccu.TABLE_SCHEMA
+        ,ccu.COLUMN_NAME 
+    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu on tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
+    where tc.CONSTRAINT_TYPE = 'UNIQUE'
+    order by tc.CONSTRAINT_NAME, ccu.TABLE_CATALOG, ccu.TABLE_SCHEMA, ccu.TABLE_NAME, ccu.COLUMN_NAME
+)
+, [foreignKeys] as (
+    select top 100 percent
+        tc.CONSTRAINT_CATALOG
+        ,tc.CONSTRAINT_NAME
+        ,ccu.TABLE_NAME
+        ,ccu.TABLE_SCHEMA
+        ,ccu.COLUMN_NAME 
+        ,ccu1.TABLE_SCHEMA as foreignTableSchema
+        ,ccu1.TABLE_NAME as foreignTableName
+        ,ccu1.COLUMN_NAME as foreignColumnName
+    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu on tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
+    join INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc on tc.CONSTRAINT_NAME = rc.CONSTRAINT_NAME --and ccu.COLUMN_NAME = rc.CONSTRAINT_NAME
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu1 on ccu1.CONSTRAINT_NAME = rc.UNIQUE_CONSTRAINT_NAME
+    where tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
+    order by tc.CONSTRAINT_NAME, ccu.TABLE_CATALOG, ccu.TABLE_SCHEMA, ccu.TABLE_NAME, ccu.COLUMN_NAME
+)
+, [tablesAndColums] as (
+    select  top 100 percent
+        t.table_catalog
+        ,t.TABLE_SCHEMA
+        ,t.TABLE_NAME
+        ,t.TABLE_TYPE 
+        ,c.COLUMN_NAME
+        ,c.DATA_TYPE
+        ,c.ORDINAL_POSITION
+        ,iif(c.IS_NULLABLE = 'YES', 1, 0) as IS_NULLABLE
+        ,IIF(c.column_default is not null, 1, 0) as [Generated]
+    from INFORMATION_SCHEMA.TABLES t
+    join INFORMATION_SCHEMA.COLUMNS c on t.TABLE_SCHEMA = c.TABLE_SCHEMA and t.TABLE_NAME = c.TABLE_NAME
+    order by c.ORDINAL_POSITION
+)
+select
+tablesAndColums.TABLE_CATALOG
+,tablesAndColums.TABLE_SCHEMA
+,tablesAndColums.TABLE_NAME
+,tablesAndColums.TABLE_TYPE
+,tablesAndColums.COLUMN_NAME
+,tablesAndColums.DATA_TYPE
+,tablesAndColums.ORDINAL_POSITION
+,cast(tablesAndColums.IS_NULLABLE as bit)
+,cast(tablesAndColums.[Generated] as bit)
+,cast(iif (primaryKeys.CONSTRAINT_NAME is not null,1, 0) as bit) as isPrimaryKey
+,cast(iif ([unique].CONSTRAINT_NAME is not null,1, 0) as bit) as isUnique
+,cast(iif (foreignKeys.CONSTRAINT_NAME is not null,1, 0) as bit) as isForeign
+,cast(iif (COLUMNPROPERTY(OBJECT_ID(CONCAT(tablesAndColums.[TABLE_CATALOG],'.',tablesAndColums.[TABLE_SCHEMA],'.',tablesAndColums.[TABLE_NAME])) ,tablesAndColums.[COLUMN_NAME] ,'IsIdentity') = 1,1,0) as bit) as isIdentity
+,foreignKeys.foreignTableSchema
+,foreignKeys.foreignTableName
+,foreignKeys.foreignColumnName
+from tablesAndColums
+left join primaryKeys on tablesAndColums.TABLE_SCHEMA = primaryKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = primaryKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = primaryKeys.COLUMN_NAME
+left join [unique] on tablesAndColums.TABLE_SCHEMA = [unique].TABLE_SCHEMA and tablesAndColums.TABLE_NAME = [unique].TABLE_NAME and tablesAndColums.COLUMN_NAME = [unique].COLUMN_NAME
+left join foreignKeys on tablesAndColums.TABLE_SCHEMA = foreignKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = foreignKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = foreignKeys.COLUMN_NAME
+order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColums.ORDINAL_POSITION
+";
+            var result = Context.Select<Metadata>(new SqlCustom(_query));
+        }
     }
 
 
@@ -1018,6 +1106,30 @@ as
         [Unique]
         public int Id { get; set; }
         public string Name { get; set; }
+    }
+
+
+    class Metadata
+    {
+        [Unique]
+        public string TABLE_CATALOG { get; set; }
+        [Unique]
+        public string TABLE_SCHEMA { get; set; }
+        [Unique]
+        public string TABLE_NAME { get; set; }
+        public string TABLE_TYPE { get; set; }
+        public string COLUMN_NAME { get; set; }
+        public string DATA_TYPE { get; set; }
+        public int ORDINAL_POSITION { get; set; }
+        public bool IS_NULLABLE { get; set; }
+        public bool Generated { get; set; }
+        public bool isPrimaryKey { get; set; }
+        public bool isUnique { get; set; }
+        public bool isForeign { get; set; }
+        public bool isIdentity { get; set; }
+        public string foreignTableSchema { get; set; }
+        public string foreignTableName { get; set; }
+        public string foreignColumnName { get; set; }
     }
 }
 
