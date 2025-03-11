@@ -38,5 +38,16 @@ namespace DataTools.Commands
             Query.OrderBy((from c in columnName select new SqlOrderByClause(new SqlName(c))).ToArray());
             return this;
         }
+
+        public SelectCommmand<ModelT> Offset(SqlExpression offset)
+        {
+            Query.Offset(offset);
+            return this;
+        }
+        public SelectCommmand<ModelT> Limit(SqlExpression limit)
+        {
+            Query.Limit(limit);
+            return this;
+        }
     }
 }
