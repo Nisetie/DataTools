@@ -9,12 +9,12 @@ namespace DataTools.DML
         private readonly SqlConstant _dummySqlConstant = new SqlConstant(1);
 
 
-        private Queue<SqlExpression> _expressions = new Queue<SqlExpression>();
+        private List<SqlExpression> _nodes = new List<SqlExpression>();
 
-        public IEnumerable<SqlExpression> Queue => _expressions;
-        public SqlWhereClause AddChain(SqlExpression expression)
+        public IEnumerable<SqlExpression> Nodes => _nodes;
+        public SqlWhereClause AddNode(SqlExpression expression)
         {
-            _expressions.Enqueue(expression);
+            _nodes.Add(expression);
             return this;
         }
 
@@ -24,26 +24,28 @@ namespace DataTools.DML
         /// </summary>
         public SqlWhereClause()
         {
-            AddChain(_dummySqlConstant);
-            AddChain(new SqlEqual());
-            AddChain(_dummySqlConstant);
+            AddNode(_dummySqlConstant);
+            AddNode(new SqlEqual());
+            AddNode(_dummySqlConstant);
         }
 
         public SqlWhereClause(SqlExpression expression)
         {
-            _expressions.Enqueue(expression);
+            _nodes.Add(expression);
         }
     }
 
-    public class SqlGreaterThan : SqlExpression { }
-    public class SqlGreaterOrEqual : SqlExpression { }
-    public class SqlLesserThan : SqlExpression { }
-    public class SqlLesserOrEqual : SqlExpression { }
-    public class SqlEqual : SqlExpression { }
-    public class SqlNotEqual : SqlExpression { }
-    public class SqlAnd : SqlExpression { }
-    public class SqlOr : SqlExpression { }
-    public class SqlNot : SqlExpression { }
-    public class SqlIsNull : SqlExpression { }
+    public abstract class SqlLogicalOperator : SqlExpression { }
+
+    public class SqlGreaterThan : SqlLogicalOperator { }
+    public class SqlGreaterOrEqual : SqlLogicalOperator { }
+    public class SqlLessThan : SqlLogicalOperator { }
+    public class SqlLessOrEqual : SqlLogicalOperator { }
+    public class SqlEqual : SqlLogicalOperator { }
+    public class SqlNotEqual : SqlLogicalOperator { }
+    public class SqlAnd : SqlLogicalOperator { }
+    public class SqlOr : SqlLogicalOperator { }
+    public class SqlNot : SqlLogicalOperator { }
+    public class SqlIsNull : SqlLogicalOperator { }
 }
 

@@ -4,6 +4,11 @@
     {
         public string Query;
         public SqlCustom(string customQuery) => Query = customQuery;
+
+        public override string ToString()
+        {
+            return Query;
+        }
     }
 }
 

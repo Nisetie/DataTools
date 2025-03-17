@@ -91,7 +91,7 @@ namespace DataTools.Common
                 let isConvertible = realType.GetInterface(nameof(IConvertible))
                 let isParsable = realType.GetMethod("Parse", new Type[] { typeof(string) })
                 let toString = typeof(object).GetMethod("ToString", new Type[] { })
-                let fIndex = f.FieldIndex
+                let fIndex = f.FieldOrder
                 let arrayValue = Expression.ArrayIndex(param_dataRow, Expression.Constant(fIndex))
                 select f.IsForeignKey == false
                 // свойства, имеющие примитивные типы
@@ -240,7 +240,7 @@ namespace DataTools.Common
                            let isParsableForeign = realForeignType?.GetMethod("Parse", new Type[] { typeof(string) })
 
                            select Expression.Block(
-                               Expression.Assign(var_value, Expression.ArrayIndex(var_dataRow, Expression.Constant(f.FieldIndex)))
+                               Expression.Assign(var_value, Expression.ArrayIndex(var_dataRow, Expression.Constant(f.FieldOrder)))
                                , f.IsForeignKey == false
                                // свойства, имеющие примитивные типы
                                ? Expression.IfThen(

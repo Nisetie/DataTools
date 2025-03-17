@@ -10,6 +10,9 @@ namespace DataTools.Meta
     public class ModelMetadata : IModelMetadata
     {
         private List<IModelFieldMetadata> _fields = new List<IModelFieldMetadata>();
+        private Dictionary<string, IModelFieldMetadata> _fieldsIndex = new Dictionary<string, IModelFieldMetadata>();
+
+        public int FieldsCount => _fields.Count;
 
         public Type ModelType { get; set; }
         public string ModelName { get; set; }
@@ -27,8 +30,17 @@ namespace DataTools.Meta
 
         public ModelMetadata() { }
 
-        public void AddField(IModelFieldMetadata fieldMetadata) => _fields.Add(fieldMetadata);
-        public IModelFieldMetadata GetField(string fieldName) => (from f in _fields where f.FieldName == fieldName select f).FirstOrDefault();
+        public void AddField(IModelFieldMetadata fieldMetadata)
+        {
+            _fields.Add(fieldMetadata);
+            _fieldsIndex[fieldMetadata.ColumnName] = fieldMetadata;
+        }
+
+        public IModelFieldMetadata GetField(string fieldName)
+        {
+            //return (from f in _fields where f.FieldName == fieldName select f).FirstOrDefault();
+            if (_fieldsIndex.TryGetValue(fieldName, out IModelFieldMetadata fieldMetadata)) return fieldMetadata; return null;
+        }
     }
     public static class ModelMetadata<ModelT>
         where ModelT : class, new()

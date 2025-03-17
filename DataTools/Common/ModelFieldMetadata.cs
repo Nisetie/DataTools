@@ -22,7 +22,7 @@ namespace DataTools.Meta
         public bool IsSorted { get; set; }
         public int SortOrder { get; set; }
         public SqlOrderByClause.E_ORDER SortDirection { get; set; }
-        public int FieldIndex { get; set; }
+        public int FieldOrder { get; set; }
         public ModelFieldMetadata() { }
 
         /// <summary>
@@ -42,7 +42,7 @@ namespace DataTools.Meta
             }
         }
 
-        public ModelFieldMetadata(int fieldIndex, PropertyInfo propertyInfo) : this(propertyInfo) => FieldIndex = fieldIndex;
+        public ModelFieldMetadata(int fieldOrder, PropertyInfo propertyInfo) : this(propertyInfo) => FieldOrder = fieldOrder;
     }
 }
 

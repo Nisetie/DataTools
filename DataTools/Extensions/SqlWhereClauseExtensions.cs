@@ -6,15 +6,15 @@ namespace DataTools.Extensions
     {
         private static SqlWhereClause _Combine(SqlWhereClause left, SqlExpression right)
         { 
-            return left.AddChain(right);
+            return left.AddNode(right);
         }
 
         public static SqlWhereClause Eq(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlEqual()), right);
         public static SqlWhereClause Ne(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlNotEqual()), right);
         public static SqlWhereClause Gt(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlGreaterThan()), right);
         public static SqlWhereClause Ge(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlGreaterOrEqual()), right);
-        public static SqlWhereClause Lt(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlLesserThan()), right);
-        public static SqlWhereClause Le(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlLesserOrEqual()), right);
+        public static SqlWhereClause Lt(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlLessThan()), right);
+        public static SqlWhereClause Le(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlLessOrEqual()), right);
         public static SqlWhereClause And(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlAnd()), right);
         public static SqlWhereClause Or(this SqlWhereClause left, SqlExpression right) => _Combine(_Combine(left, new SqlOr()), right);
         public static SqlWhereClause IsNull(this SqlWhereClause left) => _Combine(left, new SqlIsNull());

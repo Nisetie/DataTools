@@ -5,7 +5,7 @@ namespace DataTools.Interfaces
 {
     public interface IModelFieldMetadata
     {
-        int FieldIndex { get; set; }
+        int FieldOrder { get; set; }
         string FieldName { get; set; }
         string ColumnName { get; set; }
         string ColumnDisplayName { get; set; }

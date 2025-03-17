@@ -116,10 +116,10 @@ namespace DataTools.PostgreSQL
             ParseExpression(sqlSelect.FromSource);
             _query.AppendLine();
 
-            if (sqlSelect.WhereClause != null)
+            if (sqlSelect.Wheres != null)
             {
                 _query.Append("WHERE ");
-                ParseExpression(sqlSelect.WhereClause);
+                ParseExpression(sqlSelect.Wheres);
                 _query.AppendLine();
             }
 
@@ -198,7 +198,7 @@ namespace DataTools.PostgreSQL
             //}
 
             _query.Append("(");
-            foreach (var el in sqlWhereClause.Queue)
+            foreach (var el in sqlWhereClause.Nodes)
                 ParseExpression(el);
             _query.Append(")");
 
@@ -333,12 +333,12 @@ namespace DataTools.PostgreSQL
             _query.Append(" = ");
         }
 
-        protected override void Parse_SqlLesserOrEqual(SqlLesserOrEqual sqlLesserOrEqual)
+        protected override void Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual)
         {
             _query.Append(" <= ");
         }
 
-        protected override void Parse_SqlLesserThan(SqlLesserThan sqlLesserThan)
+        protected override void Parse_SqlLesserThan(SqlLessThan sqlLesserThan)
         {
             _query.Append(" < ");
         }

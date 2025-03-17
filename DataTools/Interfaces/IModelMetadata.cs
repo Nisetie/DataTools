@@ -34,5 +34,7 @@ namespace DataTools.Interfaces
 
         void AddField(IModelFieldMetadata field);
         IModelFieldMetadata GetField(string fieldName);
+
+        int FieldsCount { get; }
     }
 }

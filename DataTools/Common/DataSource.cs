@@ -89,10 +89,10 @@ namespace DataTools.Common
                 case SqlGreaterOrEqual sqlGreaterOrEqual:
                     Parse_SqlGreaterOrEqual(sqlGreaterOrEqual);
                     break;
-                case SqlLesserThan sqlLesserThan:
+                case SqlLessThan sqlLesserThan:
                     Parse_SqlLesserThan(sqlLesserThan);
                     break;
-                case SqlLesserOrEqual sqlLesserOrEqual:
+                case SqlLessOrEqual sqlLesserOrEqual:
                     Parse_SqlLesserOrEqual(sqlLesserOrEqual);
                     break;
                 case SqlEqual sqlEqual:
@@ -124,8 +124,8 @@ namespace DataTools.Common
         protected abstract void Parse_SqlAnd(SqlAnd sqlAnd);
         protected abstract void Parse_SqlIsNull(SqlIsNull sqlIsNull);
         protected abstract void Parse_SqlEqual(SqlEqual sqlEqual);
-        protected abstract void Parse_SqlLesserOrEqual(SqlLesserOrEqual sqlLesserOrEqual);
-        protected abstract void Parse_SqlLesserThan(SqlLesserThan sqlLesserThan);
+        protected abstract void Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual);
+        protected abstract void Parse_SqlLesserThan(SqlLessThan sqlLesserThan);
         protected abstract void Parse_SqlGreaterOrEqual(SqlGreaterOrEqual sqlGreaterOrEqual);
         protected abstract void Parse_SqlGreaterThan(SqlGreaterThan sqlGreaterThan);
         protected abstract void Parse_SqlProcedure(SqlProcedure sqlProcedure);

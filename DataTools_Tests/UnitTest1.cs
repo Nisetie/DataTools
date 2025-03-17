@@ -3,43 +3,45 @@ using DataTools.Attributes;
 using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
+using DataTools.InMemory;
 using DataTools.Interfaces;
+using DataTools.Meta;
 using DataTools.MSSQL;
 using DataTools.PostgreSQL;
 using DataTools.SQLite;
-using System.Data.Entity.Infrastructure;
+using Newtonsoft.Json.Linq;
 
 namespace DataTools_Tests
 {
     public abstract class CommonTests<ContextT> where ContextT : DataContext, new()
     {
-        public ContextT Context;
+        public ContextT DataContext;
         public string alias;
 
         public CommonTests(string alias)
         {
-            DataManager.AddContext(alias, Context = new ContextT());
+            DataManager.AddContext(alias, DataContext = new ContextT());
         }
 
         [Category("Select")]
         [Test]
         public void TestSelectNoException()
         {
-            Assert.DoesNotThrow(() => Context.Select<TestModelChild>().ToList());
+            Assert.DoesNotThrow(() => DataContext.Select<TestModelChild>().ToList());
         }
 
         [Category("Select")]
         [Test]
         public void TestSelect()
         {
-            var result = Context.SelectFrom<TestModelChild>().OrderBy("Name").Execute();
+            var result = DataContext.SelectFrom<TestModelChild>().OrderBy("Name").Execute();
         }
 
         [Category("Select")]
         [Test]
         public void TestSelectMany()
         {
-            var result = Context.SelectFrom<TestModelChild>().OrderBy("Name").Execute().ToArray();
+            var result = DataContext.SelectFrom<TestModelChild>().OrderBy("Name").Execute().ToArray();
             Assert.That(
                 (
                 result[0].Id == 1 &&
@@ -68,7 +70,7 @@ namespace DataTools_Tests
         [TestCase(0, ExpectedResult = 0)]
         public int TestWhere(int id)
         {
-            var ar = Context.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray();
+            var ar = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray();
             return ar.Length;
         }
 
@@ -76,7 +78,7 @@ namespace DataTools_Tests
         [Test]
         public void TestWhereIsNull()
         {
-            var ar = Context.SelectFrom<TestModelSimple>().Where("Id", null).Execute().ToArray();
+            var ar = DataContext.SelectFrom<TestModelSimple>().Where("Id", null).Execute().ToArray();
             Assert.That(ar.Length == 1);
         }
 
@@ -84,11 +86,38 @@ namespace DataTools_Tests
         [TestCase]
         public void TestInsert()
         {
-            var dc = DataManager.GetContext(alias);
+            if (DataContext is InMemory_DataContext) TestInsertInMemory();
+            else TestInsertRDBMS();
 
+        }
+
+        public void TestInsertInMemory()
+        {
+
+            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChildInMemory>()).Count();
+
+            var m = new TestModelChildInMemory()
+            {
+                Id = 1,
+                Name = $"{nameof(TestModelChild)}",
+                Extra = null,
+                FValue = float.MaxValue,
+                GValue = double.MaxValue,
+                Parent = null,
+                Timestamp = DateTime.MinValue,
+                Value = int.MinValue
+            };
+            DataContext.Insert(m);
+
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChildInMemory>()).Count();
+
+            Assert.That(count + 1 == newCount);
+        }
+        public void TestInsertRDBMS()
+        {
             bool isLong = false;
 
-            var count = dc.ExecuteScalar(new SqlSelect().From(new SqlSelect().From<TestModelChild>(), "t").Select("count(*)"));
+            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
             if (count is long)
                 isLong = true;
 
@@ -102,9 +131,9 @@ namespace DataTools_Tests
                 Timestamp = DateTime.MinValue,
                 Value = int.MinValue
             };
-            dc.Insert(m);
+            DataContext.Insert(m);
 
-            var newCount = dc.ExecuteScalar(new SqlSelect().From(new SqlSelect().From<TestModelChild>(), "t").Select(new SqlCustom("count(*)")));
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
 
             if (isLong)
                 Assert.That((long)count + 1 == (long)newCount);
@@ -117,7 +146,7 @@ namespace DataTools_Tests
         [TestCase(arg: 0)]
         public void TestUpdate(int id)
         {
-            var r = Context.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray();
+            var r = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray();
 
             if (r.Count() == 1)
                 Assert.That(true);
@@ -127,10 +156,10 @@ namespace DataTools_Tests
             var m = r.ToArray()[0];
             m.Name = "NewName";
 
-            Context.Update(m);
+            DataContext.Update(m);
 
-            var n = Context.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray()[0];
-            var nn = Context.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("Id").NeValue(id)).Execute().ToArray();
+            var n = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Execute().ToArray()[0];
+            var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("Id").NeValue(id)).Execute().ToArray();
 
             Assert.That(n.Name == "NewName" && nn.All(m => m.Name != "NewName"));
         }
@@ -165,15 +194,15 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdateBinary()
         {
-            var result = Context.SelectFrom<TestModel>().Where("Id", 1).Execute().ToArray();
+            var result = DataContext.SelectFrom<TestModel>().Where("Id", 1).Execute().ToArray();
 
             var s = Convert.ToHexString(new byte[] { 255, 255, 0, 255 });
 
             result[0].bindata = new byte[] { 255, 255, 0, 255 };
 
-            Context.Update(result[0]);
+            DataContext.Update(result[0]);
 
-            result = Context.Select<TestModel>(new SqlSelect().From<TestModel>().Where("Id", 1)).ToArray();
+            result = DataContext.Select<TestModel>(new SqlSelect().From<TestModel>().Where("Id", 1)).ToArray();
 
             Assert.That(s == Convert.ToHexString(result[0].bindata));
         }
@@ -182,9 +211,12 @@ namespace DataTools_Tests
         [Test]
         public void TestCallProcedureCreating()
         {
+            if (DataContext is InMemory_DataContext)
+                Assert.Inconclusive("Unsupported");
+
             var q = new SqlProcedure().Call("test");
 
-            var ds = Context.GetDataSource();
+            var ds = DataContext.GetDataSource();
 
             WriteSQLQuery(q);
 
@@ -196,7 +228,7 @@ namespace DataTools_Tests
         [Category("Random")]
         private void WriteSQLQuery(SqlExpression q)
         {
-            var ds = Context.GetDataSource();
+            var ds = DataContext.GetDataSource();
             switch (ds)
             {
                 case MSSQL_DataSource mssql_ds:
@@ -209,7 +241,7 @@ namespace DataTools_Tests
                     TestContext.Out.WriteLine(sqlite_ds.GetSqlQuery(q));
                     break;
                 default:
-                    Assert.Fail();
+                    Assert.Inconclusive("Unsupported");
                     break;
             }
         }
@@ -219,6 +251,8 @@ namespace DataTools_Tests
         public void TestCallProcedureWithoutParamAndReturns()
         {
             var context = DataManager.GetContext(alias);
+
+            if (context is InMemory_DataContext) Assert.Inconclusive("Unsupported");
 
             switch (context)
             {
@@ -232,7 +266,8 @@ namespace DataTools_Tests
                 default:
                     Assert.Fail();
                     break;
-            };
+            }
+            ;
 
             context.CallProcedure("dbo.testProc");
         }
@@ -327,9 +362,9 @@ namespace DataTools_Tests
         public void TestDeleteAllFromTable()
         {
             var q = new SqlDelete().From<TestModelChild>();
-            Context.Execute(q);
+            DataContext.Execute(q);
 
-            var ar = Context.Select<TestModelChild>().ToArray();
+            var ar = DataContext.Select<TestModelChild>().ToArray();
 
             Assert.That(ar.Length == 0);
         }
@@ -339,12 +374,12 @@ namespace DataTools_Tests
         public void TestDeleteSingleRowFromTable()
         {
             var q = new SqlDelete().From<TestModelChild>().Where(nameof(TestModelChild.Name), "TestModelChild1");
-            Context.Execute(q);
-            var l1 = Context.Select<TestModelChild>().ToArray().Length;
+            DataContext.Execute(q);
+            var l1 = DataContext.Select<TestModelChild>().ToArray().Length;
 
-            Context.Delete(Context.Select<TestModelChild>().ToArray()[0]);
+            DataContext.Delete(DataContext.Select<TestModelChild>().ToArray()[0]);
 
-            var l2 = Context.Select<TestModelChild>().ToArray().Length;
+            var l2 = DataContext.Select<TestModelChild>().ToArray().Length;
 
             Assert.That(l1 == 1 && l2 == 0);
         }
@@ -370,14 +405,17 @@ namespace DataTools_Tests
         [Test]
         public void TestCallTableFunctionWithoutParam()
         {
-            switch (Context)
+            switch (DataContext)
             {
                 case SQLite_DataContext:
-                    Assert.Pass($"{nameof(SQLite_DataContext)} does not support stored table functions");
+                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+                    break;
+                case InMemory_DataContext:
+                    Assert.Inconclusive($"{nameof(InMemory_DataContext)} does not support stored table functions");
                     break;
             }
 
-            var result = Context.CallTableFunction<TestModel>("dbo.testFunc");
+            var result = DataContext.CallTableFunction<TestModel>("dbo.testFunc");
 
             Assert.That(result.Count() == 3);
         }
@@ -387,14 +425,17 @@ namespace DataTools_Tests
         [TestCase(arguments: 1)]
         public void TestCallTableFunctionWithParam(int i)
         {
-            switch (Context)
+            switch (DataContext)
             {
                 case SQLite_DataContext:
-                    Assert.Pass($"{nameof(SQLite_DataContext)} does not support stored table functions");
+                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+                    break;
+                case InMemory_DataContext:
+                    Assert.Inconclusive($"{nameof(InMemory_DataContext)} does not support stored table functions");
                     break;
             }
 
-            var result = Context.CallTableFunction<TestModel>("dbo.testFuncParam", i);
+            var result = DataContext.CallTableFunction<TestModel>("dbo.testFuncParam", i);
 
             Assert.That(i == result.Count());
         }
@@ -403,9 +444,11 @@ namespace DataTools_Tests
         [Test]
         public void TestCallScalarFunction()
         {
+            if (DataContext is InMemory_DataContext) Assert.Inconclusive("Unsupported");
+
             string fName = null;
 
-            switch (Context)
+            switch (DataContext)
             {
                 case SQLite_DataContext:
                     fName = "datetime";
@@ -421,7 +464,7 @@ namespace DataTools_Tests
                     break;
             }
 
-            var result = Context.CallScalarFunction(fName);
+            var result = DataContext.CallScalarFunction(fName);
             if (result is string resultStr)
                 Assert.That(DateTime.TryParse(resultStr, out _));
             else if (result is DateTime)
@@ -432,9 +475,11 @@ namespace DataTools_Tests
         [Test]
         public void TestCallScalarFunctionWithParam()
         {
+            if (DataContext is InMemory_DataContext) Assert.Inconclusive("Unsupported");
+
             string fName = null;
 
-            switch (Context)
+            switch (DataContext)
             {
                 case SQLite_DataContext:
                     fName = "length";
@@ -446,11 +491,11 @@ namespace DataTools_Tests
                     fName = "length";
                     break;
                 default:
-                    Assert.Fail();
+                    Assert.Inconclusive("Unsupported");
                     break;
             }
 
-            var result = Context.CallScalarFunction(fName, "abc");
+            var result = DataContext.CallScalarFunction(fName, "abc");
             if (result is string resultStr)
                 Assert.That(int.TryParse(resultStr, out int resultInt) && resultInt == 3);
             else if (result is int)
@@ -473,9 +518,11 @@ namespace DataTools_Tests
             var context = DataManager.GetContext(alias);
 
             if (context is PostgreSQL_DataContext)
-                Assert.Pass($"{nameof(PostgreSQL_DataContext)} does not support procedures with result set.");
+                Assert.Inconclusive($"{nameof(PostgreSQL_DataContext)} does not support procedures with result set.");
             if (context is SQLite_DataContext)
-                Assert.Pass($"{nameof(SQLite_DataContext)} does not support procedures with result set.");
+                Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support procedures with result set.");
+            if (context is InMemory_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_DataContext)} does not support procedures with result set.");
 
             var result = context.CallProcedure<testProcReturn_Result>("dbo.testProcReturn", i).ToArray();
             Assert.That(i == result.Length || string.IsNullOrEmpty(result[0].recs));
@@ -485,7 +532,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectGUID()
         {
-            var result = Context.Select<TestModelGuidChild>().ToArray();
+            var result = DataContext.Select<TestModelGuidChild>().ToArray();
             Assert.Pass();
         }
 
@@ -498,9 +545,9 @@ namespace DataTools_Tests
             var g = Guid.NewGuid();
             a.Id = g;
             a.Name = "child3";
-            Context.Insert(a);
+            DataContext.Insert(a);
 
-            var r = Context.Select<TestModelGuidChild>(new SqlSelect().From<TestModelGuidChild>().Where("id", g)).ToArray();
+            var r = DataContext.Select<TestModelGuidChild>(new SqlSelect().From<TestModelGuidChild>().Where("Id", g)).ToArray();
 
             Assert.That(r.Length == 1 && r[0].Id == g);
         }
@@ -509,13 +556,10 @@ namespace DataTools_Tests
     [TestFixture("sqlite", "Data Source=dbo")]
     public class SQLiteTests : CommonTests<SQLite_DataContext>
     {
-
-
-
         public SQLiteTests(string alias, string connectionString) : base(alias)
         {
             this.alias = alias;
-            Context.ConnectionString = connectionString;
+            DataContext.ConnectionString = connectionString;
 
         }
 
@@ -638,7 +682,7 @@ insert into dbo.TestModelNoUnique (id,name) select null,'d';
         public PostgreSQLTests(string alias, string connectionString) : base(alias)
         {
             this.alias = alias;
-            Context.ConnectionString = connectionString;
+            DataContext.ConnectionString = connectionString;
 
         }
 
@@ -790,7 +834,7 @@ $$
         public MSSQLTests(string alias, string connectionString) : base(alias)
         {
             this.alias = alias;
-            Context.ConnectionString = connectionString;
+            DataContext.ConnectionString = connectionString;
         }
 
         [SetUp]
@@ -1014,15 +1058,201 @@ left join [unique] on tablesAndColums.TABLE_SCHEMA = [unique].TABLE_SCHEMA and t
 left join foreignKeys on tablesAndColums.TABLE_SCHEMA = foreignKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = foreignKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = foreignKeys.COLUMN_NAME
 order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColums.ORDINAL_POSITION
 ";
-            var result = Context.Select<Metadata>(new SqlCustom(_query));
+            var result = DataContext.Select<Metadata>(new SqlCustom(_query));
         }
     }
 
+
+    [TestFixture("inmemory")]
+    public class InMemoryTests : CommonTests<InMemory_DataContext>
+    {
+        public InMemoryTests(string alias) : base(alias)
+        {
+            this.alias = alias;
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            var dc = DataManager.GetContext(alias) as InMemory_DataContext;
+            dc.AddTable(ModelMetadata<TestModel>.Instance);
+            dc.GetData("dbo.TestModel").Add(
+                new object[]{
+                    1,
+                    1L,
+                    1,
+                    "TestModel1",
+                    'a',
+                    false,
+                    1,
+                    1.1F,
+                    1.2,
+                    1.3,
+                    DateTime.Parse("2024-01-01"),
+                    TimeSpan.Parse("23:59:59"),
+                    Guid.NewGuid(),
+                    Convert.FromHexString("01020304")
+                }
+            );
+            dc.GetData("dbo.TestModel").Add(
+                new object[] {
+                    2 ,
+                    2 ,
+                    2 ,
+                    "TestModel2" ,
+                    'b' ,
+                    true ,
+                    1,
+                    1.1F,
+                    1.2,
+                    1.3,
+                    DateTime.Parse("2024-03-01") ,
+                    TimeSpan.Parse("01:01:01"),
+                    Guid.NewGuid(),
+                    Convert.FromHexString("FFFFFFFF")
+                }
+            );
+            dc.GetData("dbo.TestModel").Add(
+                new object[] {
+                    3,
+                    null ,
+                    null ,
+                    "TestModel3",
+                    'b',
+                    false,
+                    1,
+                    1.1F,
+                    1.3,
+                    1.4,
+                    DateTime.Parse("2024-04-01"),
+                    TimeSpan.Parse("01:01:01"),
+                    Guid.NewGuid(),
+                    Convert.FromHexString("0000FF00")
+                }
+            );
+
+            dc.AddTable(ModelMetadata<TestModelExtra>.Instance);
+            dc.GetData("dbo.TestModelExtra").Add(
+                new object[] {
+                    1,
+                    "TestModelExtra1" ,
+                     1 ,
+                    1.1F,
+                    1.2,
+                    DateTime.Parse("2024-01-01"),
+                    1
+                }
+            );
+            dc.GetData("dbo.TestModelExtra").Add(
+                new object[] {
+                    2,
+                    "TestModelExtra2" ,
+                    1,
+                    1.1F,
+                    1.2,
+                    DateTime.Parse("2023-01-01"),
+                    2
+                }
+            );
+
+            dc.AddTable(ModelMetadata<TestModelChild>.Instance);
+
+            dc.GetData("dbo.TestModelChild").Add(
+                new object[] {
+                    1,
+                    "TestModelChild1" ,
+                    1,
+                    1.1F,
+                    1.2,
+                    DateTime.Parse("2024-01-01"),
+                    1,
+                    1
+                }
+            );
+            dc.GetData("dbo.TestModelChild").Add(
+                new object[] {
+                   2,
+                    "TestModelChild2" ,
+                    1,
+                    1.15F,
+                    1.25,
+                    DateTime.Parse("2023-01-01"),
+                    3,
+                    2
+               }
+           );
+
+            dc.AddTable(ModelMetadata<TestModelGuidParent>.Instance);
+            var pguid1 = Guid.NewGuid();
+            var pguid2 = Guid.NewGuid();
+            dc.GetData(ModelMetadata<TestModelGuidParent>.Instance.FullObjectName).Add(
+                new object[] {
+                    pguid1,
+                    "parent1"
+                }
+            );
+            dc.GetData(ModelMetadata<TestModelGuidParent>.Instance.FullObjectName).Add(
+                new object[] {
+                    pguid2 ,
+                    "parent2"
+                }
+            );
+
+            dc.AddTable(ModelMetadata<TestModelGuidChild>.Instance);
+            dc.GetData(ModelMetadata<TestModelGuidChild>.Instance.FullObjectName).Add(
+                new object[] {
+                    Guid.NewGuid(),
+                    "child1",
+                    pguid1
+                }
+            );
+            dc.GetData(ModelMetadata<TestModelGuidChild>.Instance.FullObjectName).Add(
+                new object[] {
+                    Guid.NewGuid() ,
+                    "child2",
+                    pguid2
+                }
+            );
+
+            dc.AddTable(ModelMetadata<TestModelSimple>.Instance);
+            dc.GetData(ModelMetadata<TestModelSimple>.Instance.FullObjectName).Add(new object[] { 1, 'a' });
+            dc.GetData(ModelMetadata<TestModelSimple>.Instance.FullObjectName).Add(new object[] { 2, 'b' });
+            dc.GetData(ModelMetadata<TestModelSimple>.Instance.FullObjectName).Add(new object[] { 1, 'c' });
+            dc.GetData(ModelMetadata<TestModelSimple>.Instance.FullObjectName).Add(new object[] { 3, 'b' });
+            dc.GetData(ModelMetadata<TestModelSimple>.Instance.FullObjectName).Add(new object[] { null, 'd' });
+        }
+    }
 
     [ObjectName("TestModel", "dbo"), DisplayModelName("Тестовая модель")]
     public class TestModel
     {
         [IgnoreChanges, Unique]
+        public int Id { get; set; }
+        public long? LongId { get; set; }
+        public short? ShortId { get; set; }
+        public string Name { get; set; }
+        public string CharCode { get; set; }
+        public bool Checked { get; set; }
+        public int Value { get; set; }
+        public float FValue { get; set; }
+        public double GValue { get; set; }
+        public decimal Money { get; set; }
+        public DateTime Timestamp { get; set; }
+        public TimeSpan Duration { get; set; }
+        public Guid Guid { get; set; }
+
+        public byte[] bindata { get; set; }
+
+        public override string ToString()
+        {
+            return Name;
+        }
+    }
+
+    [ObjectName("TestModel", "dbo"), DisplayModelName("Тестовая модель")]
+    public class TestModelInMemory
+    {
+        [Unique]
         public int Id { get; set; }
         public long? LongId { get; set; }
         public short? ShortId { get; set; }
@@ -1064,10 +1294,47 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
         }
     }
 
+    [ObjectName("TestModelChild", "dbo"), DisplayModelName("Дочерняя тестовая модель")]
+    public class TestModelChildInMemory
+    {
+        [Unique]
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public int? Value { get; set; }
+        public float? FValue { get; set; }
+        public double? GValue { get; set; }
+        public DateTime? Timestamp { get; set; }
+        [Reference(nameof(TestModelInMemory.Id)), ColumnName("Parent_id")] public TestModelInMemory? Parent { get; set; }
+        [Reference(nameof(TestModelExtraInMemory.Id)), ColumnName("Extra_id")] public TestModelExtraInMemory? Extra { get; set; }
+
+        public override string? ToString()
+        {
+            return Name;
+        }
+    }
+
     [ObjectName("TestModelExtra", "dbo"), DisplayModelName("Дополнительная тестовая модель")]
     public class TestModelExtra
     {
         [IgnoreChanges, Unique]
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public int? Value { get; set; }
+        public float? FValue { get; set; }
+        public double? GValue { get; set; }
+        public DateTime? Timestamp { get; set; }
+        //[Reference(nameof(TestModelExtra.Id)), ColumnName("Parent_id")] public TestModelExtra Parent { get; set; }
+
+        public override string? ToString()
+        {
+            return Name;
+        }
+    }
+
+    [ObjectName("TestModelExtra", "dbo"), DisplayModelName("Дополнительная тестовая модель")]
+    public class TestModelExtraInMemory
+    {
+        [Unique]
         public int Id { get; set; }
         public string? Name { get; set; }
         public int? Value { get; set; }

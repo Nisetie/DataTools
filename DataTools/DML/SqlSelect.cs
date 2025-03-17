@@ -19,7 +19,7 @@ namespace DataTools.DML
 
         public IEnumerable<SqlExpression> Selects => _selects;
         public SqlExpression FromSource => _from;
-        public SqlWhereClause WhereClause => _where;
+        public SqlWhereClause Wheres => _where;
         public IEnumerable<SqlOrderByClause> Orders => _orders;
         public SqlExpression OffsetRows => _offset;
         public SqlExpression LimitRows => _limit;

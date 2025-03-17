@@ -19,7 +19,7 @@ namespace DataTools.Extensions
             var fields = meta.Fields;
             var copy = sqlSelect
                 .From(meta.FullObjectName)
-                .Select((from f in fields select new SqlExpressionWithAlias(new SqlName(f.ColumnName), f.ColumnName)).ToArray())
+                .Select((from f in fields select new SqlName(f.ColumnName)).ToArray())
                 .OrderBy((from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray());
             return copy;
         }
@@ -30,7 +30,7 @@ namespace DataTools.Extensions
             var fields = meta.Fields;
             var copy = sqlSelect
                 .From(subquery, alias)
-                .Select((from f in fields select new SqlExpressionWithAlias(new SqlName(f.ColumnName), f.ColumnName)).ToArray())
+                .Select((from f in fields select new SqlName(f.ColumnName)).ToArray())
                 .OrderBy((from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray());
             return copy;
         }
