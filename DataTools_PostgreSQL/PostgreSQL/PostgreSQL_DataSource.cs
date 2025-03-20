@@ -169,34 +169,6 @@ namespace DataTools.PostgreSQL
 
         protected override void Parse_SqlWhereClause(SqlWhereClause sqlWhereClause)
         {
-
-            //if (sqlWhereClause.Right != null)
-            //{
-            //    _query.Append("(");
-            //    ParseExpression(sqlWhereClause.Left);
-            //    _query.Append(" ");
-            //    switch (sqlWhereClause.Operator)
-            //    {
-            //        case E_OP.EQ: _query.Append("="); break;
-            //        case E_OP.NE: _query.Append("<>"); break;
-            //        case E_OP.GT: _query.Append(">"); break;
-            //        case E_OP.GE: _query.Append(">="); break;
-            //        case E_OP.LT: _query.Append("<"); break;
-            //        case E_OP.LE: _query.Append("<="); break;
-            //        case E_OP.AND: _query.Append("AND"); break;
-            //        case E_OP.OR: _query.Append("OR"); break;
-            //    };
-            //    _query.Append(" ");
-            //    ParseExpression(sqlWhereClause.Right);
-            //    _query.Append(")");
-            //}
-            //else
-            //{
-            //    _query.Append("(");
-            //    ParseExpression(sqlWhereClause.Left);
-            //    _query.Append(")");
-            //}
-
             _query.Append("(");
             foreach (var el in sqlWhereClause.Nodes)
                 ParseExpression(el);

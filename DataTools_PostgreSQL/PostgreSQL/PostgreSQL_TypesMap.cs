@@ -10,7 +10,7 @@ namespace DataTools.PostgreSQL
     {
         private static List<(string sqltype, Type netType, NpgsqlDbType sqldbtype, object defaultValue)> _mapping;
         private static HashSet<string> _numbers;
-
+        private static Dictionary<Type, (string sqltype, Type netType, NpgsqlDbType sqldbtype, object defaultValue)> _reverseMapping;
         static PostgreSQL_TypesMap()
         {
             _mapping = new List<(string sqltype, Type netType, NpgsqlDbType NpgsqlDbType, object defaultValue)>
@@ -39,6 +39,8 @@ namespace DataTools.PostgreSQL
                 ("char", typeof(char), NpgsqlDbType.Char, default(char))
             };
 
+            _reverseMapping  = _mapping.ToDictionary(t => t.netType);
+
             _numbers = new HashSet<string>()
             {
                 "smallint",
@@ -53,11 +55,13 @@ namespace DataTools.PostgreSQL
 
         public static string GetSqlType(Type type)
         {
-            if (type == typeof(string))
-                return "text";
-            foreach (var el in _mapping)
-                if (el.netType == type)
-                    return el.sqltype;
+            if (_reverseMapping.TryGetValue(type, out var t))
+                return t.sqltype;
+            //if (type == typeof(string))
+            //    return "text";
+            //foreach (var el in _mapping)
+            //    if (el.netType == type)
+            //        return el.sqltype;
             return "text";
         }
 
@@ -75,23 +79,24 @@ namespace DataTools.PostgreSQL
         {
             if (value == null)
                 return "NULL";
-            if (IsNumber(GetSqlType(value.GetType())))
-                return $"{value}".Replace(',', '.');
+            var sqlType = GetSqlType(value.GetType()));
+            if (IsNumber(sqlType))
+                return $"{value}::{sqlType}".Replace(',', '.');
 
             switch (value)
             {
                 case DateTime dt:
                     if (dt.Year < 1970)
                         dt = new DateTime(1970, 01, 01, 00, 00, 00);
-                    return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
+                    return $"'{dt:yyyy-MM-dd HH:mm:ss}'::{sqlType}";
                 case DateTimeOffset dto:
                     if (dto.Year < 1970)
                         dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
-                    return $"'{dto:yyyy-MM-dd HH:mm:ss}'";
+                    return $"'{dto:yyyy-MM-dd HH:mm:ss}'::{sqlType}";
                 case byte[] byteArray:
                     return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
                 default:
-                    return $"'{value}'";
+                    return $"'{value}'::{sqlType}";
             }
         }
 

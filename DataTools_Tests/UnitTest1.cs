@@ -39,6 +39,14 @@ namespace DataTools_Tests
 
         [Category("Select")]
         [Test]
+        public void TestSelectLessOrEqual()
+        {
+            var result = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("FValue").LeValue(1.1F)).OrderBy("Name").Execute();
+            Assert.That(result.Count() == 1);
+        }
+
+        [Category("Select")]
+        [Test]
         public void TestSelectMany()
         {
             var result = DataContext.SelectFrom<TestModelChild>().OrderBy("Name").Execute().ToArray();
