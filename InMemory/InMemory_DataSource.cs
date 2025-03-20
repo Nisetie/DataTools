@@ -1,7 +1,6 @@
 ﻿using DataTools.DML;
 using DataTools.Interfaces;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -27,8 +26,14 @@ namespace DataTools.InMemory
 
         ParameterExpression param_dataRow = Expression.Parameter(typeof(object[]), "dataRow");
         ParameterExpression var_tableMetadata = Expression.Variable(typeof(IModelMetadata), "tableMetadata");
+        ParameterExpression[] block_variables;
 
-        void AddWhere(SqlWhereClause whereClause)
+        public InMemory_DataSource() :base()
+        {
+            block_variables = new ParameterExpression[] { var_tableMetadata };
+        }
+
+        private void AddWhere(SqlWhereClause whereClause)
         {
             wheres.Push(whereClause);
             wheresNodes.Push(whereClause.Nodes.ToArray());
@@ -39,7 +44,7 @@ namespace DataTools.InMemory
             operators.Push(new Stack<ExpressionType>());
         }
 
-        Func<object[], bool> AnalyzeWhere(IModelMetadata tableMeta)
+        private Func<object[], bool> AnalyzeWhere(IModelMetadata tableMeta)
         {
             while (wheres.Count > 0)
             {
@@ -51,8 +56,7 @@ namespace DataTools.InMemory
                 var current_unaryexps = unaryexps.Peek();
                 var current_ops = operators.Peek();
 
-                //VisitNode(currentNodes[(int)ix]);
-                var expr = currentNodes[(int)ix];
+                var expr = currentNodes[ix];
                 switch (expr)
                 {
                     case SqlWhereClause sqlWhereClause:
@@ -63,18 +67,7 @@ namespace DataTools.InMemory
                         break;
                     case SqlName sqlName:
                         current_unaryexps.Enqueue(
-                            Expression.ArrayIndex(
-                                param_dataRow
-                                , Expression.Property(
-                                    Expression.Call(
-                                        var_tableMetadata
-                                        , "GetField"
-                                        , null
-                                        , Expression.Constant(sqlName.ToString())
-                                        )
-                                    , nameof(IModelFieldMetadata.FieldOrder))
-                                )
-                            );
+                            Expression.ArrayIndex(param_dataRow, Expression.Constant(tableMeta.GetField(sqlName.ToString()).FieldOrder)));
                         break;
                     case SqlAnd sqlAnd:
                         current_ops.Push(ExpressionType.AndAlso);
@@ -145,7 +138,7 @@ namespace DataTools.InMemory
 
             return Expression.Lambda<Func<object[], bool>>(
                 Expression.Block(
-                    variables: new ParameterExpression[] { var_tableMetadata }
+                    variables: block_variables
                     , Expression.Assign(var_tableMetadata, Expression.Constant(tableMeta))
                     , binexps.Pop().Dequeue()
                     )
@@ -166,11 +159,16 @@ namespace DataTools.InMemory
             this.wheresNodes.Clear();
             this.wheresNodesPosition.Clear();
 
+            string tableName;
+            IModelMetadata tableMeta;
+            IList<object[]> tableData;
+
             if (query is SqlInsert sqlInsert)
             {
-                string tableName = sqlInsert.IntoDestination.ToString();
-                var tableMeta = _context.GetTableMetadata(tableName);
-                var tableData = _context.GetData(tableName);
+                tableName = sqlInsert.IntoDestination.ToString();
+                _context.LockTable(tableName);
+                tableMeta = _context.GetTableMetadata(tableName);
+                tableData = _context.GetData(tableName);
                 var dataRow = new object[tableMeta.FieldsCount];
                 int i = 0;
                 var col_e = sqlInsert.Columns.GetEnumerator();
@@ -184,14 +182,16 @@ namespace DataTools.InMemory
                         dataRow[tableMeta.GetField(col_e.Current.Name).FieldOrder] = val_e.Current.ToString();
                 }
                 tableData.Add(dataRow);
+                _context.UnlockTable(tableName);
                 return new object[1][] { dataRow };
 
             }
             else if (query is SqlUpdate sqlUpdate)
             {
-                string tableName = sqlUpdate.FromSource.ToString();
-                var tableMeta = _context.GetTableMetadata(tableName);
-                var tableData = _context.GetData(tableName);
+                tableName = sqlUpdate.FromSource.ToString();
+                _context.LockTable(tableName);
+                tableMeta = _context.GetTableMetadata(tableName);
+                tableData = _context.GetData(tableName);
                 AddWhere(sqlUpdate.Wheres);
                 var whereLambda = AnalyzeWhere(tableMeta);
                 var col_e = sqlUpdate.Columns.GetEnumerator();
@@ -205,28 +205,31 @@ namespace DataTools.InMemory
                         el[tableMeta.GetField(col_e.Current.Name).FieldOrder] = value;
 
                 }
+                _context.UnlockTable(tableName);
                 return f;
             }
             else if (query is SqlDelete sqlDelete)
             {
-                string tableName = sqlDelete.FromSource.ToString();
-                var tableMeta = _context.GetTableMetadata(tableName);
-                var tableData = _context.GetData(tableName);
+                tableName = sqlDelete.FromSource.ToString();
+                _context.LockTable(tableName);
+                tableMeta = _context.GetTableMetadata(tableName);
+                tableData = _context.GetData(tableName);
                 AddWhere(sqlDelete.Wheres);
                 var whereLambda = AnalyzeWhere(tableMeta);
                 var r = tableData.Where(whereLambda).ToArray();
-                foreach (var el in r)
-                    tableData.Remove(el);
-                return null;
+                foreach (var el in r) tableData.Remove(el);
+                _context.UnlockTable(tableName);
             }
             else if (query is SqlSelect sqlSelect)
             {
-                string tableName = sqlSelect.FromSource.ToString();
-                var tableMeta = _context.GetTableMetadata(tableName);
-                var tableData = _context.GetData(tableName);
+                tableName = sqlSelect.FromSource.ToString();
+                _context.LockTable(tableName);
+                tableMeta = _context.GetTableMetadata(tableName);
+                tableData = _context.GetData(tableName);
                 AddWhere(sqlSelect.Wheres);
                 var whereLambda = AnalyzeWhere(tableMeta);
                 var f = tableData.Where(whereLambda).ToArray();
+                _context.UnlockTable(tableName);
                 return f;
             }
             return null;

@@ -24,6 +24,7 @@ namespace DataTools.MSSQL
             base.Initialize(dataContext);
             if (!(dataContext is MSSQL_DataContext context)) return;
             _conn.ConnectionString = context.ConnectionString;
+            //_conn.Open();
         }
 
         public void Execute(string query)
@@ -68,7 +69,11 @@ namespace DataTools.MSSQL
                     yield return array;
                 }
             }
-            finally { reader?.Close(); _conn.Close(); }
+            finally
+            {
+                reader?.Close();
+                _conn.Close();
+            }
         }
 
         protected override void _BeforeParsing()
@@ -173,40 +178,6 @@ namespace DataTools.MSSQL
 
         protected override void Parse_SqlWhereClause(SqlWhereClause sqlWhereClause)
         {
-            //if (sqlWhereClause.Right != null)
-            //{
-            //    _query.Append("(");
-            //    ParseExpression(sqlWhereClause.Left);
-            //    _query.Append(" ");
-            //    switch (sqlWhereClause.Operator)
-            //    {
-            //        case E_OP.EQ: _query.Append("="); break;
-            //        case E_OP.NE: _query.Append("<>"); break;
-            //        case E_OP.GT: _query.Append(">"); break;
-            //        case E_OP.GE: _query.Append(">="); break;
-            //        case E_OP.LT: _query.Append("<"); break;
-            //        case E_OP.LE: _query.Append("<="); break;
-            //        case E_OP.AND: _query.Append("AND"); break;
-            //        case E_OP.OR: _query.Append("OR"); break;
-            //        case E_OP.ISNULL: _query.Append("IS NULL"); break;
-            //    };
-            //    _query.Append(" ");
-            //    ParseExpression(sqlWhereClause.Right);
-            //    _query.Append(")");
-            //}
-            //else
-            //{
-            //    _query.Append("(");
-            //    ParseExpression(sqlWhereClause.Left);
-            //    _query.Append(")");
-            //}
-
-            //_query.Append("(");
-            //ParseExpression(sqlWhereClause.Left);
-            //_query.Append(" ");
-            //ParseExpression(sqlWhereClause.Right);
-            //_query.Append(")");
-
             _query.Append("(");
             foreach (var el in sqlWhereClause.Nodes)
                 ParseExpression(el);

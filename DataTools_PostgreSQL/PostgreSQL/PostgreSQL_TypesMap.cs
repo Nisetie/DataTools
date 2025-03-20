@@ -30,7 +30,7 @@ namespace DataTools.PostgreSQL
                 ("uuid", typeof(Guid), NpgsqlDbType.Uuid, Guid.Empty),
                 ("bytea", typeof(byte[]), NpgsqlDbType.Bytea, default(byte[])),
                 ("timestamp", typeof(DateTime), NpgsqlDbType.Timestamp, DateTime.Now),
-                ("timestamptz", typeof(DateTime), NpgsqlDbType.TimestampTz, DateTime.Now),
+                ("timestamptz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),
                 ("date", typeof(DateTime), NpgsqlDbType.Date, DateTime.Now),
                 ("time", typeof(TimeSpan), NpgsqlDbType.Timestamp, TimeSpan.Zero),
                 ("timetz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),

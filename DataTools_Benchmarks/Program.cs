@@ -3,6 +3,8 @@ using DataTools.Attributes;
 using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
+using DataTools.InMemory;
+using DataTools.Meta;
 using DataTools.MSSQL;
 using Microsoft.CodeAnalysis;
 using Microsoft.Data.SqlClient;
@@ -28,49 +30,63 @@ namespace DataTools_Benchmarks
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
 
 
-                sw.Restart();
-                b.DoMSSQLSelectManyRecords();
-                Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecords)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-                sw.Restart();
-                b.DoEntityFrameworkSelectManyRecords();
-                Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectManyRecords)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-                sw.Restart();
-                b.DoDataToolsMSSQLSelectManyRecords();
-                Console.WriteLine($"DataTools {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectManyRecords)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoMSSQLSelectManyRecords();
+                //Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecords)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoMSSQLSelectRecordManyTimes();
+                //Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectRecordManyTimes)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoMSSQLSelectManyRecordsWithReferences();
+                //Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoMSSQLSelectManyRecordsWithReferencesOptimized();
+                //Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecordsWithReferencesOptimized)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+
+                //sw.Restart();
+                //b.DoEntityFrameworkSelectManyRecords();
+                //Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectManyRecords)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoEntityFrameworkSelectRecordManyTimes();
+                //Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectRecordManyTimes)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoEntityFrameworkSelectManyRecordsWithReferences();
+                //Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
 
                 sw.Restart();
-                b.DoMSSQLSelectRecordManyTimes();
-                Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectRecordManyTimes)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-                sw.Restart();
-                b.DoEntityFrameworkSelectRecordManyTimes();
-                Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectRecordManyTimes)} " + sw.Elapsed.ToString());
+                b.DoDataToolsMSSQLSelectManyRecords();
+                Console.WriteLine($"DataTools MSSQL {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectManyRecords)} " + sw.Elapsed.ToString());
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
                 sw.Restart();
                 b.DoDataToolsMSSQLSelectRecordManyTimes();
-                Console.WriteLine($"DataTools {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectRecordManyTimes)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-
-
-                sw.Restart();
-                b.DoMSSQLSelectManyRecordsWithReferences();
-                Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-                sw.Restart();
-                b.DoMSSQLSelectManyRecordsWithReferencesOptimized();
-                Console.WriteLine($"ADO NET {nameof(DataTools_Benchs.DoMSSQLSelectManyRecordsWithReferencesOptimized)} " + sw.Elapsed.ToString());
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
-                sw.Restart();
-                b.DoEntityFrameworkSelectManyRecordsWithReferences();
-                Console.WriteLine($"EF {nameof(DataTools_Benchs.DoEntityFrameworkSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
+                Console.WriteLine($"DataTools MSSQL {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectRecordManyTimes)} " + sw.Elapsed.ToString());
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
                 sw.Restart();
                 b.DoDataToolsMSSQLSelectManyRecordsWithReferences();
-                Console.WriteLine($"DataTools {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
+                Console.WriteLine($"DataTools MSSQL {nameof(DataTools_Benchs.DoDataToolsMSSQLSelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
                 GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+
+                //sw.Restart();
+                //b.DoDataToolsInMemorySelectManyRecords();
+                //Console.WriteLine($"DataTools InMemory {nameof(DataTools_Benchs.DoDataToolsInMemorySelectManyRecords)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoDataToolsInMemorySelectRecordManyTimes();
+                //Console.WriteLine($"DataTools InMemory {nameof(DataTools_Benchs.DoDataToolsInMemorySelectRecordManyTimes)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+                //sw.Restart();
+                //b.DoDataToolsInMemorySelectManyRecordsWithReferences();
+                //Console.WriteLine($"DataTools InMemory {nameof(DataTools_Benchs.DoDataToolsInMemorySelectManyRecordsWithReferences)} " + sw.Elapsed.ToString());
+                //GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, true);
+
+
 
                 Console.WriteLine("Again? Press Y...");
                 if (Console.ReadKey().Key != ConsoleKey.Y) break;
@@ -88,6 +104,7 @@ namespace DataTools_Benchmarks
         public int c = 10000;
         private string connectionString = "Data Source=(LocalDB)\\MSSQLLocalDB;AttachDbFilename=" + Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Database.mdf") + ";Integrated Security=True;Pooling=True";
         private MSSQL_DataContext _context;
+        private InMemory_DataContext _inmemory =new InMemory_DataContext();
 
         public DataTools_Benchs()
         {
@@ -147,6 +164,47 @@ select i, 1,1,'TestModel1','a',0,1,1.1,1.2,1.3,'2024-01-01','23:59:59',newid(),1
 --select i, 1,1,'TestModel1','a',0,1,1.1,1.2,1.3,'2024-01-01','23:59:59',newid(),i from t1
 option (maxrecursion 0);
 ");
+
+            _inmemory.AddTable(ModelMetadata<test_inmemory>.Instance);
+            for (int i = 0; i <c; ++i)
+            {
+                _inmemory.Insert( new test_inmemory() { 
+                    i= i, 
+                    LongId = 1,
+                    ShortId = 1,
+                    Name = "TestModel1",
+                    CharCode = "a",
+                    Checked = true,
+                    Value = 1,
+                    FValue = 1.1F,
+                    GValue = 1.2,
+                    Money = (decimal)1.3,
+                    Timestamp = DateTime.Parse("2024-01-01"),
+                    Duration = TimeSpan.Parse("23:59:59"),
+                    Guid = Guid.NewGuid()
+                });  
+            }
+            _inmemory.AddTable(ModelMetadata<testt_inmemory>.Instance);
+            for (int i = 0; i < c; ++i)
+            {
+                _inmemory.Insert(new testt_inmemory()
+                {
+                    i = i,
+                    LongId = 1,
+                    ShortId = 1,
+                    Name = "TestModel1",
+                    CharCode = "a",
+                    Checked = true,
+                    Value = 1,
+                    FValue = 1.1F,
+                    GValue = 1.2,
+                    Money = (decimal)1.3,
+                    Timestamp = DateTime.Parse("2024-01-01"),
+                    Duration = TimeSpan.Parse("23:59:59"),
+                    Guid = Guid.NewGuid(),
+                    test = _inmemory.SelectFrom<test_inmemory>().Where(new SqlWhereClause().AndName("i").EqValue(1 + (i % 5))).Execute().First()
+                });
+            }
         }
 
         [Benchmark]
@@ -337,18 +395,21 @@ option (maxrecursion 0);
             conn.Close();
         }
 
-        private SqlSelect cachedSelect = new SqlSelect().From<testt>();
+        private SqlSelect cachedSelect_test = new SqlSelect().From<test>();
+        private SqlSelect cachedSelect_testt = new SqlSelect().From<testt>();
+        private SqlSelect cachedSelect_test_inmemory = new SqlSelect().From<test_inmemory>();
+        private SqlSelect cachedSelect_testt_inmemory = new SqlSelect().From<testt_inmemory>();
 
         [Benchmark]
         public void DoDataToolsMSSQLSelectManyRecords()
         {
-            var l = _context.Select<test>(cachedSelect).ToArray();
+            var l = _context.Select<test>(cachedSelect_test).ToArray();
         }
 
         [Benchmark]
         public void DoDataToolsMSSQLSelectManyRecordsWithReferences()
         {
-            var l = _context.Select<testt>(cachedSelect).ToArray();
+            var l = _context.Select<testt>(cachedSelect_testt).ToArray();
         }
 
         [Benchmark]
@@ -388,6 +449,29 @@ option (maxrecursion 0);
                 var l = context.test.Where(t => t.i == i + 1).First();
             }
 
+        }
+
+        [Benchmark]
+        public void DoDataToolsInMemorySelectManyRecords()
+        {
+            var l = _inmemory.Select<test_inmemory>(cachedSelect_test_inmemory).ToArray();
+        }
+
+        [Benchmark]
+        public void DoDataToolsInMemorySelectRecordManyTimes()
+        {
+            var cmd = new SqlSelect().From<test_inmemory>();
+            for (int i = 1; i <= c; ++i)
+            {
+                cmd.Where("i", i);
+                var l = _inmemory.Select<test_inmemory>(cmd).FirstOrDefault();
+            }
+        }
+
+        [Benchmark]
+        public void DoDataToolsInMemorySelectManyRecordsWithReferences()
+        {
+            var l = _inmemory.Select<testt_inmemory>(cachedSelect_testt_inmemory).ToArray();
         }
 
         private class TestContext : DbContext
@@ -460,6 +544,25 @@ option (maxrecursion 0);
         public Guid? Guid { get; set; }
     }
 
+    [NoUnique]
+    internal class test_inmemory
+    {
+        public int i { get; set; }
+
+        public long? LongId { get; set; }
+        public short? ShortId { get; set; }
+        public string Name { get; set; }
+        public string CharCode { get; set; }
+        public bool? Checked { get; set; }
+        public int? Value { get; set; }
+        public float? FValue { get; set; }
+        public double? GValue { get; set; }
+        public decimal? Money { get; set; }
+        public DateTime? Timestamp { get; set; }
+        public TimeSpan? Duration { get; set; }
+        public Guid? Guid { get; set; }
+    }
+
     internal class testt
     {
         [DataTools.Attributes.Unique]
@@ -481,5 +584,27 @@ option (maxrecursion 0);
 
         [Reference(nameof(test.i)), ColumnName("testi")]
         public test? test { get; set; }
+    }
+
+    [NoUnique]
+    internal class testt_inmemory
+    {
+        public int i { get; set; }
+
+        public long? LongId { get; set; }
+        public short? ShortId { get; set; }
+        public string Name { get; set; }
+        public string CharCode { get; set; }
+        public bool? Checked { get; set; }
+        public int? Value { get; set; }
+        public float? FValue { get; set; }
+        public double? GValue { get; set; }
+        public decimal? Money { get; set; }
+        public DateTime? Timestamp { get; set; }
+        public TimeSpan? Duration { get; set; }
+        public Guid? Guid { get; set; }
+
+        [Reference(nameof(test.i)), ColumnName("testi")]
+        public test_inmemory? test { get; set; }
     }
 }
