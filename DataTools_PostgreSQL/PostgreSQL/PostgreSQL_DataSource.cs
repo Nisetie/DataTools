@@ -49,22 +49,28 @@ namespace DataTools.PostgreSQL
             _conn.Open();
             try
             {
-                reader = new NpgsqlCommand(query, _conn).ExecuteReader(CommandBehavior.SequentialAccess);
+                reader = new NpgsqlCommand(query, _conn).ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
                 if (reader.HasRows)
                 {
-                    var array = new object[reader.FieldCount];
+                    int fieldCount = reader.FieldCount;
+                    var array = new object[fieldCount];
+                    object value = null;
                     while (reader.Read())
                     {
-                        for (int i = 0; i < array.Length; ++i)
+                        for (int i = 0; i < fieldCount; ++i)
                         {
-                            var v = reader[i];
-                            array[i] = (v == DBNull.Value ? null : v);
+                            value = reader[i];
+                            array[i] = value == DBNull.Value ? null : value;
                         }
                         yield return array;
                     }
                 }
             }
-            finally { reader.Close(); _conn.Close(); }
+            finally
+            {
+                reader.Close();
+                _conn.Close();
+            }
         }
 
         protected override void _BeforeParsing()
@@ -134,14 +140,14 @@ namespace DataTools.PostgreSQL
 
             if (sqlSelect.OffsetRows != null)
             {
-                _query.Append("OFFSET ");
+                _query.Append("OFFSET (");
                 ParseExpression(sqlSelect.OffsetRows);
-                _query.AppendLine(" rows ");
+                _query.AppendLine(") rows ");
                 if (sqlSelect.LimitRows != null)
                 {
-                    _query.AppendLine("fetch next ");
+                    _query.AppendLine("fetch next (");
                     ParseExpression(sqlSelect.LimitRows);
-                    _query.AppendLine(" rows only");
+                    _query.AppendLine(") rows only");
                 }
             }
         }
