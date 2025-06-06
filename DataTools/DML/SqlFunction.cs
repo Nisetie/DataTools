@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace DataTools.DML
 {
@@ -30,6 +31,29 @@ namespace DataTools.DML
         {
             _parameters = parameters;
             return this;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SqlFunction sqlFunction)
+            {
+                if (_functionName != sqlFunction._functionName) return false;
+
+                var leftE = _parameters.GetEnumerator();
+                var rightE = sqlFunction._parameters.GetEnumerator();
+                while (leftE.MoveNext())
+                {
+                    if (!rightE.MoveNext()) return false;
+                    if (!leftE.Current.Equals(rightE.Current)) return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        public override string ToString()
+        {
+            return $"{_functionName}({string.Join(",",_parameters)})";
         }
     }
 }

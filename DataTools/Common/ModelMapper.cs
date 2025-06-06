@@ -23,12 +23,12 @@ namespace DataTools.Common
         /// <summary>
         /// Смаппировать модель с массивом значений
         /// </summary>
-        public static Func<IDataContext, object[], ModelT> MapModel { get; private set; }
+        public static Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], ModelT> MapModel { get; private set; }
 
         /// <summary>
         /// Смаппировать модели с массивами значений
         /// </summary>
-        public static Func<IDataContext, IEnumerable<object[]>, IEnumerable<ModelT>> MapModels { get; private set; }
+        public static Func<IDataContext, Dictionary<Type, Func<object, object>>, IEnumerable<object[]>, IEnumerable<ModelT>> MapModels { get; private set; }
 
         public static Action<SqlUpdate, ModelT> BindUpdateValues { get; private set; }
         public static Action<SqlDelete, ModelT> BindDeleteValues { get; private set; }
@@ -40,7 +40,7 @@ namespace DataTools.Common
 
             var fields = (from field
                           in Metadata.Fields
-                          where !field.IgnoreChanges
+                          where !(field.IgnoreChanges || field.Autoincrement)
                           select field).ToDictionary(p => p.FieldName);
 
             var call = Expression.Call(
@@ -76,10 +76,13 @@ namespace DataTools.Common
             var fields = Metadata.Fields;
 
             var param_dataContext = Expression.Parameter(typeof(IDataContext), "dataContext");
+            var param_customConverters = Expression.Parameter(typeof(Dictionary<Type, Func<object, object>>), "customConverters");
             var param_dataRow = Expression.Parameter(typeof(object[]), "dataRow");
 
             var var_m = Expression.Variable(Metadata.ModelType, "m");
             var var_selectBuilder = Expression.Variable(typeof(SqlSelect));
+
+            var var_customConverter = Expression.Variable(typeof(Func<object, object>), "customConverter");
 
             var modelAssigns = Expression.Block(
                 from f
@@ -90,23 +93,33 @@ namespace DataTools.Common
                 let realType = isNullable ? unboxedType : f.FieldType
                 let isConvertible = realType.GetInterface(nameof(IConvertible))
                 let isParsable = realType.GetMethod("Parse", new Type[] { typeof(string) })
-                let toString = typeof(object).GetMethod("ToString", new Type[] { })
+                let toString = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                 let fIndex = f.FieldOrder
                 let arrayValue = Expression.ArrayIndex(param_dataRow, Expression.Constant(fIndex))
                 select f.IsForeignKey == false
                 // свойства, имеющие примитивные типы
                 ? Expression.Block(
                     Expression.IfThen(
-                        Expression.NotEqual(Expression.ArrayIndex(param_dataRow, Expression.Constant(fIndex)), Expression.Constant(null))
-                        , Expression.Assign(
-                            Expression.Property(var_m, f.FieldName),
-                            Expression.Convert(
-                                isConvertible != null
-                                ? Expression.Call(typeof(Convert), "ChangeType", null, arrayValue, Expression.Constant(realType))
-                                : isParsable != null
-                                ? Expression.Call(isParsable, Expression.Call(arrayValue, toString))
-                                : arrayValue as Expression
-                                , f.FieldType
+                        Expression.NotEqual(arrayValue, Expression.Constant(null))
+                        , Expression.IfThenElse(
+                            Expression.AndAlso(
+                                Expression.NotEqual(param_customConverters, Expression.Constant(null))
+                                , Expression.Call(param_customConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(realType), var_customConverter)
+                                )
+                            , Expression.Assign(
+                                Expression.Property(var_m, f.FieldName),
+                                Expression.Convert(Expression.Invoke(var_customConverter, arrayValue), f.FieldType)
+                            )
+                            , Expression.Assign(
+                                Expression.Property(var_m, f.FieldName),
+                                Expression.Convert(
+                                    isConvertible != null
+                                    ? Expression.Call(typeof(Convert), "ChangeType", null, arrayValue, Expression.Constant(realType))
+                                    : isParsable != null
+                                    ? Expression.Call(isParsable, Expression.Call(arrayValue, toString))
+                                    : arrayValue as Expression
+                                    , f.FieldType
+                                    )
                                 )
                             )
                         )
@@ -123,7 +136,7 @@ namespace DataTools.Common
                                        , Expression.Call(typeof(SqlSelectExtensions), nameof(SqlSelectExtensions.Where), null, var_selectBuilder, Expression.Constant(f.ForeignColumnName), arrayValue)
                                    , Expression.Assign(
                                        Expression.Property(var_m, f.FieldName)
-                                       , Expression.Call(typeof(Enumerable), "FirstOrDefault", new Type[] { f.FieldType }, Expression.Call(param_dataContext, nameof(IDataContext.Select), new Type[] { f.FieldType }, var_selectBuilder)))
+                                       , Expression.Call(typeof(Enumerable), "FirstOrDefault", new Type[] { f.FieldType }, Expression.Call(param_dataContext, nameof(IDataContext.Select), new Type[] { f.FieldType }, var_selectBuilder, Expression.Constant(new SqlParameter[] { }, typeof(SqlParameter[])))))
                                    )
                                )
                            )
@@ -131,18 +144,19 @@ namespace DataTools.Common
                 );
 
             var all_variables = new ParameterExpression[] { } as IEnumerable<ParameterExpression>;
-            all_variables = all_variables.Concat(new[] { var_selectBuilder, var_m });
+            all_variables = all_variables.Concat(new[] { var_selectBuilder, var_m, var_customConverter });
 
             var all_script = Expression.Block(
                     variables: all_variables
                     , Expression.Assign(var_m, Expression.New(typeof(ModelT)))
                     , modelAssigns
-                    , Expression.Convert(var_m, typeof(ModelT)) // return model;
+                    , var_m // return model;
                     );
 
-            MapModel = Expression.Lambda<Func<IDataContext, object[], ModelT>>(
+            MapModel = Expression.Lambda<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], ModelT>>(
                 all_script,
                 param_dataContext,
+                param_customConverters,
                 param_dataRow
                 ).Compile();
         }
@@ -156,6 +170,7 @@ namespace DataTools.Common
             var fields = Metadata.Fields;
 
             var param_dataContext = Expression.Parameter(typeof(IDataContext), "dataContext");
+            var param_customConverters = Expression.Parameter(typeof(Dictionary<Type, Func<object, object>>), "customConverters");
             var param_dataRows = Expression.Parameter(typeof(IEnumerable<object[]>), "dataRows");
 
             var var_modelsList = Expression.Variable(typeof(List<ModelT>), "modelsList");
@@ -164,6 +179,7 @@ namespace DataTools.Common
             var var_m = Expression.Variable(Metadata.ModelType, "m");
             var var_dataRow = Expression.Variable(typeof(object[]), "dataRow");
             var var_value = Expression.Variable(typeof(object), "value");
+            var var_customConverter = Expression.Variable(typeof(Func<object, object>), "customConverter");
             LabelTarget loopBreakLabel = Expression.Label("loopBreak");
 
             // создать кеширующие временные словари для связанных моделей
@@ -206,7 +222,7 @@ namespace DataTools.Common
             all_variables = all_variables.Concat(modelVars.Select(kv => kv.Value));
             all_variables = all_variables.Concat(modelKeys.Select(kv => kv.Value));
             all_variables = all_variables.Concat(modelSelects.Select(kv => kv.Value));
-            all_variables = all_variables.Concat(new[] { var_dataRowsEnumerator, var_m, var_dataRow, var_modelsList, var_value });
+            all_variables = all_variables.Concat(new[] { var_dataRowsEnumerator, var_m, var_dataRow, var_modelsList, var_value, var_customConverter });
 
             var loop_dataRows = Expression.Loop(
                Expression.IfThenElse(
@@ -244,19 +260,29 @@ namespace DataTools.Common
                                , f.IsForeignKey == false
                                // свойства, имеющие примитивные типы
                                ? Expression.IfThen(
-                                   Expression.NotEqual(var_value, Expression.Constant(null))
-                                   , Expression.Assign(
-                                       Expression.Property(var_m, f.FieldName),
-                                       Expression.Convert(
-                                           isConvertible != null
-                                           ? Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(realType))
-                                           : isParsable != null
-                                           ? Expression.Call(isParsable, Expression.Call(var_value, toString))
-                                           : var_value as Expression
-                                           , f.FieldType
-                                           )
-                                       )
-                                   )
+                                    Expression.NotEqual(var_value, Expression.Constant(null))
+                                    , Expression.IfThenElse(
+                                        Expression.AndAlso(
+                                            Expression.NotEqual(param_customConverters, Expression.Constant(null))
+                                            , Expression.Call(param_customConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(realType), var_customConverter)
+                                            )
+                                        , Expression.Assign(
+                                            Expression.Property(var_m, f.FieldName),
+                                            Expression.Convert(Expression.Invoke(var_customConverter, var_value), f.FieldType)
+                                        )
+                                        , Expression.Assign(
+                                            Expression.Property(var_m, f.FieldName),
+                                            Expression.Convert(
+                                                isConvertible != null
+                                                ? Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(realType))
+                                                : isParsable != null
+                                                ? Expression.Call(isParsable, Expression.Call(var_value, toString))
+                                                : var_value as Expression
+                                                , f.FieldType
+                                                )
+                                            )
+                                        )
+                                    )
                                // собрать команды для запроса значений свойств, имеющих типы моделей
                                : Expression.IfThen(
                                    Expression.NotEqual(var_value, Expression.Constant(null)),
@@ -279,7 +305,7 @@ namespace DataTools.Common
                                             Expression.Call(typeof(SqlSelectExtensions), nameof(SqlSelectExtensions.Where), null, var_modelSelect, Expression.Constant(f.ForeignColumnName), var_value)
                                         , Expression.Assign(
                                             Expression.Property(var_m, f.FieldName)
-                                            , Expression.Call(typeof(Enumerable), "FirstOrDefault", new Type[] { f.FieldType }, Expression.Call(param_dataContext, nameof(IDataContext.Select), new Type[] { f.FieldType }, var_modelSelect))
+                                            , Expression.Call(typeof(Enumerable), "FirstOrDefault", new Type[] { f.FieldType }, Expression.Call(param_dataContext, nameof(IDataContext.Select), new Type[] { f.FieldType }, var_modelSelect, Expression.Constant(new SqlParameter[] { }, typeof(SqlParameter[]))))
                                             )
                                         , Expression.Assign(Expression.Property(var_modelDic, "Item", var_castValue), Expression.Property(var_m, f.FieldName)))
                                         )
@@ -302,9 +328,10 @@ namespace DataTools.Common
                 , Expression.Convert(var_modelsList, typeof(IEnumerable<ModelT>))
                 );
 
-            MapModels = Expression.Lambda<Func<IDataContext, IEnumerable<object[]>, IEnumerable<ModelT>>>(
+            MapModels = Expression.Lambda<Func<IDataContext, Dictionary<Type, Func<object, object>>, IEnumerable<object[]>, IEnumerable<ModelT>>>(
                 all_script,
                 param_dataContext,
+                param_customConverters,
                 param_dataRows
                 ).Compile();
         }
@@ -331,7 +358,7 @@ namespace DataTools.Common
                     Expression.NewArrayInit(// new object[]
                         typeof(object),
                         (from field in Metadata.Fields
-                         where !field.IgnoreChanges
+                         where !(field.IgnoreChanges || field.Autoincrement)
                          select
                          !field.IsForeignKey
                          ? Expression.Convert(Expression.Property(param_m, field.ColumnName), typeof(object)) as Expression

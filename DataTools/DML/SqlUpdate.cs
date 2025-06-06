@@ -1,5 +1,6 @@
 ﻿using DataTools.Extensions;
 using System.Collections.Generic;
+using System.Text;
 
 namespace DataTools.DML
 {
@@ -38,6 +39,41 @@ namespace DataTools.DML
         {
             _where = where;
             return this;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SqlUpdate sqlUpdate)
+            {
+                if (!_from.Equals(sqlUpdate._from)
+                    || !_where.Equals(sqlUpdate._where))
+                    return false;
+                var leftCE = _columns.GetEnumerator();
+                var rightCE = sqlUpdate._columns.GetEnumerator();
+                while (leftCE.MoveNext())
+                    if (!rightCE.MoveNext() || !leftCE.Current.Equals(rightCE.Current)) return false;
+                var leftVE = _values.GetEnumerator();
+                var rightVE = sqlUpdate._values.GetEnumerator();
+                while (leftVE.MoveNext())
+                    if (!rightVE.MoveNext() || !leftVE.Current.Equals(rightVE.Current)) return false;
+                return true;
+            }
+            return false;
+        }
+
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+
+            sb
+                .AppendLine($"UPDATE {_from}")
+                .AppendLine($"SET")
+                .AppendLine($"{string.Join(",",_columns)}")
+                .AppendLine("=")
+                .AppendLine($"{string.Join(",", _values)}")
+                .AppendLine($"WHERE {_where}");
+
+            return sb.ToString();
         }
     }
 }

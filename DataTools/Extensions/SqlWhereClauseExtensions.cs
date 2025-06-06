@@ -36,5 +36,14 @@ namespace DataTools.Extensions
         public static SqlWhereClause LeName(this SqlWhereClause left, string colname) => Le(left, new SqlName(colname));
         public static SqlWhereClause AndName(this SqlWhereClause left, string colname) => And(left, new SqlName(colname));
         public static SqlWhereClause OrName(this SqlWhereClause left, string colname) => Or(left, new SqlName(colname));
+
+        public static SqlWhereClause EqPar(this SqlWhereClause left, SqlParameter par) => Eq(left, par);
+        public static SqlWhereClause NePar(this SqlWhereClause left, SqlParameter par) => Ne(left, par);
+        public static SqlWhereClause GtPar(this SqlWhereClause left, SqlParameter par) => Gt(left, par);
+        public static SqlWhereClause GePar(this SqlWhereClause left, SqlParameter par) => Ge(left, par);
+        public static SqlWhereClause LtPar(this SqlWhereClause left, SqlParameter par) => Lt(left, par);
+        public static SqlWhereClause LePar(this SqlWhereClause left, SqlParameter par) => Le(left, par);
+        public static SqlWhereClause AndPar(this SqlWhereClause left, SqlParameter par) => And(left, par);
+        public static SqlWhereClause OrPar(this SqlWhereClause left, SqlParameter par) => Or(left, par);
     }
 }

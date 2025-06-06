@@ -11,6 +11,7 @@ namespace DataTools.Meta
     {
         private List<IModelFieldMetadata> _fields = new List<IModelFieldMetadata>();
         private Dictionary<string, IModelFieldMetadata> _fieldsIndex = new Dictionary<string, IModelFieldMetadata>();
+        private Dictionary<string, IModelFieldMetadata> _columnsIndex = new Dictionary<string, IModelFieldMetadata>();
 
         public int FieldsCount => _fields.Count;
 
@@ -20,7 +21,7 @@ namespace DataTools.Meta
         public string SchemaName { get; set; }
         public string ObjectName { get; set; }
 
-        public string FullObjectName { get; set; }
+        public string FullObjectName { get => string.IsNullOrEmpty(SchemaName) ? ObjectName : $"{SchemaName}.{ObjectName}"; }
 
         public string DisplayModelName { get; set; }
 
@@ -33,12 +34,16 @@ namespace DataTools.Meta
         public void AddField(IModelFieldMetadata fieldMetadata)
         {
             _fields.Add(fieldMetadata);
-            _fieldsIndex[fieldMetadata.ColumnName] = fieldMetadata;
+            _columnsIndex[fieldMetadata.ColumnName] = fieldMetadata;
+            _fieldsIndex[fieldMetadata.FieldName] = fieldMetadata;
         }
 
+        public IModelFieldMetadata GetColumn(string columnName)
+        {
+            if (_columnsIndex.TryGetValue(columnName, out IModelFieldMetadata fieldMetadata)) return fieldMetadata; return null;
+        }
         public IModelFieldMetadata GetField(string fieldName)
         {
-            //return (from f in _fields where f.FieldName == fieldName select f).FirstOrDefault();
             if (_fieldsIndex.TryGetValue(fieldName, out IModelFieldMetadata fieldMetadata)) return fieldMetadata; return null;
         }
     }
@@ -57,7 +62,6 @@ namespace DataTools.Meta
                 ModelType = modelType,
                 ModelName = (modelType.Namespace == null ? "" : modelType.Namespace + ".") + modelType.Name,
                 ObjectName = modelType.Name,
-                FullObjectName = modelType.Name,
                 DisplayModelName = modelType.Name,
                 NoUniqueKey = false
             };

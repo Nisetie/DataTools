@@ -13,8 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj" />
     <ProjectReference Include="..\DataTools_MSSQL\DataTools_MSSQL.csproj" />
-    <ProjectReference Include="..\InMemory\DataTools_InMemory.csproj" />
+    <ProjectReference Include="..\InMemory\DataTools_InMemory_SQLite.csproj" />
   </ItemGroup>
 
   <ItemGroup>

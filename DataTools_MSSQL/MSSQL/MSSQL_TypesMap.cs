@@ -10,6 +10,7 @@ namespace DataTools.MSSQL
     {
         private static List<(string sqltype, Type netType, SqlDbType sqldbtype, object defaultValue)> _mapping;
         private static HashSet<string> _numbers;
+        private static Dictionary<Type, string> _reverseMapping;
 
         static MSSQL_TypesMap()
         {
@@ -22,8 +23,9 @@ namespace DataTools.MSSQL
 
                 ("real", typeof(float), SqlDbType.Real, default(float)),
                 ("float", typeof(double), SqlDbType.Float, default(double)),
+
                 ("smallmoney", typeof(decimal), SqlDbType.SmallMoney, default(decimal)),
-                ("money", typeof(decimal), SqlDbType.Money, default(decimal)),
+                ("money", typeof(decimal), SqlDbType.Decimal, default(decimal)),
                 ("numeric", typeof(decimal), SqlDbType.Decimal, default(decimal)),
                 ("decimal", typeof(decimal), SqlDbType.Decimal, default(decimal)),
 
@@ -40,7 +42,7 @@ namespace DataTools.MSSQL
                 ("date", typeof(DateTime), SqlDbType.Date, DateTime.Now),
                 ("datetime", typeof(DateTime), SqlDbType.DateTime, DateTime.Now),
                 ("datetime2", typeof(DateTime), SqlDbType.DateTime2, DateTime.Now),
-                ("datetimeoffset", typeof(DateTimeOffset), SqlDbType.DateTimeOffset, default(DateTimeOffset)),
+                ("", typeof(DateTimeOffset), SqlDbType.DateTimeOffset, default(DateTimeOffset)),
                 ("time", typeof(TimeSpan), SqlDbType.Time, default(TimeSpan)),
                 ("timestamp", typeof(TimeSpan), SqlDbType.Timestamp, default(TimeSpan)),
 
@@ -54,10 +56,25 @@ namespace DataTools.MSSQL
                 ("xml", typeof(string), SqlDbType.Xml, string.Empty)
             };
 
+            _reverseMapping = new Dictionary<Type, string>()
+            {
+                { typeof(byte),"tinyint" },
+                { typeof(short),"smallint" },
+                { typeof(int),"int" },
+                { typeof(long),"bigint" },
+                { typeof(float),"real" },
+                { typeof(double),"float" },
+                { typeof(decimal),"numeric" },
+                { typeof(Guid),"uniqueidentifier" },
+                { typeof(byte[]),"varbinary" },
+                { typeof(DateTime),"datetime" },
+                { typeof(DateTimeOffset),"datetimeoffset" },
+                { typeof(TimeSpan),"time" }
+            };
+
             _numbers = new HashSet<string>()
             {
                 "bigint",
-                //"bit",
                 "decimal",
                 "float",
                 "int",
@@ -72,11 +89,8 @@ namespace DataTools.MSSQL
 
         public static string GetSqlType(Type type)
         {
-            if (type == typeof(string))
-                return "nvarchar";
-            foreach (var el in _mapping)
-                if (el.netType == type)
-                    return el.sqltype;
+            if (_reverseMapping.TryGetValue(type, out var t))
+                return t;
             return "nvarchar";
         }
 
@@ -93,7 +107,7 @@ namespace DataTools.MSSQL
 
         public static bool IsNumber(string sqlType)
         {
-            return _numbers.Contains(sqlType);
+            return _numbers.Contains(sqlType.ToLower());
         }
 
         /// <summary>
@@ -105,16 +119,20 @@ namespace DataTools.MSSQL
         {
             if (value == null)
                 return "NULL";
-
-            if (IsNumber(GetSqlType(value.GetType())))
+            var sqlType = GetSqlType(value.GetType());
+            if (IsNumber(sqlType))
                 return $"{value}".Replace(',', '.');
 
             switch (value)
             {
                 case DateTime dt:
                     if (dt.Year < 1900)
-                        dt = new DateTime(1900, 01, 01, 00, 00, 00);
-                    return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
+                        dt = new DateTime(1900, 01, 01, 00, 00, 00, DateTimeKind.Unspecified);
+                    return $"'{dt:yyyy-MM-ddTHH:mm:ss.fff}'";
+                case DateTimeOffset dto:
+                    if (dto.Year < 1970)
+                        dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
+                    return $"'{dto:o}'";
                 case bool b:
                     return b ? "1" : "0";
                 case byte[] byteArray:

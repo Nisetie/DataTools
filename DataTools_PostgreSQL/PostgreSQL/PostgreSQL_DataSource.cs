@@ -1,6 +1,5 @@
 ﻿using DataTools.Common;
 using DataTools.DML;
-using DataTools.Interfaces;
 using Npgsql;
 using System;
 using System.Collections.Generic;
@@ -9,31 +8,45 @@ using System.Text;
 
 namespace DataTools.PostgreSQL
 {
-    public class PostgreSQL_DataSource : DataSource
+    public class PostgreSQL_DataSource : DBMS_DataSource
     {
         private NpgsqlConnection _conn = new NpgsqlConnection();
-        private StringBuilder _query = new StringBuilder();
+        private NpgsqlCommand _command;
 
-        public PostgreSQL_DataSource() : base() { }
-
-        public override void Initialize(IDataContext dataContext)
+        public PostgreSQL_DataSource(string connectionString) : base(new PostgreSQL_QueryParser())
         {
-            base.Initialize(dataContext);
-            if (!(dataContext is PostgreSQL_DataContext context)) return;
-            _conn.ConnectionString = context.ConnectionString;
+            _conn.ConnectionString = connectionString;
+            _command = _conn.CreateCommand();
+        }
+
+        public override void Execute(SqlExpression query, params SqlParameter[] parameters)
+        {
+            Execute(_queryParser.ToString(query, parameters));
+        }
+
+        public override object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters)
+        {
+            return ExecuteScalar(_queryParser.ToString(query, parameters));
+        }
+
+        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters)
+        {
+            return ExecuteWithResult(_queryParser.ToString(query, parameters));
         }
 
         public void Execute(string query)
         {
             _conn.Open();
-            new NpgsqlCommand(query, _conn).ExecuteNonQuery();
+            _command.CommandText = query;
+            _command.ExecuteNonQuery();
             _conn.Close();
         }
 
         public object ExecuteScalar(string query)
         {
             _conn.Open();
-            var result = new NpgsqlCommand(query, _conn).ExecuteScalar();
+            _command.CommandText = query;
+            var result = _command.ExecuteScalar();
             _conn.Close();
             return result;
         }
@@ -45,300 +58,30 @@ namespace DataTools.PostgreSQL
         /// <returns></returns>
         public IEnumerable<object[]> ExecuteWithResult(string query)
         {
-            NpgsqlDataReader reader = null;
+            NpgsqlDataReader r = null;
+            object v;
             _conn.Open();
             try
             {
-                reader = new NpgsqlCommand(query, _conn).ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
-                if (reader.HasRows)
+                _command.CommandText = query;
+                r = _command.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
+                if (r.HasRows)
                 {
-                    int fieldCount = reader.FieldCount;
+                    int fieldCount = r.FieldCount;
                     var array = new object[fieldCount];
-                    object value = null;
-                    while (reader.Read())
+                    while (r.Read())
                     {
                         for (int i = 0; i < fieldCount; ++i)
-                        {
-                            value = reader[i];
-                            array[i] = value == DBNull.Value ? null : value;
-                        }
+                            array[i] = (v = r[i]) == DBNull.Value ? null : v;
                         yield return array;
                     }
                 }
             }
             finally
             {
-                reader.Close();
+                r.Close();
                 _conn.Close();
             }
-        }
-
-        protected override void _BeforeParsing()
-        {
-            _query.Clear();
-        }
-
-        protected override void _ExecuteAfterParsing()
-        {
-            this.Execute(_query.ToString());
-        }
-
-        public string GetSqlQuery(SqlExpression expression)
-        {
-            _BeforeParsing();
-            _Parse(expression);
-            return _query.ToString();
-        }
-
-        protected override string StringifyValue(object value)
-        {
-            return PostgreSQL_TypesMap.ToStringSQL(value);
-        }
-
-        protected override object _ExecuteScalarAfterParsing()
-        {
-            return this.ExecuteScalar(_query.ToString());
-        }
-
-        protected override IEnumerable<object[]> _ExecuteWithResultAfterParsing()
-        {
-            return this.ExecuteWithResult(_query.ToString());
-        }
-
-        protected override void Parse_SqlSelect(SqlSelect sqlSelect)
-        {
-            _query.Append("SELECT ");
-
-            foreach (var s in sqlSelect.Selects)
-            {
-                ParseExpression(s);
-                _query.Append(',');
-            }
-            _query.AppendLine("(select 1) as fakeOrder");
-
-            if (sqlSelect.FromSource == null) return; // select без источника (select getdate())
-
-            _query.AppendLine("FROM ");
-            ParseExpression(sqlSelect.FromSource);
-            _query.AppendLine();
-
-            if (sqlSelect.Wheres != null)
-            {
-                _query.Append("WHERE ");
-                ParseExpression(sqlSelect.Wheres);
-                _query.AppendLine();
-            }
-
-            _query.Append("ORDER BY ");
-            if (sqlSelect.Orders != null)
-                foreach (var o in sqlSelect.Orders)
-                {
-                    ParseExpression(o);
-                    _query.Append(',');
-                }
-            _query.AppendLine("fakeOrder");
-
-            if (sqlSelect.OffsetRows != null)
-            {
-                _query.Append("OFFSET (");
-                ParseExpression(sqlSelect.OffsetRows);
-                _query.AppendLine(") rows ");
-                if (sqlSelect.LimitRows != null)
-                {
-                    _query.AppendLine("fetch next (");
-                    ParseExpression(sqlSelect.LimitRows);
-                    _query.AppendLine(") rows only");
-                }
-            }
-        }
-
-        protected override void Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias)
-        {
-            if (sqlExpressionWithAlias.SqlExpression is SqlFunction)
-            {
-                ParseExpression(sqlExpressionWithAlias.SqlExpression);
-                _query.AppendLine($" as {sqlExpressionWithAlias.Alias}");
-            }
-            else
-            {
-                _query.Append("(");
-                ParseExpression(sqlExpressionWithAlias.SqlExpression);
-                _query.AppendLine($") as {sqlExpressionWithAlias.Alias}");
-            }
-        }
-
-        protected override void Parse_SqlOrderByClause(SqlOrderByClause sqlOrderByClause)
-        {
-            ParseExpression(sqlOrderByClause.OrderValue);
-            _query.Append(" ").Append(sqlOrderByClause.Order);
-        }
-
-        protected override void Parse_SqlWhereClause(SqlWhereClause sqlWhereClause)
-        {
-            _query.Append("(");
-            foreach (var el in sqlWhereClause.Nodes)
-                ParseExpression(el);
-            _query.Append(")");
-
-        }
-        protected override void Parse_SqlConstant(SqlConstant sqlConstant)
-        {
-            if (sqlConstant.Value is SqlExpression expression)
-                ParseExpression(expression);
-            else
-                _query.Append(StringifyValue(sqlConstant.Value));
-        }
-
-        protected override void Parse_SqlCustom(SqlCustom sqlCustomQuery)
-        {
-            _query.Append(sqlCustomQuery.Query);
-        }
-
-        protected override void Parse_SqlName(SqlName sqlName)
-        {
-            _query.Append($"{sqlName.Name}");
-        }
-
-        protected override void Parse_SqlDelete(SqlDelete sqlDelete)
-        {
-            _query.Append("DELETE FROM ");
-            ParseExpression(sqlDelete.FromSource);
-            _query
-                .AppendLine()
-                .Append("WHERE ");
-            ParseExpression(sqlDelete.Wheres);
-        }
-
-        protected override void Parse_SqlInsert(SqlInsert sqlInsert)
-        {
-            _query.Append("INSERT INTO ");
-            ParseExpression(sqlInsert.IntoDestination);
-            _query.Append("(");
-            foreach (var c in sqlInsert.Columns)
-            {
-                ParseExpression(c);
-                _query.Append(",");
-            }
-            _query
-                .Remove(_query.Length - 1, 1)
-                .AppendLine(")")
-                .AppendLine("values")
-                .Append("(");
-            foreach (var v in sqlInsert.Values)
-            {
-                ParseExpression(v);
-                _query.Append(",");
-            }
-            _query
-                .Remove(_query.Length - 1, 1)
-                .AppendLine("),")
-                .Remove(_query.Length - 3, 3)
-                .AppendLine()
-                .AppendLine("returning *");
-        }
-
-        protected override void Parse_SqlUpdate(SqlUpdate sqlUpdate)
-        {
-            _query.Append("UPDATE ");
-            ParseExpression(sqlUpdate.FromSource);
-            _query
-                .AppendLine()
-                .AppendLine("SET");
-
-            int i = 0;
-            var columnsE = sqlUpdate.Columns.GetEnumerator();
-            var valuesE = sqlUpdate.Values.GetEnumerator();
-            while (columnsE.MoveNext() && valuesE.MoveNext())
-            {
-                ParseExpression(columnsE.Current);
-                _query.Append("=");
-                ParseExpression(valuesE.Current);
-                _query.AppendLine(",");
-                i++;
-            }
-            _query
-                .Remove(_query.Length - 3, 3)
-                .AppendLine();
-
-            _query.Append("WHERE ");
-            ParseExpression(sqlUpdate.Wheres);
-            _query
-                .AppendLine()
-                .AppendLine("returning *");
-        }
-
-        protected override void Parse_SqlFunction(SqlFunction sqlFunction)
-        {
-            _query.Append($"{sqlFunction.FunctionName}( ");
-
-            foreach (var p in sqlFunction.Parameters)
-            {
-                ParseExpression(p);
-                _query.Append(",");
-            }
-            _query.Remove(_query.Length - 1, 1).Append(")");
-        }
-
-        protected override void Parse_SqlProcedure(SqlProcedure sqlProcedure)
-        {
-            _query.Append($"CALL {sqlProcedure.ProcedureName}( ");
-
-            foreach (var p in sqlProcedure.Parameters)
-            {
-                ParseExpression(p);
-                _query.Append(",");
-            }
-            _query.Remove(_query.Length - 1, 1).Append(");");
-        }
-
-        protected override void Parse_SqlOr(SqlOr sqlOr)
-        {
-            _query.Append(" OR ");
-        }
-
-        protected override void Parse_SqlAnd(SqlAnd sqlAnd)
-        {
-            _query.Append(" AND ");
-        }
-
-        protected override void Parse_SqlIsNull(SqlIsNull sqlIsNull)
-        {
-            _query.Append(" IS NULL ");
-        }
-
-        protected override void Parse_SqlEqual(SqlEqual sqlEqual)
-        {
-            _query.Append(" = ");
-        }
-
-        protected override void Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual)
-        {
-            _query.Append(" <= ");
-        }
-
-        protected override void Parse_SqlLesserThan(SqlLessThan sqlLesserThan)
-        {
-            _query.Append(" < ");
-        }
-
-        protected override void Parse_SqlGreaterOrEqual(SqlGreaterOrEqual sqlGreaterOrEqual)
-        {
-            _query.Append(" >= ");
-        }
-
-        protected override void Parse_SqlGreaterThan(SqlGreaterThan sqlGreaterThan)
-        {
-            _query.Append(" > ");
-        }
-
-        protected override void Parse_SqlNot(SqlNot sqlNot)
-        {
-            _query.Append(" NOT ");
-        }
-
-        protected override void Parse_SqlNotEqual(SqlNotEqual sqlNotEqual)
-        {
-            _query.Append(" <> ");
         }
     }
 }
