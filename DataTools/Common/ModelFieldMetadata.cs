@@ -23,6 +23,8 @@ namespace DataTools.Meta
         public int SortOrder { get; set; }
         public SqlOrderByClause.E_ORDER SortDirection { get; set; }
         public int FieldOrder { get; set; }
+        public bool Autoincrement { get;set;}
+
         public ModelFieldMetadata() { }
 
         /// <summary>
@@ -35,7 +37,7 @@ namespace DataTools.Meta
             IEnumerable<FieldAttribute> attrs = propertyInfo.GetCustomAttributes<FieldAttribute>(true);
             FieldName = propertyInfo.Name;
             ColumnName = propertyInfo.Name;
-            FieldType = fieldType;
+            ColumnType = FieldType = fieldType;
             foreach (var attr in attrs)
             {
                 attr.ProcessMetadata(propertyInfo, this);

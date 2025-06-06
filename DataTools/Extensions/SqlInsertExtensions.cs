@@ -14,10 +14,9 @@ namespace DataTools.Extensions
         {
             var meta = ModelMetadata<ModelT>.Instance;
             var fields = meta.Fields;
-            var copy = sqlInsert
+            return sqlInsert
                 .Into(meta.FullObjectName)
                 .Column((from field in fields where !field.IgnoreChanges select field.ColumnName).ToArray());
-            return copy;
         }
         public static SqlInsert Into(this SqlInsert sqlInsert, string objectName) => sqlInsert.Into(new SqlName(objectName));
         public static SqlInsert Column(this SqlInsert sqlInsert, params string[] columns) => sqlInsert.Column(columns.Select(c => new SqlName(c)).ToArray());

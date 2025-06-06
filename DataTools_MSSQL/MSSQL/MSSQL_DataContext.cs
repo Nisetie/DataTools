@@ -16,8 +16,7 @@ namespace DataTools.MSSQL
 
         protected override IDataSource _GetDataSource()
         {
-            var ds = new MSSQL_DataSource();
-            ds.Initialize(this);
+            var ds = new MSSQL_DataSource(ConnectionString);
             return ds;
         }
     }

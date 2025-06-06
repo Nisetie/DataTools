@@ -1,4 +1,6 @@
-﻿namespace DataTools.DML
+﻿using System.Text;
+
+namespace DataTools.DML
 {
     public class SqlDelete : SqlExpression
     {
@@ -20,6 +22,21 @@
         {
             _where = where;
             return this;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is SqlDelete sqlDelete
+                && _from.Equals(sqlDelete._from)
+                && _where.Equals(sqlDelete._where);
+        }
+        public override string ToString()
+        {
+            var sb = new StringBuilder();
+            sb
+                .AppendLine($"DELETE {_from}")
+                .AppendLine($"WHERE {_where}");
+            return sb.ToString();
         }
     }
 }

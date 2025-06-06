@@ -1,23 +1,23 @@
 ﻿using DataTools.Common;
 using DataTools.DML;
+using DataTools.SQLite;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Text;
 
-namespace DataTools.SQLite
+namespace DataTools.InMemory_SQLite
 {
-    public sealed class SQLite_DataSource : DBMS_DataSource, IDisposable
+    public sealed class InMemory_SQLite_DataSource : DBMS_DataSource, IDisposable
     {
         private SQLiteConnection _conn = new SQLiteConnection();
         private SQLiteCommand _command;
-        private IEnumerable<(string dbName, string schemaName)> _attached = null;
 
         public SQLiteConnection Connection { get { return _conn; } }
 
-        public SQLite_DataSource(string connectionString) : base(new SQLite_QueryParser())
+        public InMemory_SQLite_DataSource(string connectionString) : base(new SQLite_QueryParser())
         {
             _conn.ConnectionString = connectionString;
+            _conn.Open();
             _command = _conn.CreateCommand();
         }
 
@@ -38,18 +38,14 @@ namespace DataTools.SQLite
 
         public void Execute(string query)
         {
-            _conn.Open();
             _command.CommandText = query;
             _command.ExecuteNonQuery();
-            _conn.Close();
         }
 
         public object ExecuteScalar(string query)
         {
-            _conn.Open();
             _command.CommandText = query;
             var result = _command.ExecuteScalar();
-            _conn.Close();
             return result == DBNull.Value ? null : result;
         }
 
@@ -57,31 +53,31 @@ namespace DataTools.SQLite
         {
             SQLiteDataReader reader = null;
             object v;
-            _conn.Open();
             try
             {
                 _command.CommandText = query;
                 reader = _command.ExecuteReader(System.Data.CommandBehavior.SequentialAccess | System.Data.CommandBehavior.SingleResult);
-                int fieldsCount = reader.FieldCount;
                 if (reader.HasRows)
                 {
                     int fieldCount = reader.FieldCount;
-                    var array = new object[fieldCount];                    
+                    var array = new object[fieldCount];
                     while (reader.Read())
                     {
-                        for (int i = 0; i < fieldCount; ++i)                            
+                        for (int i = 0; i < fieldCount; ++i)
                             array[i] = (v = reader[i]) == DBNull.Value ? null : v;
                         yield return array;
                     }
                 }
 
             }
-            finally { reader?.Close(); _conn.Close(); }
+            finally { reader?.Close(); }
         }
 
         public void Dispose()
         {
-            
+            _command.Dispose();
+            _conn.Close();
+            _conn.Dispose();
         }
     }
 }

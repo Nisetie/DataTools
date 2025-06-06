@@ -13,9 +13,9 @@ namespace DataTools.Commands
 
         public SelectCommmand(IDataContext context) { Context = context; }
 
-        public IEnumerable<ModelT> Execute()
+        public IEnumerable<ModelT> Select(params SqlParameter[] parameters)
         {
-            return Context.Select<ModelT>(Query);
+            return Context.Select<ModelT>(Query,parameters);
         }
 
         public SelectCommmand<ModelT> Where(string columnName, object value)
@@ -48,6 +48,11 @@ namespace DataTools.Commands
         {
             Query.Limit(limit);
             return this;
+        }
+
+        public override string ToString()
+        {
+            return Query.ToString();
         }
     }
 }

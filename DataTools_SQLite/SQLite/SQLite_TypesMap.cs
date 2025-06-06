@@ -8,9 +8,10 @@ namespace DataTools.SQLite
 {
     public unsafe static class SQLite_TypesMap
     {
-        private const string INT = "INT";
-        private const string REAL = "REAL";
-        private const string TEXT = "TEXT";
+        public const string INT = "INT";
+        public const string REAL = "REAL";
+        public const string TEXT = "TEXT";
+        public const string BLOB = "BLOB";
         private static List<(string dataType, Type netType, DbType sqldbtype, object defaultValue)> _mapping;
         private static HashSet<string> _numbers;
 
@@ -29,12 +30,16 @@ namespace DataTools.SQLite
                 (INT, typeof(ulong), DbType.UInt64, default(ulong)),
                 (REAL, typeof(float), DbType.Single, default(float)),
                 (REAL, typeof(double), DbType.Double, default(double)),
+                (REAL, typeof(decimal), DbType.Decimal, default(decimal)),
+                (REAL, typeof(decimal), DbType.Currency, default(decimal)),
                 (TEXT, typeof(char), DbType.String, default(char)),
                 (TEXT, typeof(string), DbType.String, default(string)),
                 (TEXT, typeof(DateTime), DbType.Date, default(DateTime)),
                 (TEXT, typeof(TimeSpan), DbType.Time, default(TimeSpan)),
                 (TEXT, typeof(DateTime), DbType.DateTime, default(DateTime)),
-                (TEXT, typeof(DateTimeOffset), DbType.DateTimeOffset, default(DateTimeOffset))
+                (TEXT, typeof(DateTimeOffset), DbType.DateTimeOffset, default(DateTimeOffset)),
+                (TEXT, typeof(Guid), DbType.Guid, default(string)),
+                (BLOB, typeof(byte[]), DbType.Binary, default(byte[]))
             };
 
             _numbers = new HashSet<string>()
@@ -46,10 +51,10 @@ namespace DataTools.SQLite
 
         public static string GetDataType(Type type)
         {
-            if (type == typeof(string))
-                return TEXT;
+            var realType = Nullable.GetUnderlyingType(type);
+            if (realType == null) realType = type;
             foreach (var el in _mapping)
-                if (el.netType == type)
+                if (el.netType == realType)
                     return el.dataType;
             return TEXT;
         }

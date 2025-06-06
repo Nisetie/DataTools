@@ -1,4 +1,5 @@
-﻿using NpgsqlTypes;
+﻿using DataTools.Interfaces;
+using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,27 +17,35 @@ namespace DataTools.PostgreSQL
             _mapping = new List<(string sqltype, Type netType, NpgsqlDbType NpgsqlDbType, object defaultValue)>
             {
                 ("boolean", typeof(bool), NpgsqlDbType.Boolean, default(bool)),
+
                 ("smallint", typeof(short),NpgsqlDbType.Smallint, default(short)),
                 ("int", typeof(int), NpgsqlDbType.Integer, default(int)),
                 ("bigint", typeof(long), NpgsqlDbType.Bigint, default(long)),
+
                 ("real", typeof(float), NpgsqlDbType.Real, default(float)),
                 ("float", typeof(double), NpgsqlDbType.Double, default(double)),
                 ("numeric", typeof(decimal), NpgsqlDbType.Numeric, default(decimal)),
                 ("money", typeof(decimal), NpgsqlDbType.Money, default(decimal)),
+
                 ("text", typeof(string), NpgsqlDbType.Text, string.Empty),
+                ("char", typeof(char), NpgsqlDbType.Char, default(char)),
+
                 ("json", typeof(string), NpgsqlDbType.Json, string.Empty),
                 ("jsonb", typeof(string), NpgsqlDbType.Jsonb, string.Empty),
+
                 ("xml", typeof(string), NpgsqlDbType.Xml, string.Empty),
+
                 ("uuid", typeof(Guid), NpgsqlDbType.Uuid, Guid.Empty),
                 ("bytea", typeof(byte[]), NpgsqlDbType.Bytea, default(byte[])),
+
                 ("timestamp", typeof(DateTime), NpgsqlDbType.Timestamp, DateTime.Now),
                 ("timestamptz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),
                 ("date", typeof(DateTime), NpgsqlDbType.Date, DateTime.Now),
                 ("time", typeof(TimeSpan), NpgsqlDbType.Timestamp, TimeSpan.Zero),
                 ("timetz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),
                 ("interval", typeof(TimeSpan), NpgsqlDbType.Timestamp, TimeSpan.Zero),
-                ("bit", typeof(bool), NpgsqlDbType.Bit, default(bool)),
-                ("char", typeof(char), NpgsqlDbType.Char, default(char))
+
+                ("bit", typeof(bool), NpgsqlDbType.Bit, default(bool))
             };
 
             _reverseMapping = new Dictionary<Type, string>()
@@ -48,7 +57,6 @@ namespace DataTools.PostgreSQL
                 { typeof(float),"real" },
                 { typeof(double),"float" },
                 { typeof(decimal),"numeric" },
-                { typeof(string),"text" },
                 { typeof(Guid),"uuid" },
                 { typeof(byte[]),"bytea" },
                 { typeof(DateTime),"timestamp" },
@@ -93,17 +101,18 @@ namespace DataTools.PostgreSQL
             var sqlType = GetSqlType(value.GetType());
             if (IsNumber(sqlType))
                 return $"({value})::{sqlType}".Replace(',', '.');
-
+            
             switch (value)
             {
                 case DateTime dt:
                     if (dt.Year < 1970)
                         dt = new DateTime(1970, 01, 01, 00, 00, 00);
-                    return $"('{dt:yyyy-MM-dd HH:mm:ss}')::{sqlType}";
+                    return $"('{dt:yyyy-MM-dd HH:mm:ss.fff}')::{sqlType}";
                 case DateTimeOffset dto:
                     if (dto.Year < 1970)
                         dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
-                    return $"('{dto:yyyy-MM-dd HH:mm:ss}')::{sqlType}";
+                    dto = dto.UtcDateTime;
+                    return $"('{dto:o}')::{sqlType}";
                 case byte[] byteArray:
                     return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
                 default:

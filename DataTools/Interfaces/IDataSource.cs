@@ -5,9 +5,8 @@ namespace DataTools.Interfaces
 {
     public interface IDataSource
     {
-        void Initialize(IDataContext dataContext);
-        void Execute(SqlExpression query);
-        object ExecuteScalar(SqlExpression query);
+        void Execute(SqlExpression query, params SqlParameter[] parameters);
+        object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
 
         /// <summary>
         /// Запрос возвращает коллекций массивов (строк данных), где
@@ -15,7 +14,7 @@ namespace DataTools.Interfaces
         /// </summary>
         /// <param name="query"></param>
         /// <returns></returns>
-        IEnumerable<object[]> ExecuteWithResult(SqlExpression query);
+        IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
     }
 }
 

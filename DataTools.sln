@@ -15,7 +15,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Tests", "DataTool
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Benchmarks", "DataTools_Benchmarks\DataTools_Benchmarks.csproj", "{1BA6017C-B197-4988-9514-556AB5A44E01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory", "InMemory\DataTools_InMemory.csproj", "{E5832B29-05FD-02FD-EFB3-4082FB16BD04}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory_SQLite", "DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj", "{E5832B29-05FD-02FD-EFB3-4082FB16BD04}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

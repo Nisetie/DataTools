@@ -31,5 +31,19 @@ namespace DataTools.DML
             _parameters = parameters;
             return this;
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SqlProcedure sqlProcedure)
+            {
+                if (_procedureName != sqlProcedure._procedureName) return false;
+                var leftE = _parameters.GetEnumerator();
+                var rightE = sqlProcedure._parameters.GetEnumerator();
+                while (leftE.MoveNext())
+                    if (!rightE.MoveNext() || !leftE.Current.Equals(rightE.Current)) return false;
+                return true;
+            }
+            return false;
+        }
     }
 }

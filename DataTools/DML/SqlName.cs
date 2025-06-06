@@ -2,12 +2,20 @@
 {
     public class SqlName : SqlExpression
     {
-        public string Name;
-        public SqlName(string name) => Name = name;
+        private string _name;
+        public string Name => _name;
+        public SqlName(string name) => _name = name;
 
         public override string ToString()
         {
             return Name;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is SqlName sqlName) 
+                return Name == sqlName.Name;
+            return false;
         }
     }
 }

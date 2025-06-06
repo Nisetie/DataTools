@@ -11,16 +11,16 @@ namespace DataTools.Interfaces
         /// <returns></returns>
         IDataSource GetDataSource();
 
-        void Execute(SqlExpression query);
-        object ExecuteScalar(SqlExpression query);
-        IEnumerable<object[]> ExecuteWithResult(SqlExpression query);
+        void Execute(SqlExpression query, params SqlParameter[] parameters);
+        object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
+        IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
 
         /// <summary>
         /// Запрос данных из источника с автоматическим маппированием полей модели.
         /// </summary>
         /// <param name="selectBuilder"></param>
         /// <returns></returns>
-        IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null) where ModelT : class, new();
+        IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new();
 
         //IEnumerable<ModelT> Select<ModelT>(SqlWhereClause whereClause) where ModelT: class,new() ;
 
@@ -43,9 +43,9 @@ namespace DataTools.Interfaces
         /// <param name="record"></param>
         void Delete<ModelT>(ModelT record) where ModelT : class, new();
 
-        IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function) where ModelT : class, new();
-        object CallScalarFunction(SqlFunction function);
-        IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure) where ModelT : class, new();
-        void CallProcedure(SqlProcedure procedure);
+        IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function, params SqlParameter[] parameters) where ModelT : class, new();
+        object CallScalarFunction(SqlFunction function, params SqlParameter[] parameters);
+        IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure, params SqlParameter[] parameters) where ModelT : class, new();
+        void CallProcedure(SqlProcedure procedure, params SqlParameter[] parameters);
     }
 }

@@ -20,7 +20,7 @@ namespace DataTools.Interfaces
         /// <summary>
         /// Полное название объекта в источнике
         /// </summary>
-        string FullObjectName { get; set; }
+        string FullObjectName { get; }
         IEnumerable<IModelFieldMetadata> Fields { get; }
         /// <summary>
         /// Тип класса модели
@@ -33,6 +33,7 @@ namespace DataTools.Interfaces
         bool NoUniqueKey { get; set; }
 
         void AddField(IModelFieldMetadata field);
+        IModelFieldMetadata GetColumn(string columnName);
         IModelFieldMetadata GetField(string fieldName);
 
         int FieldsCount { get; }

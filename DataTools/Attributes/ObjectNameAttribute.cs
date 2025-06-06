@@ -9,14 +9,13 @@ namespace DataTools.Attributes
     {
         public string SchemaName = null;
         public string ObjectName;
-        public ObjectNameAttribute(string objectName) => ObjectName = objectName;
-        public ObjectNameAttribute(string objectName, string objectSchema) : this(objectName) => SchemaName = objectSchema;
+        public ObjectNameAttribute(string objectName) => ObjectName = objectName.Trim();
+        public ObjectNameAttribute(string objectName, string objectSchema) : this(objectName) => SchemaName = objectSchema.Trim();
 
         public override void ProcessMetadata(IModelMetadata metadata)
         {
             metadata.ObjectName = ObjectName;
             metadata.SchemaName = SchemaName;
-            metadata.FullObjectName = string.IsNullOrEmpty(metadata.SchemaName) ? metadata.ObjectName : $"{metadata.SchemaName}.{metadata.ObjectName}";
         }
     }
 }
