@@ -1,6 +1,7 @@
 ﻿using DataTools.DML;
 using DataTools.Interfaces;
 using System;
+using System.Text;
 
 namespace DataTools.SQLite
 {
@@ -12,259 +13,160 @@ namespace DataTools.SQLite
             return SQLite_TypesMap.ToStringSQL(value);
         }
 
-        protected override void Parse_SqlSelect(SqlSelect sqlSelect)
+        protected override string Parse_SqlSelect(SqlSelect sqlSelect)
         {
-            _query.Append("SELECT ");
+            var sb = new StringBuilder(256);
+            sb.Append("SELECT ");
 
             foreach (var s in sqlSelect.Selects)
-            {
-                ParseExpression(s);
-                _query.Append(',');
-            }
-            _query.AppendLine("(select 1) as fakeOrder");
+                sb
+                    .Append(ParseExpression(s))
+                    .Append(',');
+            sb.Length -= 1;
+            sb.AppendLine();
 
-            if (sqlSelect.FromSource == null) return; // select без источника (select getdate())
+            if (sqlSelect.FromSource == null) return sb.ToString(); // select без источника (select getdate())
 
-            _query.AppendLine("FROM ");
+            sb.AppendLine("FROM ");
 
             var name = sqlSelect.FromSource.ToString();
             if (name.IndexOf('.') == name.LastIndexOf('.'))
                 name = name.Replace('.', '_');
 
-            _query.Append(name).AppendLine();
+            sb.Append(name).AppendLine();
 
             if (sqlSelect.Wheres != null)
-            {
-                _query.Append("WHERE ");
-                ParseExpression(sqlSelect.Wheres);
-                _query.AppendLine();
-            }
+                sb
+                    .Append("WHERE ")
+                    .Append(ParseExpression(sqlSelect.Wheres))
+                    .AppendLine();
 
-            _query.Append("ORDER BY ");
             if (sqlSelect.Orders != null)
+            {
+                sb.Append("ORDER BY ");
+
                 foreach (var o in sqlSelect.Orders)
-                {
-                    ParseExpression(o);
-                    _query.Append(',');
-                }
-            _query.AppendLine("fakeOrder");
+                    sb
+                        .Append(ParseExpression(o))
+                        .Append(',');
+                sb.Length -= 1;
+                sb.AppendLine();
+            }
 
             if (sqlSelect.OffsetRows != null)
             {
-                _query.Append("limit ");
-                ParseExpression(sqlSelect.OffsetRows);
-                _query.AppendLine(",");
+                sb
+                    .Append("limit ")
+                    .Append(ParseExpression(sqlSelect.OffsetRows))
+                    .AppendLine(",");
                 if (sqlSelect.LimitRows != null)
-                    ParseExpression(sqlSelect.LimitRows);
+                    sb.Append(ParseExpression(sqlSelect.LimitRows));
             }
+            return sb.ToString();
         }
-        protected override void Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias)
+        protected override string Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias)
         {
-            _query.Append("(");
-            ParseExpression(sqlExpressionWithAlias.SqlExpression);
-            _query.AppendLine($") as {sqlExpressionWithAlias.Alias}");
-        }
-
-        protected override void Parse_SqlOrderByClause(SqlOrderByClause sqlOrderByClause)
-        {
-            ParseExpression(sqlOrderByClause.OrderValue);
-            _query.Append(" ").Append(sqlOrderByClause.Order);
+            return $"({ParseExpression(sqlExpressionWithAlias.SqlExpression)}) as {sqlExpressionWithAlias.Alias}";
         }
 
-        protected override void Parse_SqlWhereClause(SqlWhereClause sqlWhereClause)
+        protected override string Parse_SqlOrderByClause(SqlOrderByClause sqlOrderByClause)
         {
-            _query.Append("(");
-            foreach (var el in sqlWhereClause.Nodes)
-                ParseExpression(el);
-            _query.Append(")");
-        }
-        protected override void Parse_SqlConstant(SqlConstant sqlConstant)
-        {
-            if (sqlConstant.Value is SqlExpression expression)
-                ParseExpression(expression);
-            else
-                _query.Append(StringifyValue(sqlConstant.Value));
+            return $"{ParseExpression(sqlOrderByClause.OrderValue)} {sqlOrderByClause.Order}";
         }
 
-        protected override void Parse_SqlCustom(SqlCustom sqlCustomQuery)
+        protected override string Parse_SqlDelete(SqlDelete sqlDelete)
         {
-            _query.Append(sqlCustomQuery.Query);
-        }
-
-        protected override void Parse_SqlName(SqlName sqlName)
-        {
-            _query.Append($"{sqlName}");
-        }
-
-        protected override void Parse_SqlDelete(SqlDelete sqlDelete)
-        {
-            _query.Append("DELETE FROM ");
+            var sb = new StringBuilder(128);
+            sb.Append("DELETE FROM ");
 
             var name = sqlDelete.FromSource.ToString();
             if (name.IndexOf('.') == name.LastIndexOf('.'))
                 name = name.Replace('.', '_');
 
-            _query
-                .Append(name)
-                .AppendLine()
-                .Append("WHERE ");
-            ParseExpression(sqlDelete.Wheres);
+            sb.Append(name).AppendLine();
+            if (sqlDelete.Wheres != null)
+                sb.Append("WHERE ").Append(ParseExpression(sqlDelete.Wheres));
+            return sb.ToString();
         }
 
-        protected override void Parse_SqlInsert(SqlInsert sqlInsert)
+        protected override string Parse_SqlInsert(SqlInsert sqlInsert)
         {
-            _query.Append("INSERT INTO ");
+            var sb = new StringBuilder(256);
+            sb.Append("INSERT INTO ");
 
             var name = sqlInsert.IntoDestination.ToString();
             if (name.IndexOf('.') == name.LastIndexOf('.'))
                 name = name.Replace('.', '_');
 
-            _query.Append(name).Append("(");
+            sb.Append(name).Append("(");
 
             foreach (var c in sqlInsert.Columns)
-            {
-                ParseExpression(c);
-                _query.Append(",");
-            }
-            _query
-                .Remove(_query.Length - 1, 1)
+                sb.Append(ParseExpression(c)).Append(",");
+            sb
+                .Remove(sb.Length - 1, 1)
                 .AppendLine(")")
                 .AppendLine("values")
                 .Append("(");
             foreach (var v in sqlInsert.Values)
-            {
-                ParseExpression(v);
-                _query.Append(",");
-            }
-            _query
-                .Remove(_query.Length - 1, 1)
+                sb.Append(ParseExpression(v)).Append(",");
+            return sb
+                .Remove(sb.Length - 1, 1)
                 .AppendLine("),")
-                .Remove(_query.Length - 3, 3)
+                .Remove(sb.Length - 3, 3)
                 .AppendLine()
-                .AppendLine("returning *;");
+                .AppendLine("returning *;")
+                .ToString();
         }
 
-        protected override void Parse_SqlUpdate(SqlUpdate sqlUpdate)
+        protected override string Parse_SqlUpdate(SqlUpdate sqlUpdate)
         {
-            _query.Append("UPDATE ");
+            var sb = new StringBuilder(256);
+            sb.Append("UPDATE ");
 
             var name = sqlUpdate.FromSource.ToString();
             if (name.IndexOf('.') == name.LastIndexOf('.'))
                 name = name.Replace('.', '_');
 
-            _query
+            sb
                 .Append(name)
                 .AppendLine()
                 .AppendLine("SET");
 
-            int i = 0;
+
             var columnsE = sqlUpdate.Columns.GetEnumerator();
             var valuesE = sqlUpdate.Values.GetEnumerator();
             while (columnsE.MoveNext() && valuesE.MoveNext())
-            {
-                ParseExpression(columnsE.Current);
-                _query.Append("=");
-                ParseExpression(valuesE.Current);
-                _query.AppendLine(",");
-                i++;
-            }
-            _query
-                .Remove(_query.Length - 3, 3)
+                sb
+                    .Append(ParseExpression(columnsE.Current))
+                    .Append("=")
+                    .Append(ParseExpression(valuesE.Current))
+                    .AppendLine(",");
+            sb
+                .Remove(sb.Length - 3, 3)
                 .AppendLine();
 
-            _query.Append("WHERE ");
-            ParseExpression(sqlUpdate.Wheres);
-            _query
-                .AppendLine()
-                .AppendLine("returning *;");
-        }
-
-        protected override void Parse_SqlFunction(SqlFunction sqlFunction)
-        {
-            _query.Append($"{sqlFunction.FunctionName}( ");
-
-            foreach (var p in sqlFunction.Parameters)
+            if (sqlUpdate.Wheres != null)
             {
-                ParseExpression(p);
-                _query.Append(",");
+                sb.Append("WHERE ")
+                    .Append(ParseExpression(sqlUpdate.Wheres))
+                    .AppendLine();
             }
-            _query.Remove(_query.Length - 1, 1).Append(")");
+            sb.AppendLine("returning *;");
+            return sb.ToString();
         }
 
-        protected override void Parse_SqlProcedure(SqlProcedure sqlProcedure)
+        protected override string Parse_SqlFunction(SqlFunction sqlFunction)
+        {
+            var sb = new StringBuilder();
+            sb.Append($"{sqlFunction.FunctionName}( ");
+            foreach (var p in sqlFunction.Parameters)
+                sb.Append(ParseExpression(p)).Append(",");
+            return sb.Remove(sb.Length - 1, 1).Append(")").ToString();
+        }
+
+        protected override string Parse_SqlProcedure(SqlProcedure sqlProcedure)
         {
             throw new NotImplementedException();
-        }
-
-        protected override void Parse_SqlOr(SqlOr sqlOr)
-        {
-            _query.Append(" OR ");
-        }
-
-        protected override void Parse_SqlAnd(SqlAnd sqlAnd)
-        {
-            _query.Append(" AND ");
-        }
-
-        protected override void Parse_SqlIsNull(SqlIsNull sqlIsNull)
-        {
-            _query.Append(" IS NULL ");
-        }
-
-        protected override void Parse_SqlEqual(SqlEqual sqlEqual)
-        {
-            _query.Append(" = ");
-        }
-
-        protected override void Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual)
-        {
-            _query.Append(" <= ");
-        }
-
-        protected override void Parse_SqlLesserThan(SqlLessThan sqlLesserThan)
-        {
-            _query.Append(" < ");
-        }
-
-        protected override void Parse_SqlGreaterOrEqual(SqlGreaterOrEqual sqlGreaterOrEqual)
-        {
-            _query.Append(" >= ");
-        }
-
-        protected override void Parse_SqlGreaterThan(SqlGreaterThan sqlGreaterThan)
-        {
-            _query.Append(" > ");
-        }
-
-        protected override void Parse_SqlNot(SqlNot sqlNot)
-        {
-            _query.Append(" NOT ");
-        }
-        protected override void Parse_SqlNotEqual(SqlNotEqual sqlNotEqual)
-        {
-            _query.Append(" <> ");
-        }
-        protected override void Parse_SqlComposition(SqlComposition sqlComposition)
-        {
-            foreach (var el in sqlComposition.Elements)
-            {
-                if (el is SqlExpression) ParseExpression((SqlExpression)el);
-                else _query.Append(el.ToString());
-            }
-        }
-
-        protected override void Parse_SqlParameter(SqlParameter sqlParameter)
-        {
-            string parName = sqlParameter.Name;
-            for (var i = 0; i < _currentParams.Length; i++)
-                if (parName == _currentParams[i].Name)
-                {
-                    var p = _currentParams[i].Value;
-                    if (p is SqlExpression sqlExpression) ParseExpression(sqlExpression);
-                    else _query.Append($"{StringifyValue(p)}");
-                    return;
-                }
-            _query.Append($"{StringifyValue(null)}");
         }
     }
 }

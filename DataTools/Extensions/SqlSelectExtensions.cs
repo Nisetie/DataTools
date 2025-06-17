@@ -17,22 +17,28 @@ namespace DataTools.Extensions
         {
             var meta = ModelMetadata<ModelT>.Instance;
             var fields = meta.Fields;
-            var copy = sqlSelect
+            var selectColumns = (from f in fields select new SqlName(f.ColumnName)).ToArray();
+            var orderColumns = (from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray();
+            sqlSelect
                 .From(meta.FullObjectName)
-                .Select((from f in fields select new SqlName(f.ColumnName)).ToArray())
-                .OrderBy((from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray());
-            return copy;
+                .Select(selectColumns);
+            if (orderColumns.Length > 0)
+                sqlSelect.OrderBy(orderColumns);
+            return sqlSelect;
         }
 
         public static SqlSelect From<ModelT>(this SqlSelect sqlSelect, SqlExpression subquery, string alias) where ModelT : class, new()
         {
             var meta = ModelMetadata<ModelT>.Instance;
             var fields = meta.Fields;
-            var copy = sqlSelect
+            var selectColumns = (from f in fields select new SqlName(f.ColumnName)).ToArray();
+            var orderColumns = (from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray();
+            sqlSelect
                 .From(subquery, alias)
-                .Select((from f in fields select new SqlName(f.ColumnName)).ToArray())
-                .OrderBy((from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray());
-            return copy;
+               .Select(selectColumns);
+            if (orderColumns.Length > 0)
+                sqlSelect.OrderBy(orderColumns);
+            return sqlSelect;
         }
 
 

@@ -23,7 +23,7 @@ namespace DataTools.Meta
         public int SortOrder { get; set; }
         public SqlOrderByClause.E_ORDER SortDirection { get; set; }
         public int FieldOrder { get; set; }
-        public bool Autoincrement { get;set;}
+        public bool IsAutoincrement { get; set; }
 
         public ModelFieldMetadata() { }
 

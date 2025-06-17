@@ -33,7 +33,8 @@ namespace DataTools.DML
         {
             if (obj is SqlInsert sqlInsert)
             {
-                if (!_into.Equals(sqlInsert._into)) return false;
+                if (_into == null ? sqlInsert._into != null : !_into.Equals(sqlInsert._into)) return false;
+                if ((_columns == null && sqlInsert._columns != null) || (_columns != null && sqlInsert._columns == null)) return false;
                 var leftCE = _columns.GetEnumerator();
                 var rightCE = sqlInsert._columns.GetEnumerator();
                 while (leftCE.MoveNext())
@@ -54,7 +55,7 @@ namespace DataTools.DML
             sb
                 .AppendLine($"INSERT {_into}")
                 .AppendLine($"({string.Join(",", _columns)})")
-                .AppendLine($"VALUES ({string.Join(",",_values)})");
+                .AppendLine($"VALUES ({string.Join(",", _values)})");
 
             return sb.ToString();
         }

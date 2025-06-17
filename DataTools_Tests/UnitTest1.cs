@@ -3,6 +3,8 @@ using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.InMemory_SQLite;
+using DataTools.Interfaces;
+using DataTools.Meta;
 using DataTools.MSSQL;
 using DataTools.PostgreSQL;
 using DataTools.SQLite;
@@ -20,6 +22,39 @@ namespace DataTools_Tests
         public CommonTests(string alias)
         {
             DataManager.AddContext(alias, DataContext = new ContextT());
+        }
+
+        [Category("CustomModelMapper")]
+        [Test]
+        public void TestCustomModelMapper()
+        {
+            var meta = ModelMetadata<TestModel>.Instance;
+
+            var mapper = (IDataContext context, object[] values) =>
+            {
+                var m = new TestModel();
+                var l = values[meta.GetField(nameof(TestModel.Id)).FieldOrder];
+                m.Id = values[meta.GetField(nameof(TestModel.Id)).FieldOrder].Cast<int>();
+                m.LongId = values[meta.GetField(nameof(TestModel.LongId)).FieldOrder].Cast<long?>();
+                m.ShortId = values[meta.GetField(nameof(TestModel.ShortId)).FieldOrder].Cast<short?>();
+                m.Name = values[meta.GetField(nameof(TestModel.Name)).FieldOrder].Cast<string>();
+                m.CharCode = values[meta.GetField(nameof(TestModel.CharCode)).FieldOrder].Cast<string>();
+                m.Checked = values[meta.GetField(nameof(TestModel.Checked)).FieldOrder].Cast<bool>();
+                m.Value = values[meta.GetField(nameof(TestModel.Value)).FieldOrder].Cast<int>();
+                m.FValue = values[meta.GetField(nameof(TestModel.FValue)).FieldOrder].Cast<float>();
+                m.GValue = values[meta.GetField(nameof(TestModel.GValue)).FieldOrder].Cast<double>();
+                m.Money = values[meta.GetField(nameof(TestModel.Money)).FieldOrder].Cast<decimal>();
+                m.Timestamp = values[meta.GetField(nameof(TestModel.Timestamp)).FieldOrder].Cast<DateTime>();
+                m.Duration = values[meta.GetField(nameof(TestModel.Duration)).FieldOrder].Cast<TimeSpan>();
+                m.Guid = values[meta.GetField(nameof(TestModel.Guid)).FieldOrder].Cast<Guid>();
+                m.bindata = values[meta.GetField(nameof(TestModel.bindata)).FieldOrder].Cast<byte[]>();
+
+                return m;
+            };
+
+            DataContext.AddCustomMapper<TestModel>(mapper);
+
+            var result = DataContext.SelectFrom<TestModel>().Select().ToArray();
         }
 
         [Category("Select")]
@@ -41,7 +76,7 @@ namespace DataTools_Tests
         public void TestSelectWithParameter()
         {
             var par = new SqlParameter("par1");
-            var query = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("Name").Eq(par));
+            var query = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().Name("Name").Eq(par));
 
             par.Value = "TestModelChild";
 
@@ -117,7 +152,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectLessOrEqual()
         {
-            var result = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("FValue").LeValue(1.1F)).OrderBy("Name").Select();
+            var result = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().Name("FValue").LeValue(1.1F)).OrderBy("Name").Select();
             Assert.That(result.Count() == 1);
         }
 
@@ -126,56 +161,22 @@ namespace DataTools_Tests
         public void TestSelectMany()
         {
             var result = DataContext.SelectFrom<TestModel>().OrderBy("Name").Select().ToArray();
+
+            var check1 = result.Length == 3;
+            var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && Convert.ToHexString(result[0].bindata) == "01020304";
+            var check3 = result[1].Id == 2 && result[1].LongId == 2L && result[1].ShortId == 2 && result[1].Name == "TestModel2" && result[1].CharCode == "b" && result[1].Checked == true && result[1].Value == 1 && result[1].FValue == 1.1F && result[1].GValue == 1.2 && result[1].Money == (decimal)1.3 && result[1].Timestamp == DateTime.Parse("2024-03-01") && result[1].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[1].bindata) == "FFFFFFFF";
+            var check4 = result[2].Id == 3 && result[2].LongId == null && result[2].ShortId == null && result[2].Name == "TestModel3" && result[2].CharCode == "b" && result[2].Checked == true && result[2].Value == 1 && result[2].FValue == 1.1F && result[2].GValue == 1.3 && result[2].Money == (decimal)1.4 && result[2].Timestamp == DateTime.Parse("2024-04-01") && result[2].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[2].bindata) == "0000FF00";
+
+            TestContext.Out.WriteLine($"{check1} {check2} {check3} {check4}");
+
             Assert.That(
                 (
-                result.Length == 3 &&
-
-                result[0].Id == 1 &&
-                result[0].LongId == 1L &&
-                result[0].ShortId == 1 &&
-                result[0].Name == "TestModel1" &&
-                result[0].CharCode == "a" &&
-                result[0].Checked == false &&
-                result[0].Value == 1 &&
-                result[0].FValue == 1.1F &&
-                result[0].GValue == 1.2 &&
-                result[0].Money == (decimal)1.3 &&
-                result[0].Timestamp == DateTime.Parse("2024-01-01") &&
-                result[0].Duration == TimeSpan.Parse("23:59:59") &&
-                Convert.ToHexString(result[0].bindata) == "01020304"
-                )
+                check1
                 &&
-               (
-                result[1].Id == 2 &&
-                result[1].LongId == 2L &&
-                result[1].ShortId == 2 &&
-                result[1].Name == "TestModel2" &&
-                result[1].CharCode == "b" &&
-                result[1].Checked == true &&
-                result[1].Value == 1 &&
-                result[1].FValue == 1.1F &&
-                result[1].GValue == 1.2 &&
-                result[1].Money == (decimal)1.3 &&
-                result[1].Timestamp == DateTime.Parse("2024-03-01") &&
-                result[1].Duration == TimeSpan.Parse("01:01:01") &&
-                Convert.ToHexString(result[1].bindata) == "FFFFFFFF"
-               )
-               &&
-                 (
-                result[2].Id == 3 &&
-                result[2].LongId == null &&
-                result[2].ShortId == null &&
-                result[2].Name == "TestModel3" &&
-                result[2].CharCode == "b" &&
-                result[2].Checked == true &&
-                result[2].Value == 1 &&
-                result[2].FValue == 1.1F &&
-                result[2].GValue == 1.3 &&
-                result[2].Money == (decimal)1.4 &&
-                result[2].Timestamp == DateTime.Parse("2024-04-01") &&
-                result[2].Duration == TimeSpan.Parse("01:01:01") &&
-                Convert.ToHexString(result[2].bindata) == "0000FF00"
-               )
+                check2
+                && check3
+                && check4
+                )
             );
         }
 
@@ -223,7 +224,7 @@ namespace DataTools_Tests
         public void TestWhereIsNull()
         {
             var ar = DataContext.SelectFrom<TestModelSimple>().Where("Id", null).Select().ToArray();
-            TestContext.Out.WriteLine($"{ar.Length} {string.Join<TestModelSimple>(',',ar)}"); ;
+            TestContext.Out.WriteLine($"{ar.Length} {string.Join<TestModelSimple>(',', ar)}"); ;
             Assert.That(ar.Length == 1);
         }
 
@@ -339,9 +340,9 @@ namespace DataTools_Tests
             var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
 
             if (isLong)
-                Assert.That((long)count + 1 == (long)newCount);
+                Assert.That((long)count + 1 == newCount);
             else
-                Assert.That((int)count + 1 == (int)newCount);
+                Assert.That(count + 1 == newCount);
         }
 
         public void TestInsertRDBMS1()
@@ -410,7 +411,7 @@ namespace DataTools_Tests
             DataContext.Update(m);
 
             var n = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Select().ToArray()[0];
-            var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().AndName("Id").NeValue(id)).Select().ToArray();
+            var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhereClause().Name("Id").NeValue(id)).Select().ToArray();
 
             Assert.That(n.Name == "NewName" && nn.All(m => m.Name != "NewName"));
         }
@@ -810,7 +811,7 @@ namespace DataTools_Tests
     [TestFixture("sqlite", "Data Source=dbo")]
     public class SQLiteTests : CommonTests<SQLite_DataContext>
     {
-        SQLiteConnection _conn;
+        private SQLiteConnection _conn;
 
         public SQLiteTests(string alias, string connectionString) : base(alias)
         {
@@ -1335,9 +1336,9 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
             this.alias = alias;
         }
 
-        void Insert<ModelT>(object[] values) where ModelT : class, new()
+        private void Insert<ModelT>(object[] values) where ModelT : class, new()
         {
-            var model = ModelMapper<ModelT>.MapModel(DataContext, null, values);
+            var model = ModelMapper<ModelT>.MapModel(DataContext, null, values, new QueryCache());
             DataContext.Insert<ModelT>(model);
         }
 
@@ -1543,8 +1544,8 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
         public float? FValue { get; set; }
         public double? GValue { get; set; }
         public DateTime? Timestamp { get; set; }
-        [Reference(nameof(TestModel.Id)), ColumnName("Parent_id")] public TestModel? Parent { get; set; }
-        [Reference(nameof(TestModelExtra.Id)), ColumnName("Extra_id")] public TestModelExtra? Extra { get; set; }
+        [Reference(nameof(TestModel.Id)), ColumnName("Parent_id")] public TestModel Parent { get; set; }
+        [Reference(nameof(TestModelExtra.Id)), ColumnName("Extra_id")] public TestModelExtra Extra { get; set; }
 
         public override string? ToString()
         {
@@ -1597,7 +1598,7 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
     }
 
 
-    class Metadata
+    internal class Metadata
     {
         [Unique]
         public string TABLE_CATALOG { get; set; }

@@ -19,7 +19,7 @@ namespace DataTools.Interfaces
         int SortOrder { get; set; }
         SqlOrderByClause.E_ORDER SortDirection { get; set; }
         Type ColumnType { get; set; }
-        bool Autoincrement { get; set; }
+        bool IsAutoincrement { get; set; }
     }
 }
 

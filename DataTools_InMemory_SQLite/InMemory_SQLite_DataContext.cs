@@ -38,7 +38,7 @@ namespace DataTools.InMemory_SQLite
                 from field
                 in meta.Fields
                 let dataType = SQLite_TypesMap.GetDataType(field.FieldType)
-                let isUniqId = dataType == SQLite_TypesMap.INT && field.Autoincrement
+                let isUniqId = dataType == SQLite_TypesMap.INT && field.IsAutoincrement
                 select $"{field.ColumnName} {(isUniqId ? "INTEGER PRIMARY KEY" : $"{dataType} {(field.IsUnique ? "UNIQUE" : "")}")}"
                 );
 

@@ -1,5 +1,4 @@
-﻿using DataTools.Interfaces;
-using NpgsqlTypes;
+﻿using NpgsqlTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,7 +100,7 @@ namespace DataTools.PostgreSQL
             var sqlType = GetSqlType(value.GetType());
             if (IsNumber(sqlType))
                 return $"({value})::{sqlType}".Replace(',', '.');
-            
+
             switch (value)
             {
                 case DateTime dt:

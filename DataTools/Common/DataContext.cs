@@ -12,17 +12,17 @@ namespace DataTools.Common
     {
         private ConcurrentStack<IDataSource> _dataSources = new ConcurrentStack<IDataSource>();
 
-        private Dictionary<Type, ICustomModelMapper> _customModelMappers = new Dictionary<Type, ICustomModelMapper>();
+        private Dictionary<Type, Func<IDataContext, object[], object>> _customModelMappers = new Dictionary<Type, Func<IDataContext, object[], object>>();
         private Dictionary<Type, Func<object, object>> _customTypeConverters = new Dictionary<Type, Func<object, object>>();
-        public void AddCustomMapper<ModelT>(System.Func<IDataContext, object[], ModelT> mapper) where ModelT : class, new()
+        public void AddCustomMapper<ModelT>(Func<IDataContext, object[], object> mapper) where ModelT : class, new()
         {
-            _customModelMappers[typeof(ModelT)] = new CustomModelMapper<ModelT>(mapper);
+            _customModelMappers[typeof(ModelT)] = mapper;
         }
         public void AddCustomTypeConverter<T>(Func<object, object> converter)
         {
             _customTypeConverters[typeof(T)] = converter;
         }
-        private ICustomModelMapper GetCustomMapper<ModelT>() => _customModelMappers.TryGetValue(typeof(ModelT), out var value) ? value : null;
+        private Func<IDataContext, object[], object> GetCustomMapper<ModelT>() => _customModelMappers.TryGetValue(typeof(ModelT), out var value) ? value : null;
         public void RemoveCustomMapper<ModelT>() => _customModelMappers.Remove(typeof(ModelT));
 
         protected abstract IDataSource _GetDataSource();
@@ -39,48 +39,65 @@ namespace DataTools.Common
             _dataSources.Push(ds);
         }
 
-        private IEnumerable<ModelT> _MapResults<ModelT>(IEnumerable<object[]> data) where ModelT : class, new()
+        public IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null) where ModelT : class, new()
         {
-            var customMapper = GetCustomMapper<ModelT>() as CustomModelMapper<ModelT>;
-            if (customMapper == null)
-                return ModelMapper<ModelT>.MapModels(this, _customTypeConverters, data);
-            else
+            var ds = this.GetDataSource();
+            try
             {
-                var resultList = new List<ModelT>();
-                foreach (var dataRow in data)
-                    resultList.Add(customMapper.MapModel(this, dataRow));
-                return resultList;
+                var rawResult = ds.ExecuteWithResult(query ?? new SqlSelect().From<ModelT>());
+                var queryCache = new QueryCache();
+                var customMapper = GetCustomMapper<ModelT>();
+                if (customMapper == null)
+                    foreach (var dataRow in rawResult)
+                        yield return ModelMapper<ModelT>.MapModel(this, _customTypeConverters, dataRow, queryCache);
+                else
+                    foreach (var dataRow in rawResult)
+                        yield return (ModelT)customMapper(this, dataRow);
+            }
+            finally
+            {
+                this._ReturnDataSourceToPool(ds);
             }
         }
 
-        public virtual IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new()
+        public IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
-            var rawResult = ds.ExecuteWithResult(query ?? new SqlSelect().From<ModelT>(), parameters);
-            var mappedResult = _MapResults<ModelT>(rawResult);
-            this._ReturnDataSourceToPool(ds);
-            return mappedResult;
+            try
+            {
+                var rawResult = ds.ExecuteWithResult(query ?? new SqlSelect().From<ModelT>(), parameters);
+                var queryCache = new QueryCache();
+                var customMapper = GetCustomMapper<ModelT>();
+                if (customMapper == null)
+                    foreach (var dataRow in rawResult)
+                        yield return ModelMapper<ModelT>.MapModel(this, _customTypeConverters, dataRow, queryCache);
+                else
+                    foreach (var dataRow in rawResult)
+                        yield return (ModelT)customMapper(this, dataRow);
+            }
+            finally
+            {
+                this._ReturnDataSourceToPool(ds);
+            }
         }
 
-        public virtual void Insert<ModelT>(ModelT model) where ModelT : class, new()
+        public void Insert<ModelT>(ModelT model) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
-
             var insertBuilder = new SqlInsert().Into<ModelT>();
             ModelMapper<ModelT>.BindInsertValues(insertBuilder, model);
-
             var result = ds.ExecuteWithResult(insertBuilder).ToArray()[0];
-
+            var queryCache = new QueryCache();
             var map = ModelMapper<ModelT>.MapModel;
-            var customMapper = GetCustomMapper<ModelT>() as CustomModelMapper<ModelT>;
+            var customMapper = GetCustomMapper<ModelT>();
             if (customMapper != null)
-                model = customMapper.MapModel(this, result);
+                model = (ModelT)customMapper(this, result);
             else
-                model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result);
+                model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result, queryCache);
             this._ReturnDataSourceToPool(ds);
         }
 
-        public virtual void Update<ModelT>(ModelT model) where ModelT : class, new()
+        public void Update<ModelT>(ModelT model) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
 
@@ -88,17 +105,17 @@ namespace DataTools.Common
             ModelMapper<ModelT>.BindUpdateValues(updateBuilder, model);
 
             var result = ds.ExecuteWithResult(updateBuilder).ToArray()[0];
-
+            var queryCache = new QueryCache();
             var map = ModelMapper<ModelT>.MapModel;
-            var customMapper = GetCustomMapper<ModelT>() as CustomModelMapper<ModelT>;
+            var customMapper = GetCustomMapper<ModelT>();
             if (customMapper != null)
-                model = customMapper.MapModel(this, result);
+                model = (ModelT)customMapper(this, result);
             else
-                model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result);
+                model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result, queryCache);
             this._ReturnDataSourceToPool(ds);
         }
 
-        public virtual void Delete<ModelT>(ModelT model) where ModelT : class, new()
+        public void Delete<ModelT>(ModelT model) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
             var deleteBuilder = new SqlDelete().From<ModelT>();
@@ -107,6 +124,12 @@ namespace DataTools.Common
             this._ReturnDataSourceToPool(ds);
         }
 
+        public void Execute(SqlExpression query)
+        {
+            var ds = this.GetDataSource();
+            ds.Execute(query);
+            this._ReturnDataSourceToPool(ds);
+        }
         public void Execute(SqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -114,6 +137,13 @@ namespace DataTools.Common
             this._ReturnDataSourceToPool(ds);
         }
 
+        public object ExecuteScalar(SqlExpression query)
+        {
+            var ds = this.GetDataSource();
+            var result = ds.ExecuteScalar(query);
+            this._ReturnDataSourceToPool(ds);
+            return result;
+        }
         public object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -122,10 +152,17 @@ namespace DataTools.Common
             return result;
         }
 
+        public IEnumerable<object[]> ExecuteWithResult(SqlExpression query)
+        {
+            var ds = this.GetDataSource();
+            var result = ds.ExecuteWithResult(query);
+            this._ReturnDataSourceToPool(ds);
+            return result;
+        }
         public IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
-            var result = ds.ExecuteWithResult(query,parameters);
+            var result = ds.ExecuteWithResult(query, parameters);
             this._ReturnDataSourceToPool(ds);
             return result;
         }
@@ -144,14 +181,22 @@ namespace DataTools.Common
         {
             var ds = this.GetDataSource();
             var result = ds.ExecuteWithResult(procedure, parameters);
+            var queryCache = new QueryCache();
+            var customMapper = GetCustomMapper<ModelT>();
+            if (customMapper == null)
+                foreach (var dataRow in result)
+                    yield return ModelMapper<ModelT>.MapModel(this, _customTypeConverters, dataRow, queryCache);
+            else
+                foreach (var dataRow in result)
+                    yield return (ModelT)customMapper(this, dataRow);
+
             this._ReturnDataSourceToPool(ds);
-            return _MapResults<ModelT>(result);
         }
 
         public void CallProcedure(SqlProcedure procedure, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
-            ds.Execute(procedure,parameters);
+            ds.Execute(procedure, parameters);
             this._ReturnDataSourceToPool(ds);
         }
     }

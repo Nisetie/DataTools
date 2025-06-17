@@ -5,11 +5,11 @@ namespace DataTools.DML
 {
     public class SqlComposition : SqlExpression
     {
-        private List<object> _list;
+        private List<SqlExpression> _list;
 
-        public IEnumerable<object> Elements => _list;
+        public List<SqlExpression> Elements => _list;
 
-        public SqlComposition(params object[] elements) => _list = new List<object>(elements);
+        public SqlComposition(params SqlExpression[] elements) => _list = new List<SqlExpression>(elements);
 
         public override string ToString()
         {
@@ -28,7 +28,7 @@ namespace DataTools.DML
                 while (leftE.MoveNext())
                 {
                     if (!rightE.MoveNext()) return false;
-                    if (!leftE.Current.Equals(rightE.Current)) return false;  
+                    if (!leftE.Current.Equals(rightE.Current)) return false;
                 }
                 return true;
             }

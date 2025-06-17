@@ -5,7 +5,7 @@ namespace DataTools.Extensions
     public static class SqlWhereClauseExtensions
     {
         private static SqlWhereClause _Combine(SqlWhereClause left, SqlExpression right)
-        { 
+        {
             return left.AddNode(right);
         }
 
@@ -45,5 +45,9 @@ namespace DataTools.Extensions
         public static SqlWhereClause LePar(this SqlWhereClause left, SqlParameter par) => Le(left, par);
         public static SqlWhereClause AndPar(this SqlWhereClause left, SqlParameter par) => And(left, par);
         public static SqlWhereClause OrPar(this SqlWhereClause left, SqlParameter par) => Or(left, par);
+
+        public static SqlWhereClause Name(this SqlWhereClause left, string colname) => _Combine(left, new SqlName(colname));
+        public static SqlWhereClause Value(this SqlWhereClause left, object custom ) => _Combine(left, new SqlConstant(custom));
+        public static SqlWhereClause Param(this SqlWhereClause left, SqlParameter par) => _Combine(left, par);
     }
 }

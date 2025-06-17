@@ -13,7 +13,7 @@
 
         public override bool Equals(object obj)
         {
-            if (obj is SqlName sqlName) 
+            if (obj is SqlName sqlName)
                 return Name == sqlName.Name;
             return false;
         }
