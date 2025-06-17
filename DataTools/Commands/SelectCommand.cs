@@ -15,7 +15,7 @@ namespace DataTools.Commands
 
         public IEnumerable<ModelT> Select(params SqlParameter[] parameters)
         {
-            return Context.Select<ModelT>(Query,parameters);
+            return Context.Select<ModelT>(Query, parameters);
         }
 
         public SelectCommmand<ModelT> Where(string columnName, object value)

@@ -18,16 +18,19 @@ namespace DataTools.MSSQL
             _command = _conn.CreateCommand();
         }
 
+        public override void Execute(SqlExpression query) => Execute(_queryParser.ToString(query));
         public override void Execute(SqlExpression query, params DML.SqlParameter[] parameters)
         {
             Execute(_queryParser.ToString(query, parameters));
         }
 
+        public override object ExecuteScalar(SqlExpression query) => ExecuteScalar(_queryParser.ToString(query));
         public override object ExecuteScalar(SqlExpression query, params DML.SqlParameter[] parameters)
         {
             return ExecuteScalar(_queryParser.ToString(query, parameters));
         }
 
+        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query) => ExecuteWithResult(_queryParser.ToString(query));
         public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params DML.SqlParameter[] parameters)
         {
             return ExecuteWithResult(_queryParser.ToString(query, parameters));
@@ -60,13 +63,14 @@ namespace DataTools.MSSQL
         public IEnumerable<object[]> ExecuteWithResult(string query)
         {
             SqlDataReader reader = null;
+            object[] array = null;
             _conn.Open();
             try
             {
                 _command.CommandText = query;
                 reader = _command.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleResult);
                 int fieldCount = reader.FieldCount;
-                var array = new object[fieldCount];
+                array = new object[fieldCount];
                 object value = null;
                 while (reader.Read())
                 {
@@ -80,8 +84,7 @@ namespace DataTools.MSSQL
             }
             finally
             {
-                reader?.Close();
-                _conn.Close();
+                reader?.Close(); _conn.Close();
             }
         }
     }

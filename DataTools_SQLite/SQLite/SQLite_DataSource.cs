@@ -3,15 +3,13 @@ using DataTools.DML;
 using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
-using System.Text;
 
 namespace DataTools.SQLite
 {
-    public sealed class SQLite_DataSource : DBMS_DataSource, IDisposable
+    public sealed class SQLite_DataSource : DBMS_DataSource
     {
         private SQLiteConnection _conn = new SQLiteConnection();
         private SQLiteCommand _command;
-        private IEnumerable<(string dbName, string schemaName)> _attached = null;
 
         public SQLiteConnection Connection { get { return _conn; } }
 
@@ -21,16 +19,17 @@ namespace DataTools.SQLite
             _command = _conn.CreateCommand();
         }
 
+        public override void Execute(SqlExpression query) => Execute(_queryParser.ToString(query));
         public override void Execute(SqlExpression query, params SqlParameter[] parameters)
         {
             Execute(_queryParser.ToString(query, parameters));
         }
-
+        public override object ExecuteScalar(SqlExpression query) => ExecuteScalar(_queryParser.ToString(query));
         public override object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteScalar(_queryParser.ToString(query, parameters));
         }
-
+        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query) => ExecuteWithResult(_queryParser.ToString(query));
         public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteWithResult(_queryParser.ToString(query, parameters));
@@ -66,10 +65,10 @@ namespace DataTools.SQLite
                 if (reader.HasRows)
                 {
                     int fieldCount = reader.FieldCount;
-                    var array = new object[fieldCount];                    
+                    var array = new object[fieldCount];
                     while (reader.Read())
                     {
-                        for (int i = 0; i < fieldCount; ++i)                            
+                        for (int i = 0; i < fieldCount; ++i)
                             array[i] = (v = reader[i]) == DBNull.Value ? null : v;
                         yield return array;
                     }
@@ -77,11 +76,6 @@ namespace DataTools.SQLite
 
             }
             finally { reader?.Close(); _conn.Close(); }
-        }
-
-        public void Dispose()
-        {
-            
         }
     }
 }

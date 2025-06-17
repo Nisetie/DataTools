@@ -21,7 +21,7 @@ namespace DataTools.Attributes
         {
             metadata.IsForeignKey = true;
             metadata.ForeignModel = (IModelMetadata)typeof(ModelMetadata<>).MakeGenericType(propertyInfo.PropertyType).GetProperty("Instance").GetValue(null);
-            metadata.ForeignColumnName = metadata.ForeignModel.Fields.First(f=> f.FieldName == ForeignFieldName).ColumnName;
+            metadata.ForeignColumnName = metadata.ForeignModel.Fields.First(f => f.FieldName == ForeignFieldName).ColumnName;
         }
     }
 }

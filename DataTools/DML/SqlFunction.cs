@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 
 namespace DataTools.DML
 {
@@ -53,7 +52,7 @@ namespace DataTools.DML
 
         public override string ToString()
         {
-            return $"{_functionName}({string.Join(",",_parameters)})";
+            return $"{_functionName}({string.Join(",", _parameters)})";
         }
     }
 }

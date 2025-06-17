@@ -9,7 +9,7 @@ namespace DataTools.SQLite
 
         public string ConnectionString
         {
-            get => _connectionString; 
+            get => _connectionString;
             set => _connectionString = value;
         }
 

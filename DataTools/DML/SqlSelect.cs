@@ -5,18 +5,12 @@ namespace DataTools.DML
 {
     public class SqlSelect : SqlExpression
     {
-        private static readonly SqlConstant _zeroOffset = new SqlConstant(0);
-        private static readonly SqlConstant _maxLimit = new SqlConstant(long.MaxValue);
-        private static readonly SqlOrderByClause[] _emptyOrderBy = new SqlOrderByClause[0];
-        private static readonly SqlWhereClause _dummyWhere = new SqlWhereClause();
-        private static readonly SqlExpression[] _emptySelect = new SqlExpression[0];
-
-        protected SqlExpression _from = null;
-        protected IEnumerable<SqlExpression> _selects = _emptySelect;
-        protected SqlWhereClause _where = _dummyWhere;
-        protected IEnumerable<SqlOrderByClause> _orders = _emptyOrderBy;
-        protected SqlExpression _offset = _zeroOffset;
-        protected SqlExpression _limit = _maxLimit;
+        protected SqlExpression _from;
+        protected IEnumerable<SqlExpression> _selects;
+        protected SqlWhereClause _where;
+        protected IEnumerable<SqlOrderByClause> _orders;
+        protected SqlExpression _offset;
+        protected SqlExpression _limit;
 
         public IEnumerable<SqlExpression> Selects => _selects;
         public SqlExpression FromSource => _from;
@@ -61,11 +55,12 @@ namespace DataTools.DML
         {
             if (obj is SqlSelect sqlSelect)
             {
-                if (!_from.Equals(sqlSelect._from)
-                    || !_where.Equals(sqlSelect._where)
-                    || !_offset.Equals(sqlSelect._offset)
-                    || !_limit.Equals(sqlSelect._limit))
+                if (!(_from == null ? sqlSelect._from == null : _from.Equals(sqlSelect._from))
+                    || !(_where == null ? sqlSelect._where == null : _where.Equals(sqlSelect._where))
+                    || !(_offset == null ? sqlSelect._offset == null : _offset.Equals(sqlSelect._offset))
+                    || !(_limit == null ? sqlSelect._limit == null : _limit.Equals(sqlSelect._limit)))
                     return false;
+                if ((_selects == null && sqlSelect._selects != null) || (_selects != null && sqlSelect._selects == null)) return false;
                 var leftSE = _selects.GetEnumerator();
                 var rightSE = sqlSelect._selects.GetEnumerator();
                 while (leftSE.MoveNext())
@@ -81,33 +76,45 @@ namespace DataTools.DML
 
         public override string ToString()
         {
-//FROM and/ or JOIN clause.
-//WHERE clause.
-//GROUP BY clause.
-//HAVING clause.
-//SELECT clause.
-//DISTINCT clause.
-//ORDER BY clause.
-//LIMIT and / or OFFSET clause.
+            //FROM and/ or JOIN clause.
+            //WHERE clause.
+            //GROUP BY clause.
+            //HAVING clause.
+            //SELECT clause.
+            //DISTINCT clause.
+            //ORDER BY clause.
+            //LIMIT and / or OFFSET clause.
             StringBuilder sb = new StringBuilder();
-            sb
-                .Append("FROM ")
-                .Append( _from is SqlSelect ? $"({_from.ToString()})" : _from.ToString())
-                .AppendLine()
-                .Append("WHERE ")
-                .Append(_where.ToString())
-                .AppendLine()
-                .Append("SELECT ")
-                .Append(string.Join(",",_selects))
-                .AppendLine()
-                .Append("ORDER BY ")
-                .Append(string.Join(",", _orders))
-                .AppendLine()
-                .Append("LIMIT ")
-                .Append(_limit.ToString())
-                .AppendLine()
-                .Append("OFFSET ")
-                .Append(_offset.ToString());
+            if (_from != null)
+                sb
+                    .Append("FROM ")
+                    .Append(_from is SqlSelect ? $"({_from})" : _from.ToString())
+                    .AppendLine();
+            if (_where != null)
+                sb
+                    .Append("WHERE ")
+                    .Append(_where.ToString())
+                    .AppendLine();
+            if (_selects != null)
+                sb
+                    .Append("SELECT ")
+                    .Append(string.Join(",", _selects))
+                    .AppendLine();
+            if (_orders != null)
+                sb
+                    .Append("ORDER BY ")
+                    .Append(string.Join(",", _orders))
+                    .AppendLine();
+            if (_limit != null)
+                sb
+                    .Append("LIMIT ")
+                    .Append(_limit.ToString())
+                    .AppendLine();
+
+            if (_offset != null)
+                sb
+                    .Append("OFFSET ")
+                    .Append(_offset.ToString());
             return sb.ToString();
         }
     }

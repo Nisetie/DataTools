@@ -1,16 +1,9 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 
 namespace DataTools.DML
 {
     public class SqlWhereClause : SqlExpression
     {
-
-        private readonly SqlCustom _sqlEmpty = new SqlCustom("");
-        private readonly SqlConstant _dummySqlConstant = new SqlConstant(1);
-
-
         private List<SqlExpression> _nodes = new List<SqlExpression>();
 
         public IEnumerable<SqlExpression> Nodes => _nodes;
@@ -20,15 +13,8 @@ namespace DataTools.DML
             return this;
         }
 
-        /// <summary>
-        /// Конструктор без параметров создает заглушку: 1 = 1.
-        /// Поэтому для продолжения цепочки следующее звено надо начинать с AND.
-        /// </summary>
         public SqlWhereClause()
         {
-            AddNode(_dummySqlConstant);
-            AddNode(new SqlEqual());
-            AddNode(_dummySqlConstant);
         }
 
         public SqlWhereClause(SqlExpression expression)

@@ -4,10 +4,8 @@ namespace DataTools.DML
 {
     public class SqlDelete : SqlExpression
     {
-        private static readonly SqlWhereClause _whereDummy = new SqlWhereClause();
-
         protected SqlExpression _from;
-        protected SqlWhereClause _where = _whereDummy;
+        protected SqlWhereClause _where;
 
         public SqlExpression FromSource => _from;
         public SqlWhereClause Wheres => _where;
@@ -27,15 +25,15 @@ namespace DataTools.DML
         public override bool Equals(object obj)
         {
             return obj is SqlDelete sqlDelete
-                && _from.Equals(sqlDelete._from)
-                && _where.Equals(sqlDelete._where);
+                && (_from == null ? sqlDelete._from == null : _from.Equals(sqlDelete._from))
+                && (_where == null ? sqlDelete._where == null : _where.Equals(sqlDelete._where));
         }
         public override string ToString()
         {
             var sb = new StringBuilder();
-            sb
-                .AppendLine($"DELETE {_from}")
-                .AppendLine($"WHERE {_where}");
+            sb.AppendLine($"DELETE {_from}");
+            if (_where != null)
+                sb.AppendLine($"WHERE {_where}");
             return sb.ToString();
         }
     }

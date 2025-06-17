@@ -4,8 +4,8 @@ namespace DataTools.Common
 {
     public abstract class DBMS_DataSource : DataSource
     {
-        protected IDBMSQueryParser _queryParser;
+        protected IDBMS_QueryParser _queryParser;
 
-        public DBMS_DataSource(IDBMSQueryParser queryParser) { _queryParser = queryParser; }
+        public DBMS_DataSource(IDBMS_QueryParser queryParser) { _queryParser = queryParser; }
     }
 }

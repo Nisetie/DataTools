@@ -9,7 +9,7 @@ namespace DataTools.Attributes
 
         public override void ProcessMetadata(PropertyInfo propertyInfo, IModelFieldMetadata metadata)
         {
-            metadata.Autoincrement = true;
+            metadata.IsAutoincrement = true;
         }
     }
 }

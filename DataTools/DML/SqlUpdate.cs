@@ -6,9 +6,7 @@ namespace DataTools.DML
 {
     public class SqlUpdate : SqlExpression
     {
-        private static readonly SqlWhereClause _whereDummy = new SqlWhereClause(new SqlConstant(1)).Eq(new SqlConstant(1));
-
-        protected SqlWhereClause _where = _whereDummy;
+        protected SqlWhereClause _where;
         protected SqlExpression _from;
         protected IEnumerable<SqlName> _columns;
         protected IEnumerable<SqlExpression> _values;
@@ -45,9 +43,10 @@ namespace DataTools.DML
         {
             if (obj is SqlUpdate sqlUpdate)
             {
-                if (!_from.Equals(sqlUpdate._from)
-                    || !_where.Equals(sqlUpdate._where))
+                if (!(_from == null ? sqlUpdate._from == null : _from.Equals(sqlUpdate._from))
+                    || !(_where == null ? sqlUpdate._where == null : _where.Equals(sqlUpdate._where)))
                     return false;
+                if ((_columns == null && sqlUpdate._columns != null) || (_columns != null && sqlUpdate._columns == null)) return false;
                 var leftCE = _columns.GetEnumerator();
                 var rightCE = sqlUpdate._columns.GetEnumerator();
                 while (leftCE.MoveNext())
@@ -68,10 +67,11 @@ namespace DataTools.DML
             sb
                 .AppendLine($"UPDATE {_from}")
                 .AppendLine($"SET")
-                .AppendLine($"{string.Join(",",_columns)}")
+                .AppendLine($"{string.Join(",", _columns)}")
                 .AppendLine("=")
-                .AppendLine($"{string.Join(",", _values)}")
-                .AppendLine($"WHERE {_where}");
+                .AppendLine($"{string.Join(",", _values)}");
+            if (_where != null)
+                sb.AppendLine($"WHERE {_where}");
 
             return sb.ToString();
         }
