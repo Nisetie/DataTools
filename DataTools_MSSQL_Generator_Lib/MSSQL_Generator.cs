@@ -3,14 +3,17 @@ using DataTools.DML;
 using DataTools.MSSQL;
 using System.Text;
 using System.Collections.Generic;
+using DataTools.Interfaces;
+using DataTools.Meta;
 
 namespace mssqlgen
 {
-    public class MSSQL_Task
+    public class MSSQL_Generator
     {
-
         public string NamespaceName { get; set; }
         public string ConnectionString { get; set; }
+
+        public MSSQL_Generator(string namespaceName, string connectionString) { NamespaceName = namespaceName; ConnectionString = connectionString; }
 
         private readonly string _query = @"
 with primaryKeys as (
@@ -78,7 +81,8 @@ tablesAndColums.TABLE_CATALOG
 ,tablesAndColums.DATA_TYPE
 ,tablesAndColums.ORDINAL_POSITION
 ,cast(tablesAndColums.IS_NULLABLE as bit)
-,cast(tablesAndColums.[Generated] as bit)
+--,cast(tablesAndColums.[Generated] as bit)
+,cast(0 as bit) as [Generated]
 ,cast(iif (primaryKeys.CONSTRAINT_NAME is not null,1, 0) as bit) as isPrimaryKey
 ,cast(iif ([unique].CONSTRAINT_NAME is not null,1, 0) as bit) as isUnique
 ,cast(iif (foreignKeys.CONSTRAINT_NAME is not null,1, 0) as bit) as isForeign
@@ -98,11 +102,13 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
             public string Schema { get; set; }
             public string Name { get; set; }
             public string ModelCode { get; set; }
+            public IModelMetadata ModelMetadata { get; set; }
         }
-
 
         public IEnumerable<ModelDefinition> GetModelDefinitions()
         {
+            ModelMetadata mm = null;
+
             StringBuilder modelCode = new StringBuilder();
 
             string tableCatalog = "";
@@ -128,12 +134,19 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
                         modelCode.AppendLine("\t}");
                         modelCode.AppendLine("}");
 
-                        yield return new ModelDefinition() { Catalog = tableCatalog, Schema = tableSchema, Name = tableName, ModelCode = modelCode.ToString() };
+                        yield return new ModelDefinition() { Catalog = tableCatalog, Schema = tableSchema, Name = tableName, ModelCode = modelCode.ToString(), ModelMetadata = mm};
 
                         modelCode.Clear();
                     }
 
+                    mm = new ModelMetadata();
+
                     (tableCatalog, tableSchema, tableName) = (row.TABLE_CATALOG, row.TABLE_SCHEMA, row.TABLE_NAME);
+
+                    mm.ObjectName = tableName;
+                    mm.SchemaName = tableSchema;
+                    mm.ModelName = tableName;
+                    mm.DisplayModelName = tableName;
 
                     modelCode
                         .AppendLine($"using {nameof(DataTools)}.{nameof(DataTools.Attributes)};")
@@ -155,23 +168,31 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
 
                     modelCode.AppendLine($"\t\t[{nameof(ReferenceAttribute)}(nameof({foreignModelName}.{foreignColName.Replace(' ', '_')})]");
                 }
+
+                var netType = MSSQL_TypesMap.GetNetType(row.DATA_TYPE);
+
                 modelCode.AppendLine($"\t\t[{nameof(ColumnNameAttribute)}(\"{colName}\")]");
-                modelCode.AppendLine($"\t\t{MSSQL_TypesMap.GetNetType(row.DATA_TYPE)}{(row.IS_NULLABLE ? "?" : "")} {colName.Replace(' ', '_')} {{get; set;}}");
+                modelCode.AppendLine($"\t\t{netType}{(row.IS_NULLABLE ? "?" : "")} {colName.Replace(' ', '_')} {{get; set;}}");
 
                 modelCode.AppendLine();
+
+                mm.AddField(new ModelFieldMetadata()
+                {
+                    ColumnName = colName,
+                    ColumnDisplayName = colName,
+                    FieldType = netType,
+                    
+                });
 
 
             }
         }
 
-
+        [NoUnique]
         class Metadata
         {
-            [Unique]
             public string TABLE_CATALOG { get; set; }
-            [Unique]
             public string TABLE_SCHEMA { get; set; }
-            [Unique]
             public string TABLE_NAME { get; set; }
             public string TABLE_TYPE { get; set; }
             public string COLUMN_NAME { get; set; }

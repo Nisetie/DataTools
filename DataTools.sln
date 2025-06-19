@@ -17,6 +17,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Benchmarks", "Dat
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory_SQLite", "DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj", "{E5832B29-05FD-02FD-EFB3-4082FB16BD04}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL_Generator_Lib", "DataTools_MSSQL_Generator_Lib\DataTools_MSSQL_Generator_Lib.csproj", "{C3429E9B-2CCC-28DF-F9EA-41904CB7E78E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL_Generator_Exe", "DataTools_MSSQL_Generator_Exe\DataTools_MSSQL_Generator_Exe.csproj", "{D76AFDC5-D82E-C7F4-F952-E0B143FB4BC8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +55,14 @@ Global
 		{E5832B29-05FD-02FD-EFB3-4082FB16BD04}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E5832B29-05FD-02FD-EFB3-4082FB16BD04}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E5832B29-05FD-02FD-EFB3-4082FB16BD04}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3429E9B-2CCC-28DF-F9EA-41904CB7E78E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3429E9B-2CCC-28DF-F9EA-41904CB7E78E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3429E9B-2CCC-28DF-F9EA-41904CB7E78E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3429E9B-2CCC-28DF-F9EA-41904CB7E78E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D76AFDC5-D82E-C7F4-F952-E0B143FB4BC8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D76AFDC5-D82E-C7F4-F952-E0B143FB4BC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D76AFDC5-D82E-C7F4-F952-E0B143FB4BC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D76AFDC5-D82E-C7F4-F952-E0B143FB4BC8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

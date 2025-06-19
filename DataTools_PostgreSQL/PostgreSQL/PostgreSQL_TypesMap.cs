@@ -78,7 +78,9 @@ namespace DataTools.PostgreSQL
 
         public static string GetSqlType(Type type)
         {
-            if (_reverseMapping.TryGetValue(type, out var t))
+            var realType = Nullable.GetUnderlyingType(type);
+            if (realType == null) realType = type;
+            if (_reverseMapping.TryGetValue(realType, out var t))
                 return t;
             return "text";
         }

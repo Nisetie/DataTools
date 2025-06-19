@@ -51,5 +51,7 @@ namespace DataTools.Interfaces
         object CallScalarFunction(SqlFunction function, params SqlParameter[] parameters);
         IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure, params SqlParameter[] parameters) where ModelT : class, new();
         void CallProcedure(SqlProcedure procedure, params SqlParameter[] parameters);
+        void CreateTable<ModelT>() where ModelT : class, new();
+        void DropTable<ModelT>() where ModelT : class, new();
     }
 }

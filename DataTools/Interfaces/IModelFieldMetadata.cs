@@ -8,6 +8,10 @@ namespace DataTools.Interfaces
         int FieldOrder { get; set; }
         string FieldName { get; set; }
         string ColumnName { get; set; }
+        /// <summary>
+        /// NULL или тип из атрибута <see cref="ColumnTypeAttribute"/>
+        /// </summary>
+        string ColumnType { get; set; }
         string ColumnDisplayName { get; set; }
         Type FieldType { get; set; }
         bool IsUnique { get; set; }
@@ -18,8 +22,8 @@ namespace DataTools.Interfaces
         bool IsSorted { get; set; }
         int SortOrder { get; set; }
         SqlOrderByClause.E_ORDER SortDirection { get; set; }
-        Type ColumnType { get; set; }
         bool IsAutoincrement { get; set; }
+        bool IsPrimaryKey { get; set; }
     }
 }
 

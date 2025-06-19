@@ -10,6 +10,7 @@ using DataTools.PostgreSQL;
 using DataTools.SQLite;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using NUnit.Framework.Internal;
 using System.Data.SQLite;
 
 namespace DataTools_Tests
@@ -55,6 +56,8 @@ namespace DataTools_Tests
             DataContext.AddCustomMapper<TestModel>(mapper);
 
             var result = DataContext.SelectFrom<TestModel>().Select().ToArray();
+
+            DataContext.RemoveCustomMapper<TestModel>();
         }
 
         [Category("Select")]
@@ -156,6 +159,13 @@ namespace DataTools_Tests
             Assert.That(result.Count() == 1);
         }
 
+        [Category("Select")]
+        [Test]
+        public void TestSelectWithRecursiveReference()
+        {
+            var result = DataContext.Select<TestModelExtra>().ToArray();
+            Assert.That(result.Length == 2 && result[0].Extra == result[0] && result[1].Extra == result[1]);
+        }
         [Category("Select")]
         [Test]
         public void TestSelectMany()
@@ -854,66 +864,19 @@ namespace DataTools_Tests
             //    model.bindata = values[13] as byte[];
             //    return model;
             //});
+
+            DataContext.CreateTable<TestModel>();
+            DataContext.CreateTable<TestModelChild>();
+            DataContext.CreateTable<TestModelExtra>();
+
+            DataContext.CreateTable<TestModelGuidChild>();
+            DataContext.CreateTable<TestModelGuidParent>();
+
+            DataContext.CreateTable<TestModelSimple>();
+
             var ds = dc.GetDataSource() as SQLite_DataSource;
 
             var sql = @"
-
-drop table if exists dbo_TestModel;
-CREATE TABLE dbo_TestModel (
-    Id INTEGER PRIMARY KEY,
-    LongId int,
-    ShortId int,
-    Name text,
-    CharCode text,
-    Checked int,
-    Value INT,
-    FValue REAL,
-    GValue real,
-    Money real,
-    Timestamp text,
-    Duration text,
-    Guid text,
-    bindata blob
-);
-
-drop table if exists dbo_TestModelChild;
-CREATE TABLE dbo_TestModelChild (
-    Id INTEGER PRIMARY KEY,
-    Name text,
-    Value INT,
-    FValue REAL,
-    GValue real,
-    Timestamp text,
-    Parent_id INT,
-    Extra_id INT            
-);
-
-drop table if exists dbo_TestModelExtra;
-CREATE TABLE dbo_TestModelExtra (
-    Id INTEGER PRIMARY KEY,
-    Name text,
-    Value INT,
-    FValue REAL,
-    GValue real,
-    Timestamp text,
-    Extra_id INT            
-);
-
-drop table if exists dbo_TestModelGuidChild;
-drop table if exists dbo_TestModelGuidParent;
-CREATE TABLE dbo_TestModelGuidParent (
-    Id uuid primary key,
-    Name text
-);
-CREATE TABLE dbo_TestModelGuidChild (
-    Id uuid primary key,
-    Name text,
-    parent_id uuid references TestModelGuidParent(id)
-);
-
-drop table if exists dbo_TestModelNoUnique;
-create table dbo_TestModelNoUnique (id int, Name text);
-
 insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 1,1,'TestModel1','a',0,1,1.1,1.2,1.3,'2024-01-01','23:59:59','31ada97d-719a-4340-89ad-fd29d0d0a017',x'01020304';
 insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 2,2,'TestModel2','b',1,1,1.1,1.2,1.3,'2024-03-01','01:01:01','b6237194-406f-41db-8328-4f8ed82c2a5c',x'FFFFFFFF';
 insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select NULL,NULL,'TestModel3','b',1,1,1.1,1.3,1.4,'2024-04-01','01:01:01','b6237194-406f-41db-8328-4f8ed82c2a5d',x'0000FF00';
@@ -939,9 +902,22 @@ insert into dbo_TestModelNoUnique (id,name) select null,'d';
 ";
             ds.Execute(sql);
         }
+
+        [NUnit.Framework.TearDown]
+        public void Teardown()
+        {
+            DataContext.DropTable<TestModel>();
+            DataContext.DropTable<TestModelChild>();
+            DataContext.DropTable<TestModelExtra>();
+
+            DataContext.DropTable<TestModelGuidChild>();
+            DataContext.DropTable<TestModelGuidParent>();
+
+            DataContext.DropTable<TestModelSimple>();
+        }
     }
 
-    [TestFixture("postgresql", "Username=postgres;Password=12345678;Host=localhost")]
+    [TestFixture("postgresql", "Username=postgres;Password=1qaz@WSX;Host=localhost;")]
     public class PostgreSQLTests : CommonTests<PostgreSQL_DataContext>
     {
         public PostgreSQLTests(string alias, string connectionString) : base(alias)
@@ -957,64 +933,26 @@ insert into dbo_TestModelNoUnique (id,name) select null,'d';
             var dc = DataManager.GetContext(alias) as PostgreSQL_DataContext;
             var ds = dc.GetDataSource() as PostgreSQL_DataSource;
 
+            DataContext.Execute(new SqlCustom(@"
+do $$
+begin
+if (to_regnamespace('dbo') is null) then
+    create schema dbo;
+end if;
+end;
+$$;
+"));
+
+            DataContext.CreateTable<TestModel>();
+            DataContext.CreateTable<TestModelExtra>();
+            DataContext.CreateTable<TestModelChild>();
+
+            DataContext.CreateTable<TestModelGuidParent>();
+            DataContext.CreateTable<TestModelGuidChild>();            
+
+            DataContext.CreateTable<TestModelSimple>();
+
             var sql = @"
-
-drop table if exists dbo.TestModel cascade;
-CREATE TABLE dbo.TestModel (
-    Id int primary key generated always as identity,
-    LongId bigint,
-    ShortId smallint,
-    Name text,
-    CharCode char,
-    Checked bool,
-    Value INT,
-    FValue REAL,
-    GValue FLOAT,
-    Money decimal,
-    Timestamp timestamp,
-    Duration time,
-    Guid uuid,
-    bindata bytea
-);
-
-drop table if exists dbo.TestModelChild cascade;
-CREATE TABLE dbo.TestModelChild (
-    Id INT primary key generated always as identity,
-    Name text,
-    Value INT,
-    FValue REAL,
-    GValue FLOAT,
-    Timestamp timestamp,
-    Parent_id INT,
-    Extra_id INT            
-);
-
-drop table if exists dbo.TestModelExtra cascade;
-CREATE TABLE dbo.TestModelExtra (
-    Id INT primary key generated always as identity,
-    Name text,
-    Value INT,
-    FValue REAL,
-    GValue FLOAT,
-    Timestamp timestamp,
-    Extra_id INT            
-);
-
-drop table if exists dbo.TestModelGuidChild cascade;
-drop table if exists dbo.TestModelGuidParent cascade;
-CREATE TABLE dbo.TestModelGuidParent (
-    Id uuid primary key,
-    Name text
-);
-CREATE TABLE dbo.TestModelGuidChild (
-    Id uuid primary key,
-    Name text,
-    parent_id uuid references dbo.TestModelGuidParent(id)
-);
-
-drop table if exists dbo.TestModelNoUnique;
-create table dbo.TestModelNoUnique (id int, Name text);
-
 
 insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 1,1,'TestModel1','a',false,1,1.1,1.2,1.3,'2024-01-01','23:59:59',gen_random_uuid(),'\x01020304';
 insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 2,2,'TestModel2','b',true,1,1.1,1.2,1.3,'2024-03-01','01:01:01',gen_random_uuid(),'\xFFFFFFFF';
@@ -1090,9 +1028,28 @@ end
 $$
 ");
         }
+
+        [TearDown]
+        public void Teardown()
+        {
+            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFunc;"));
+            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFuncParam;"));
+            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProc;"));
+            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProcReturn;"));
+
+            DataContext.DropTable<TestModelChild>();
+            DataContext.DropTable<TestModel>();            
+            DataContext.DropTable<TestModelExtra>();
+
+            DataContext.DropTable<TestModelGuidChild>();
+            DataContext.DropTable<TestModelGuidParent>();
+
+            DataContext.DropTable<TestModelSimple>();
+        }
     }
 
-    [TestFixture("mssql", "Data Source=localhost;Integrated Security=True;Pooling=True")]
+    //[TestFixture("mssql", "Data Source=localhost;Integrated Security=True;Pooling=True")]
+    [TestFixture("mssql", "Data Source=(LocalDB)\\MSSQLLocalDB")]
     public class MSSQLTests : CommonTests<MSSQL_DataContext>
     {
 
@@ -1102,106 +1059,71 @@ $$
             DataContext.ConnectionString = connectionString;
         }
 
+        [NUnit.Framework.TearDown]
+        public void Teardown()
+        {
+            DataContext.DropTable<TestModelChild>();
+            DataContext.DropTable<TestModel>();            
+            DataContext.DropTable<TestModelExtra>();
+
+            DataContext.DropTable<TestModelGuidChild>();
+            DataContext.DropTable<TestModelGuidParent>();
+
+            DataContext.DropTable<TestModelSimple>();
+        }
+
         [SetUp]
         public void SetUp()
         {
             var dc = DataManager.GetContext(alias) as MSSQL_DataContext;
             var ds = dc.GetDataSource() as MSSQL_DataSource;
 
+            DataContext.CreateTable<TestModel>();
+            DataContext.CreateTable<TestModelExtra>();
+            DataContext.CreateTable<TestModelChild>();
+
+            DataContext.CreateTable<TestModelGuidParent>();
+            DataContext.CreateTable<TestModelGuidChild>();            
+
+            DataContext.CreateTable<TestModelSimple>();
+
             var sql = @"
-drop table if exists dbo.TestModelChild;
-drop table if exists dbo.TestModel;
-drop table if exists dbo.TestModelExtra;
-
-drop table if exists dbo.TestModelGuidChild;
-drop table if exists dbo.TestModelGuidParent;
-
-drop table if exists dbo.TestModelNoUnique;
-";
-
-            ds.Execute(sql);
-
-            sql = @"
-CREATE TABLE dbo.TestModel (
-    Id int primary key IDENTITY (1, 1),
-    LongId bigint,
-    ShortId smallint,
-    Name NVARCHAR (MAX),
-    CharCode char,
-    Checked bit,
-    Value INT,
-    FValue REAL,
-    GValue FLOAT,
-    Money money,
-    Timestamp DATETIME,
-    Duration time,
-    Guid uniqueidentifier,
-    bindata varbinary(max)
-);
-
-
-CREATE TABLE dbo.TestModelChild (
-    Id INT primary key IDENTITY (1, 1),
-    Name NVARCHAR (MAX),
-    Value INT,
-    FValue REAL,
-    GValue FLOAT,
-    Timestamp DATETIME,
-    Parent_id INT,
-    Extra_id INT            
-);
-
-
-CREATE TABLE dbo.TestModelExtra (
-    Id INT primary key IDENTITY (1, 1),
-    Name NVARCHAR(MAX),
-    Value INT,
-    FValue REAL,
-    GValue FLOAT (53),
-    Timestamp DATETIME,
-    Extra_id INT            
-);
-
-
-CREATE TABLE dbo.TestModelGuidParent (
-    Id uniqueidentifier primary key,
-    Name NVARCHAR(MAX)
-);
-CREATE TABLE dbo.TestModelGuidChild (
-    Id uniqueidentifier primary key,
-    Name NVARCHAR(MAX),
-    parent_id uniqueidentifier references TestModelGuidParent(id)
-);
-
-create table dbo.TestModelNoUnique (id int, Name nvarchar(max));
-
-";
-            ds.Execute(sql);
-
-            sql = @"
 insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 1,1,'TestModel1','a',0,1,1.1,1.2,1.3,'2024-01-01','23:59:59',newid(),0x01020304;
 insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 2,2,'TestModel2','b',1,1,1.1,1.2,1.3,'2024-03-01','01:01:01',newid(),0xFFFFFFFF;
 insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select NULL,NULL,'TestModel3','b',1,1,1.1,1.3,1.4,'2024-04-01','01:01:01',newid(),0x0000FF00;
+";
+            ds.Execute(sql);
 
+            sql = @"
 insert into dbo.TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra1',1,1.1,1.2,'2024-01-01',1;
 insert into dbo.TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra2',1,1.1,1.2,'2023-01-01',2;
+";
+            ds.Execute(sql);
 
+            sql = @"
 insert into dbo.TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild1',1,1.1,1.2,'2024-01-01',1,1;
 insert into dbo.TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild2',1,1.15,1.25,'2023-01-01',3,2;
+";
+            ds.Execute(sql);
 
+            sql = @"
 insert into dbo.TestModelGuidParent(id,name) select newid(), 'parent1';
 insert into dbo.TestModelGuidParent(id,name) select newid(), 'parent2';
+";
+            ds.Execute(sql);
 
-insert into dbo.TestModelGuidChild(id,name,parent_id) select newid(), 'child1', (select id from dbo.TestModelGuidParent where name = 'parent1');
-insert into dbo.TestModelGuidChild(id,name,parent_id) select newid(), 'child1', (select id from dbo.TestModelGuidParent where name = 'parent2');
+            sql = @"
+insert into dbo.TestModelGuidChild(id,name,parent_id) select newid(), 'child1', (select top 1 id from dbo.TestModelGuidParent where name = 'parent1');
+insert into dbo.TestModelGuidChild(id,name,parent_id) select newid(), 'child1', (select top 1 id from dbo.TestModelGuidParent where name = 'parent2');
+";
+            ds.Execute(sql);
 
+            sql = @"
 insert into dbo.TestModelNoUnique (id,name) select 1,'a';
 insert into dbo.TestModelNoUnique (id,name) select 2,'b';
 insert into dbo.TestModelNoUnique (id,name) select 1,'c';
 insert into dbo.TestModelNoUnique (id,name) select 3,'b';
 insert into dbo.TestModelNoUnique (id,name) select null,'d';
-
-
 ";
             ds.Execute(sql);
 
@@ -1563,7 +1485,7 @@ order by tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColu
         public float? FValue { get; set; }
         public double? GValue { get; set; }
         public DateTime? Timestamp { get; set; }
-
+        [Reference(nameof(TestModelExtra.Id)), ColumnName("Extra_id")] public TestModelExtra Extra { get; set; }
         public override string? ToString()
         {
             return Name;

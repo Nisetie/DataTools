@@ -172,13 +172,14 @@ namespace DataTools.Common
                 foreignModelKeys[f.FieldName] = Expression.Variable(f.ForeignModel.Fields.Where(ff => ff.ColumnName == f.ForeignColumnName).First().FieldType, $"modelKey{f.FieldName}");
                 foreignModelSelects[f.FieldName] = Expression.Variable(typeof(SqlSelect), $"select{f.FieldName}");
             }
+            var var_modelCache = Expression.Variable(typeof(ModelCache<>).MakeGenericType(Metadata.ModelType), $"modelCache");
 
             var all_variables = new ParameterExpression[] { } as IEnumerable<ParameterExpression>;
             all_variables = all_variables.Concat(foreignModelCaches.Select(kv => kv.Value));
             all_variables = all_variables.Concat(foreignModelVariables.Select(kv => kv.Value));
             all_variables = all_variables.Concat(foreignModelKeys.Select(kv => kv.Value));
             all_variables = all_variables.Concat(foreignModelSelects.Select(kv => kv.Value));
-            all_variables = all_variables.Concat(new[] { var_m, var_value, var_customConverter, var_foreignModelQueryResult });
+            all_variables = all_variables.Concat(new[] { var_m, var_value, var_customConverter, var_foreignModelQueryResult, var_modelCache });
 
             var finalBlock =
                    Expression.Block(
@@ -187,7 +188,8 @@ namespace DataTools.Common
                        , Expression.Block(
                            from f
                            in fields
-                               // для поля с простым типом данных
+                           // для поля с простым типом данных
+                           let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement
                            let fieldType = !f.IsForeignKey ? f.FieldType : f.ForeignModel.Fields.First(ff => ff.ColumnName == f.ForeignColumnName).FieldType
                            let UnboxedType = Nullable.GetUnderlyingType(fieldType)
                            let IsNullable = UnboxedType != null
@@ -209,14 +211,20 @@ namespace DataTools.Common
                                 ? Expression.IfThenElse(
                                     Expression.Equal(var_value, Expression.Constant(null))
                                     , Expression.Assign(Expression.Property(var_m, f.FieldName), Expression.Default(fieldType))
-                                   , Expression.Assign(
-                                       Expression.Property(var_m, f.FieldName),
-                                        IsConvertible
-                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                                        : IsParsable
-                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                                        : Expression.Convert(var_value, fieldType)
-                                        )
+                                   , Expression.Block(
+                                       Expression.Assign(
+                                           Expression.Property(var_m, f.FieldName),
+                                            IsConvertible
+                                            ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                                            : IsParsable
+                                            ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                                            : Expression.Convert(var_value, fieldType)
+                                            )
+                                       , !isPrimaryKey ? Expression.Empty() : Expression.Block(
+                                           Expression.Assign(var_modelCache, Expression.Call(param_queryCache, nameof(QueryCache.GetModelCache), typeArguments: new Type[] { Metadata.ModelType }, null))
+                                           , Expression.Call(var_modelCache, nameof(ModelCache<ModelT>.AddModelWithKey), null, Expression.Convert(Expression.Property(var_m, f.FieldName), typeof(object)), var_m)
+                                           ) as Expression
+                                       )
                                    )
                                : Expression.IfThen(
                                    Expression.NotEqual(var_value, Expression.Constant(null)),

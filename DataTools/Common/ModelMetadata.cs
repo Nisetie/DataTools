@@ -78,35 +78,45 @@ namespace DataTools.Meta
                 instance.AddField(f);
             }
 
-            /// проверка метамодели на отсутствие уникального поля
+            // проверка метамодели на отсутствие уникального поля
             if (_instance.NoUniqueKey == false)
                 if (!instance.Fields.Any((f) => f.IsUnique))
                     throw new Exception($"Analyzing {instance.ModelName}... No {nameof(UniqueAttribute)} field found! Define unique field in {instance.ModelName}. Use {nameof(UniqueAttribute)}.");
 
-            /// проверка метамоделей на наличие рекурсивных связей
-            /// если они есть, тогда эти связи надо разорвать
-            /// иначе будет существовать риск бесконечной рекурсии
-            var set = new Stack<string>();
-            var set1 = new Stack<IModelMetadata>();
-            IModelMetadata currentMeta;
-            set.Push(instance.ModelName);
-            set1.Push(instance);
-            while (set1.Count > 0)
-            {
-                currentMeta = set1.Pop();
+            // Нет смысла работать через ORM с составными ключами
+            var pks = instance.Fields.Where(f => f.IsAutoincrement || f.IsPrimaryKey).ToArray();
+            if (pks.Length > 1)
+                throw new Exception($"Analyzing {instance.ModelName}... There is must by only one {nameof(UniqueAttribute)} field!");
 
-                foreach (var f in currentMeta.Fields)
-                    if (f.IsForeignKey)
-                        if (set.Contains(f.ForeignModel.ModelName))
-                            throw new Exception($"Analyzing {instance.ModelName}... Recursive reference found! Remove reference to {f.ForeignModel.ModelName} from {currentMeta.ModelName} model definition.");
-                        else
-                        {
-                            set.Push(f.ForeignModel.ModelName);
-                            set1.Push(f.ForeignModel);
-                            currentMeta = f.ForeignModel;
-                        }
-                set.Pop();
-            }
+            // Первичный ключ никогла не должен быть NULL
+            foreach (var f in pks)
+                if (Nullable.GetUnderlyingType(f.FieldType) != null)
+                    throw new Exception($"{nameof(ModelMetadata<ModelT>)}. Primary key {f.FieldName} cannot be nullable!");
+
+            ///// проверка метамоделей на наличие рекурсивных связей
+            ///// если они есть, тогда эти связи надо разорвать
+            ///// иначе будет существовать риск бесконечной рекурсии
+            //var set = new Stack<string>();
+            //var set1 = new Stack<IModelMetadata>();
+            //IModelMetadata currentMeta;
+            //set.Push(instance.ModelName);
+            //set1.Push(instance);
+            //while (set1.Count > 0)
+            //{
+            //    currentMeta = set1.Pop();
+
+            //    foreach (var f in currentMeta.Fields)
+            //        if (f.IsForeignKey)
+            //            if (set.Contains(f.ForeignModel.ModelName))
+            //                throw new Exception($"Analyzing {instance.ModelName}... Recursive reference found! Remove reference to {f.ForeignModel.ModelName} from {currentMeta.ModelName} model definition.");
+            //            else
+            //            {
+            //                set.Push(f.ForeignModel.ModelName);
+            //                set1.Push(f.ForeignModel);
+            //                currentMeta = f.ForeignModel;
+            //            }
+            //    set.Pop();
+            //}
 
         }
     }

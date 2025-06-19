@@ -199,5 +199,9 @@ namespace DataTools.Common
             ds.Execute(procedure, parameters);
             this._ReturnDataSourceToPool(ds);
         }
+
+        public abstract void CreateTable<ModelT>() where ModelT : class, new();
+
+        public abstract void DropTable<ModelT>() where ModelT : class, new();
     }
 }

@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DataTools_MSSQL" Version="1.0.3" />
+    <ProjectReference Include="..\DataTools_MSSQL\DataTools_MSSQL.csproj" />
   </ItemGroup>
 
 </Project>
