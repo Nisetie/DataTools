@@ -64,12 +64,13 @@ namespace DataTools.MSSQL
                 { typeof(long),"bigint" },
                 { typeof(float),"real" },
                 { typeof(double),"float" },
-                { typeof(decimal),"numeric" },
+                { typeof(decimal),"numeric(38,19)" },
                 { typeof(Guid),"uniqueidentifier" },
-                { typeof(byte[]),"varbinary" },
+                { typeof(byte[]),"varbinary(max)" },
                 { typeof(DateTime),"datetime" },
                 { typeof(DateTimeOffset),"datetimeoffset" },
-                { typeof(TimeSpan),"time" }
+                { typeof(TimeSpan),"time" },
+                { typeof(bool),"bit" }
             };
 
             _numbers = new HashSet<string>()
@@ -80,6 +81,7 @@ namespace DataTools.MSSQL
                 "int",
                 "money",
                 "numeric",
+                "numeric(38,19)",
                 "real",
                 "smallint",
                 "smallmoney",
@@ -89,9 +91,11 @@ namespace DataTools.MSSQL
 
         public static string GetSqlType(Type type)
         {
-            if (_reverseMapping.TryGetValue(type, out var t))
+            var realType = Nullable.GetUnderlyingType(type);
+            if (realType == null) realType = type;
+            if (_reverseMapping.TryGetValue(realType, out var t))
                 return t;
-            return "nvarchar";
+            return "nvarchar(max)";
         }
 
         public static Type GetNetType(string sqlType)

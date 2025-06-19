@@ -7,11 +7,13 @@ namespace mssqlgen
         private static ArgumentsCollection _arguments = new ArgumentsCollection();
 
         private static string _namespaceName;
+        private static string _folderPath = null;
         private static string _connectionString;
 
         static void Main(string[] args)
         {
             _arguments.AddParameter(new InputArgumentWithInput("-n", "Namespace and Library name", (string namespaceName) => { _namespaceName = namespaceName; }), true);
+            _arguments.AddParameter(new InputArgumentWithInput("-p", "Save path", (string path) => { _folderPath = path; }), false);
             _arguments.AddParameter(new InputArgumentWithInput("-c", "Connection string", (string cs) => { _connectionString = cs; }), true, "-f");
             _arguments.AddParameter(new InputArgumentWithInput("-f", "Filename with connection string", (string filename) =>
             {
@@ -25,9 +27,10 @@ namespace mssqlgen
 
             _arguments.ProcessArguments(args);
 
-            var t = new MSSQL_Task();
-            t.ConnectionString = _connectionString;
-            t.NamespaceName = _namespaceName;
+            if (_folderPath == null)
+                _folderPath = new FileInfo(Environment.ProcessPath).Directory.FullName;
+
+            var t = new MSSQL_Generator(_namespaceName, _connectionString);
 
             if (Directory.Exists(_namespaceName))
                 Directory.Delete(_namespaceName, true);

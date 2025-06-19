@@ -25,8 +25,8 @@ namespace DataTools.InMemory_SQLite
             var conn = new InMemory_SQLite_DataSource(_connectionString);
             return conn;
         }
-
-        public void CreateTable<ModelT>() where ModelT : class, new()
+        
+        public override void CreateTable<ModelT>()
         {
             var meta = ModelMetadata<ModelT>.Instance;
 
@@ -37,7 +37,7 @@ namespace DataTools.InMemory_SQLite
             var fieldsDefinition = string.Join(",",
                 from field
                 in meta.Fields
-                let dataType = SQLite_TypesMap.GetDataType(field.FieldType)
+                let dataType = SQLite_TypesMap.GetSqlType(field.FieldType)
                 let isUniqId = dataType == SQLite_TypesMap.INT && field.IsAutoincrement
                 select $"{field.ColumnName} {(isUniqId ? "INTEGER PRIMARY KEY" : $"{dataType} {(field.IsUnique ? "UNIQUE" : "")}")}"
                 );
@@ -45,7 +45,7 @@ namespace DataTools.InMemory_SQLite
             _sConnection.Execute($"CREATE TABLE IF NOT EXISTS {name} ({fieldsDefinition});");
         }
 
-        public void DropTable<ModelT>() where ModelT : class, new()
+        public override void DropTable<ModelT>()
         {
             var meta = ModelMetadata<ModelT>.Instance;
             var name = meta.FullObjectName;

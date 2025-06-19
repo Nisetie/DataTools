@@ -10,9 +10,9 @@ namespace DataTools.Meta
     public class ModelFieldMetadata : IModelFieldMetadata
     {
         public Type FieldType { get; set; }
-        public Type ColumnType { get; set; }
         public string FieldName { get; set; }
         public string ColumnName { get; set; }
+        public string ColumnType { get; set; } = null;
         public string ColumnDisplayName { get; set; }
         public bool IsUnique { get; set; }
         public bool IgnoreChanges { get; set; }
@@ -24,6 +24,7 @@ namespace DataTools.Meta
         public SqlOrderByClause.E_ORDER SortDirection { get; set; }
         public int FieldOrder { get; set; }
         public bool IsAutoincrement { get; set; }
+        public bool IsPrimaryKey { get; set; }
 
         public ModelFieldMetadata() { }
 
@@ -37,11 +38,9 @@ namespace DataTools.Meta
             IEnumerable<FieldAttribute> attrs = propertyInfo.GetCustomAttributes<FieldAttribute>(true);
             FieldName = propertyInfo.Name;
             ColumnName = propertyInfo.Name;
-            ColumnType = FieldType = fieldType;
+            FieldType = fieldType;
             foreach (var attr in attrs)
-            {
                 attr.ProcessMetadata(propertyInfo, this);
-            }
         }
 
         public ModelFieldMetadata(int fieldOrder, PropertyInfo propertyInfo) : this(propertyInfo) => FieldOrder = fieldOrder;

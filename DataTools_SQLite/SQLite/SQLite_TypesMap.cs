@@ -49,7 +49,7 @@ namespace DataTools.SQLite
             };
         }
 
-        public static string GetDataType(Type type)
+        public static string GetSqlType(Type type)
         {
             var realType = Nullable.GetUnderlyingType(type);
             if (realType == null) realType = type;
@@ -74,7 +74,7 @@ namespace DataTools.SQLite
         {
             if (value == null)
                 return "NULL";
-            if (IsNumber(GetDataType(value.GetType())))
+            if (IsNumber(GetSqlType(value.GetType())))
                 return $"{value}".Replace(',', '.');
 
             switch (value)

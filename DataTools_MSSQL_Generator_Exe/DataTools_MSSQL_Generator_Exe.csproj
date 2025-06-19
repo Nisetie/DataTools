@@ -8,12 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DataTools_MSSQL" Version="1.0.3" />
     <PackageReference Include="InputArguments" Version="1.0.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\mssqlgenlib\mssqlgenlib.csproj" />
+    <ProjectReference Include="..\DataTools_MSSQL_Generator_Lib\DataTools_MSSQL_Generator_Lib.csproj" />
   </ItemGroup>
 
 </Project>
