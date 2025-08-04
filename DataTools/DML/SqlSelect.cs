@@ -7,14 +7,14 @@ namespace DataTools.DML
     {
         protected SqlExpression _from;
         protected IEnumerable<SqlExpression> _selects;
-        protected SqlWhereClause _where;
+        protected SqlWhere _where;
         protected IEnumerable<SqlOrderByClause> _orders;
         protected SqlExpression _offset;
         protected SqlExpression _limit;
 
         public IEnumerable<SqlExpression> Selects => _selects;
         public SqlExpression FromSource => _from;
-        public SqlWhereClause Wheres => _where;
+        public SqlWhere Wheres => _where;
         public IEnumerable<SqlOrderByClause> Orders => _orders;
         public SqlExpression OffsetRows => _offset;
         public SqlExpression LimitRows => _limit;
@@ -29,7 +29,7 @@ namespace DataTools.DML
             _from = objectName;
             return this;
         }
-        public SqlSelect Where(SqlWhereClause where)
+        public SqlSelect Where(SqlWhere where)
         {
             _where = where;
             return this;

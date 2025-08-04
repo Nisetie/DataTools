@@ -4,7 +4,13 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	  <Version>1.0.7</Version>
+	  <Version>1.0.8</Version>
+	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <Optimize>False</Optimize>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,5 +20,9 @@
   <ItemGroup>
     <ProjectReference Include="..\DataTools\DataTools.csproj" />
   </ItemGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+		<DebugType>none</DebugType>
+	</PropertyGroup>
 
 </Project>

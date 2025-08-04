@@ -2,29 +2,29 @@
 
 namespace DataTools.DML
 {
-    public class SqlWhereClause : SqlExpression
+    public class SqlWhere : SqlExpression
     {
         private List<SqlExpression> _nodes = new List<SqlExpression>();
 
         public IEnumerable<SqlExpression> Nodes => _nodes;
-        public SqlWhereClause AddNode(SqlExpression expression)
+        public SqlWhere AddNode(SqlExpression expression)
         {
             _nodes.Add(expression);
             return this;
         }
 
-        public SqlWhereClause()
+        public SqlWhere()
         {
         }
 
-        public SqlWhereClause(SqlExpression expression)
+        public SqlWhere(SqlExpression expression)
         {
             _nodes.Add(expression);
         }
 
         public override bool Equals(object obj)
         {
-            if (obj is SqlWhereClause sqlWhereClause)
+            if (obj is SqlWhere sqlWhereClause)
             {
                 var leftE = _nodes.GetEnumerator();
                 var rightE = sqlWhereClause._nodes.GetEnumerator();

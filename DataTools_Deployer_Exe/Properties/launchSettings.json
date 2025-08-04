@@ -1,0 +1,15 @@
+{
+  "profiles": {
+    "DataTools_Deployer_Exe": {
+      "commandName": "Project"
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
+    },
+    "Профиль 1": {
+      "commandName": "Project",
+      "commandLineArgs": "-m .\\Metadata.json -c \"Data source=localhost\\sqlexpress;Database=test;Integrated Security=true;Trust server certificate=true\" -d mssql -u -v"
+    }
+  }
+}

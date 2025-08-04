@@ -1,12 +1,11 @@
-﻿using DataTools.Extensions;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace DataTools.DML
 {
     public class SqlUpdate : SqlExpression
     {
-        protected SqlWhereClause _where;
+        protected SqlWhere _where;
         protected SqlExpression _from;
         protected IEnumerable<SqlName> _columns;
         protected IEnumerable<SqlExpression> _values;
@@ -14,7 +13,7 @@ namespace DataTools.DML
         public SqlExpression FromSource => _from;
         public IEnumerable<SqlName> Columns => _columns;
         public IEnumerable<SqlExpression> Values => _values;
-        public SqlWhereClause Wheres => _where;
+        public SqlWhere Wheres => _where;
 
         public SqlUpdate From(SqlName objectName)
         {
@@ -33,7 +32,7 @@ namespace DataTools.DML
             return this;
         }
 
-        public SqlUpdate Where(SqlWhereClause where)
+        public SqlUpdate Where(SqlWhere where)
         {
             _where = where;
             return this;

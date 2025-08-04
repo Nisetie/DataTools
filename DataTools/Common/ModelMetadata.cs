@@ -15,8 +15,8 @@ namespace DataTools.Meta
 
         public int FieldsCount => _fields.Count;
 
-        public Type ModelType { get; set; }
         public string ModelName { get; set; }
+        public string ModelTypeName { get; set; }
 
         public string SchemaName { get; set; }
         public string ObjectName { get; set; }
@@ -29,6 +29,8 @@ namespace DataTools.Meta
 
         public IEnumerable<IModelFieldMetadata> Fields => _fields;
 
+        public bool IsView { get; set; }
+
         public ModelMetadata() { }
 
         public void AddField(IModelFieldMetadata fieldMetadata)
@@ -36,6 +38,10 @@ namespace DataTools.Meta
             _fields.Add(fieldMetadata);
             _columnsIndex[fieldMetadata.ColumnName] = fieldMetadata;
             _fieldsIndex[fieldMetadata.FieldName] = fieldMetadata;
+        }
+        public void RemoveField(IModelFieldMetadata modelFieldMetadata)
+        {
+            _fields.Remove(modelFieldMetadata);
         }
 
         public IModelFieldMetadata GetColumn(string columnName)
@@ -46,7 +52,130 @@ namespace DataTools.Meta
         {
             if (_fieldsIndex.TryGetValue(fieldName, out IModelFieldMetadata fieldMetadata)) return fieldMetadata; return null;
         }
+
+        public IEnumerable<string> GetColumnsForSelect()
+        {
+            foreach (var f in _fields)
+            {
+                if (f.IsForeignKey)
+                {
+                    if (f.ColumnNames != null)
+                        foreach (var col in f.ColumnNames)
+                            yield return col;
+                    else yield return f.ColumnName;
+                }
+                else
+                    yield return f.ColumnName;
+            }
+        }
+
+        public IEnumerable<string> GetColumnsForOrdering()
+        {
+            foreach (var f in _fields)
+            {
+                if (!(f.IsPrimaryKey || f.IsAutoincrement || f.IsUnique)) continue;
+
+                if (f.IsForeignKey)
+                {
+                    if (f.ColumnNames != null)
+                        foreach (var col in f.ColumnNames)
+                            yield return col;
+                    else yield return f.ColumnName;
+                }
+                else
+                    yield return f.ColumnName;
+
+            }
+        }
+
+        public IEnumerable<string> GetColumnsForInsertUpdate()
+        {
+            foreach (var f in _fields)
+            {
+                if (f.IgnoreChanges || f.IsAutoincrement) continue;
+
+                if (f.IsForeignKey)
+                {
+                    if (f.ColumnNames != null)
+                        foreach (var col in f.ColumnNames)
+                            yield return col;
+                    else yield return f.ColumnName;
+                }
+                else
+                    yield return f.ColumnName;
+            }
+        }
+
+        public IEnumerable<IModelFieldMetadata> GetChangeableFields()
+        {
+            return from field
+                   in Fields
+                   where !(field.IgnoreChanges || field.IsAutoincrement)
+                   select field;
+        }
+
+        public IModelMetadata Copy()
+        {
+            var newMeta = new ModelMetadata();
+
+            newMeta.ModelName = ModelName;
+            newMeta.ModelTypeName = ModelTypeName;
+            newMeta.SchemaName = SchemaName;
+            newMeta.ObjectName = ObjectName;
+            newMeta.IsView = IsView;
+            newMeta.NoUniqueKey = NoUniqueKey;
+            newMeta.DisplayModelName = DisplayModelName;
+            foreach (var f in _fields)
+            {
+                newMeta.AddField(f.Copy());
+            }
+            return newMeta;
+        }
+
+        public static IModelMetadata CreateFromType(Type modelType)
+        {
+            var instance = new ModelMetadata();
+            FillFromType(instance, modelType);
+            return instance;
+        }
+        public static void FillFromType(IModelMetadata instance, Type modelType)
+        {
+            if (modelType.IsGenericType)
+            {
+                string modelName = $"{modelType.Name}_{string.Join("_",modelType.GenericTypeArguments as IEnumerable<Type>) }";
+                instance.ModelName = modelName;
+            }
+            else
+                instance.ModelName = modelType.Name;
+            instance.ModelTypeName = modelType.AssemblyQualifiedName;
+            instance.ObjectName = modelType.Name;
+            instance.DisplayModelName = modelType.Name;
+            instance.NoUniqueKey = false;
+
+
+            var attrs = modelType.GetCustomAttributes<ModelAttribute>(true);
+            foreach (var attr in attrs) attr.ProcessMetadata(instance);
+
+            int i = 0;
+            var props = modelType.GetProperties();
+            foreach (var prop in props)
+            {
+                var f = new ModelFieldMetadata(i, prop);
+                if ((f.ForeignColumnNames?.Length ?? 0) > 1)
+                    i += f.ForeignColumnNames.Length;
+                else i++;
+                instance.AddField(f);
+            }
+
+            // проверка метамодели на отсутствие идентификационного поля
+            if (instance.NoUniqueKey == false)
+                if (!instance.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
+                    throw new Exception($"Анализ {instance.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Укажите как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}.");
+
+            var pks = instance.Fields.Where(f => f.IsAutoincrement || f.IsPrimaryKey).ToArray();
+        }
     }
+
     public static class ModelMetadata<ModelT>
         where ModelT : class, new()
     {
@@ -57,67 +186,8 @@ namespace DataTools.Meta
         static ModelMetadata()
         {
             var modelType = typeof(ModelT);
-            var instance = new ModelMetadata()
-            {
-                ModelType = modelType,
-                ModelName = (modelType.Namespace == null ? "" : modelType.Namespace + ".") + modelType.Name,
-                ObjectName = modelType.Name,
-                DisplayModelName = modelType.Name,
-                NoUniqueKey = false
-            };
-            _instance = instance;
-
-            var attrs = modelType.GetCustomAttributes<ModelAttribute>(true);
-            foreach (var attr in attrs) attr.ProcessMetadata(_instance);
-
-            int i = 0;
-            var props = typeof(ModelT).GetProperties();
-            foreach (var prop in props)
-            {
-                var f = new ModelFieldMetadata(i++, prop);
-                instance.AddField(f);
-            }
-
-            // проверка метамодели на отсутствие уникального поля
-            if (_instance.NoUniqueKey == false)
-                if (!instance.Fields.Any((f) => f.IsUnique))
-                    throw new Exception($"Analyzing {instance.ModelName}... No {nameof(UniqueAttribute)} field found! Define unique field in {instance.ModelName}. Use {nameof(UniqueAttribute)}.");
-
-            // Нет смысла работать через ORM с составными ключами
-            var pks = instance.Fields.Where(f => f.IsAutoincrement || f.IsPrimaryKey).ToArray();
-            if (pks.Length > 1)
-                throw new Exception($"Analyzing {instance.ModelName}... There is must by only one {nameof(UniqueAttribute)} field!");
-
-            // Первичный ключ никогла не должен быть NULL
-            foreach (var f in pks)
-                if (Nullable.GetUnderlyingType(f.FieldType) != null)
-                    throw new Exception($"{nameof(ModelMetadata<ModelT>)}. Primary key {f.FieldName} cannot be nullable!");
-
-            ///// проверка метамоделей на наличие рекурсивных связей
-            ///// если они есть, тогда эти связи надо разорвать
-            ///// иначе будет существовать риск бесконечной рекурсии
-            //var set = new Stack<string>();
-            //var set1 = new Stack<IModelMetadata>();
-            //IModelMetadata currentMeta;
-            //set.Push(instance.ModelName);
-            //set1.Push(instance);
-            //while (set1.Count > 0)
-            //{
-            //    currentMeta = set1.Pop();
-
-            //    foreach (var f in currentMeta.Fields)
-            //        if (f.IsForeignKey)
-            //            if (set.Contains(f.ForeignModel.ModelName))
-            //                throw new Exception($"Analyzing {instance.ModelName}... Recursive reference found! Remove reference to {f.ForeignModel.ModelName} from {currentMeta.ModelName} model definition.");
-            //            else
-            //            {
-            //                set.Push(f.ForeignModel.ModelName);
-            //                set1.Push(f.ForeignModel);
-            //                currentMeta = f.ForeignModel;
-            //            }
-            //    set.Pop();
-            //}
-
+            _instance = new ModelMetadata();
+            ModelMetadata.FillFromType(_instance, modelType);             
         }
     }
 }

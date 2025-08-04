@@ -1,0 +1,147 @@
+﻿using DataTools.Interfaces;
+using DataTools.PostgreSQL;
+
+namespace DataTools.Deploy
+{
+    public class PostgreSQL_Generator : GeneratorBase
+    {
+        private PostgreSQL_DataContext _context;
+
+        public PostgreSQL_Generator(string connectionString)
+        {
+            _context = new PostgreSQL_DataContext(connectionString);
+        }
+
+        protected override IDataContext GetDataContext()
+        {
+            return _context;
+        }
+
+        protected override string GetMetadataQuery()
+        {
+            return @"
+with primaryKeys as (
+    select
+        tc.CONSTRAINT_CATALOG
+        ,tc.CONSTRAINT_NAME
+        ,ccu.TABLE_NAME
+        ,ccu.TABLE_SCHEMA
+        ,ccu.COLUMN_NAME 
+    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu on tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
+    where tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+    order by tc.CONSTRAINT_NAME, ccu.TABLE_CATALOG, ccu.TABLE_SCHEMA, ccu.TABLE_NAME, ccu.COLUMN_NAME
+)
+,uniqueKeys as (
+    select
+        tc.CONSTRAINT_CATALOG
+        ,tc.CONSTRAINT_NAME
+        ,ccu.TABLE_NAME
+        ,ccu.TABLE_SCHEMA
+        ,ccu.COLUMN_NAME 
+    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+    join INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE ccu on tc.CONSTRAINT_NAME = ccu.CONSTRAINT_NAME
+    where tc.CONSTRAINT_TYPE = 'UNIQUE'
+    order by tc.CONSTRAINT_NAME, ccu.TABLE_CATALOG, ccu.TABLE_SCHEMA, ccu.TABLE_NAME, ccu.COLUMN_NAME
+)
+, foreignKeys as (
+	select
+		left_t.CONSTRAINT_CATALOG
+		,left_t.CONSTRAINT_NAME
+		,left_t.TABLE_NAME
+		,left_t.TABLE_SCHEMA
+		,left_t.COLUMN_NAME 
+		,right_t.TABLE_SCHEMA as foreignTableSchema
+		,right_t.TABLE_NAME as foreignTableName
+		,right_t.COLUMN_NAME as foreignColumnName
+	from (
+	   	select      
+			tc.CONSTRAINT_NAME
+			,tc.CONSTRAINT_CATALOG			
+			,tc.TABLE_SCHEMA
+			,tc.TABLE_NAME			
+			,left_kku.COLUMN_NAME
+			, row_number() over (partition by tc.table_catalog,tc.table_schema,tc.table_name,tc.CONSTRAINT_NAME order by left_kku.position_in_unique_constraint) as rn
+	    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+		join INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc on tc.CONSTRAINT_NAME = rc.CONSTRAINT_NAME
+		join (select * from INFORMATION_SCHEMA.KEY_COLUMN_USAGE order by constraint_name,position_in_unique_constraint) left_kku on rc.constraint_name = left_kku.constraint_name
+		where tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
+	) left_t,
+	(
+		select      
+			tc.CONSTRAINT_NAME
+			,right_kku.CONSTRAINT_CATALOG			
+			,right_kku.TABLE_SCHEMA
+			,right_kku.TABLE_NAME			
+			,right_kku.COLUMN_NAME
+			, row_number() over (partition by tc.table_catalog,tc.table_schema,tc.table_name,tc.CONSTRAINT_NAME order by right_kku.ordinal_position) as rn
+	    from INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+		join INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS rc on tc.CONSTRAINT_NAME = rc.CONSTRAINT_NAME
+		join (select * from INFORMATION_SCHEMA.KEY_COLUMN_USAGE order by constraint_name,ordinal_position) right_kku on rc.unique_constraint_name = right_kku.constraint_name
+		where tc.CONSTRAINT_TYPE = 'FOREIGN KEY'
+	) right_t
+	where left_t.rn = right_t.rn and left_t.CONSTRAINT_NAME = right_t.CONSTRAINT_NAME
+	order by left_t.CONSTRAINT_CATALOG,left_t.TABLE_SCHEMA,left_t.TABLE_NAME,left_t.CONSTRAINT_NAME,left_t.rn	
+)
+, tablesAndColums as (
+    select
+        t.table_catalog
+        ,t.TABLE_SCHEMA
+        ,t.TABLE_NAME
+        ,t.TABLE_TYPE 
+        ,c.COLUMN_NAME
+        ,c.character_maximum_length as DATA_LENGTH
+        ,c.NUMERIC_PRECISION as NUMERIC_PRECISION
+        ,c.NUMERIC_SCALE as NUMERIC_SCALE
+        ,c.DATA_TYPE as DATA_TYPE
+        ,c.ORDINAL_POSITION
+        ,case when c.IS_NULLABLE = 'YES' then 1 else 0 end as IS_NULLABLE
+        ,case when c.column_default is not null then 1 else 0 end as Generated
+		,case when c.is_identity = 'YES' then 1 else 0 end as IS_IDENTITY
+    from INFORMATION_SCHEMA.TABLES t
+    join INFORMATION_SCHEMA.COLUMNS c on t.TABLE_SCHEMA = c.TABLE_SCHEMA and t.TABLE_NAME = c.TABLE_NAME
+	where t.TABLE_TYPE = 'BASE TABLE' -- ignore views
+    order by t.TABLE_CATALOG, t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION
+)
+select
+tablesAndColums.TABLE_CATALOG
+,tablesAndColums.TABLE_SCHEMA
+,tablesAndColums.TABLE_NAME
+,tablesAndColums.TABLE_TYPE
+,tablesAndColums.COLUMN_NAME
+,tablesAndColums.DATA_TYPE
+,tablesAndColums.DATA_LENGTH
+,tablesAndColums.NUMERIC_PRECISION
+,tablesAndColums.NUMERIC_SCALE
+,tablesAndColums.ORDINAL_POSITION
+,cast(tablesAndColums.IS_NULLABLE as bool) as isNullable
+,cast(tablesAndColums.Generated as bool) as isGenerated
+,cast(case when primaryKeys.CONSTRAINT_NAME is not null then 1 else 0 end as bool) as isPrimaryKey
+,cast(case when uniqueKeys.CONSTRAINT_NAME is not null then 1 else 0 end as bool) as isUnique
+,uniqueKeys.CONSTRAINT_NAME as UniqueConstraintName
+,cast(case when foreignKeys.CONSTRAINT_NAME is not null then 1 else 0 end as bool) as isForeign
+,tablesAndColums.IS_IDENTITY as isIdentity
+,foreignKeys.foreignTableSchema
+,foreignKeys.foreignTableName
+,foreignKeys.foreignColumnName
+,foreignKeys.CONSTRAINT_NAME as foreignKeyConstraintName
+, count(foreignKeys.foreignTableName) over (partition by tablesAndColums.TABLE_CATALOG, tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME) as referenceCount
+from tablesAndColums
+left join primaryKeys on tablesAndColums.TABLE_SCHEMA = primaryKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = primaryKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = primaryKeys.COLUMN_NAME
+left join uniqueKeys on tablesAndColums.TABLE_SCHEMA = uniqueKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = uniqueKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = uniqueKeys.COLUMN_NAME
+left join foreignKeys on tablesAndColums.TABLE_SCHEMA = foreignKeys.TABLE_SCHEMA and tablesAndColums.TABLE_NAME = foreignKeys.TABLE_NAME and tablesAndColums.COLUMN_NAME = foreignKeys.COLUMN_NAME
+order by referenceCount, tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAME, tablesAndColums.ORDINAL_POSITION
+";
+        }
+
+        protected override SqlTypeParser GetSqlTypeParser()
+        {
+            return PostgreSQL_TypesMap.GetNetType;
+        }
+
+        protected override SqlDBTypeParser GetDBTypeParser()
+        {
+            return PostgreSQL_TypesMap.GetDBType;
+        }
+    }
+}

@@ -2,6 +2,9 @@
 
 namespace DataTools.Common
 {
+    /// <summary>
+    /// Общее хранилище контекстов работы с данными.
+    /// </summary>
     public static class DataManager
     {
         private static Dictionary<string, DataContext> _contexts;

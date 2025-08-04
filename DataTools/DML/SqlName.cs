@@ -4,7 +4,7 @@
     {
         private string _name;
         public string Name => _name;
-        public SqlName(string name) => _name = name;
+        public SqlName(string name) => _name = name.Trim();
 
         public override string ToString()
         {
