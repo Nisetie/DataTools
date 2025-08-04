@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using DataTools.Common;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -8,61 +7,63 @@ namespace DataTools.SQLite
 {
     public unsafe static class SQLite_TypesMap
     {
-        public const string INT = "INT";
-        public const string REAL = "REAL";
-        public const string TEXT = "TEXT";
-        public const string BLOB = "BLOB";
-        private static List<(string dataType, Type netType, DbType sqldbtype, object defaultValue)> _mapping;
-        private static HashSet<string> _numbers;
-
         static SQLite_TypesMap()
         {
-            _mapping = new List<(string dataType, Type netType, DbType sqldbtype, object defaultValue)>
-            {
-                (INT, typeof(bool), DbType.Boolean, false),
-                (INT, typeof(byte), DbType.Byte, default(byte)),
-                (INT, typeof(sbyte), DbType.SByte, default(sbyte)),
-                (INT, typeof(short), DbType.Int16, default(short)),
-                (INT, typeof(ushort), DbType.UInt16, default(ushort)),
-                (INT, typeof(int), DbType.Int32, default(int)),
-                (INT, typeof(uint), DbType.UInt32, default(uint)),
-                (INT, typeof(long), DbType.Int64, default(long)),
-                (INT, typeof(ulong), DbType.UInt64, default(ulong)),
-                (REAL, typeof(float), DbType.Single, default(float)),
-                (REAL, typeof(double), DbType.Double, default(double)),
-                (REAL, typeof(decimal), DbType.Decimal, default(decimal)),
-                (REAL, typeof(decimal), DbType.Currency, default(decimal)),
-                (TEXT, typeof(char), DbType.String, default(char)),
-                (TEXT, typeof(string), DbType.String, default(string)),
-                (TEXT, typeof(DateTime), DbType.Date, default(DateTime)),
-                (TEXT, typeof(TimeSpan), DbType.Time, default(TimeSpan)),
-                (TEXT, typeof(DateTime), DbType.DateTime, default(DateTime)),
-                (TEXT, typeof(DateTimeOffset), DbType.DateTimeOffset, default(DateTimeOffset)),
-                (TEXT, typeof(Guid), DbType.Guid, default(string)),
-                (BLOB, typeof(byte[]), DbType.Binary, default(byte[]))
-            };
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Binary, "blob");
 
-            _numbers = new HashSet<string>()
-            {
-                INT,
-                REAL
-            };
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Boolean, "int");
+
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Guid, "nvarchar(64)");
+
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Byte, "tinyint");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int16, "smallint");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int32, "integer", "int");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int64, "bigint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.UInt16, "int");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.UInt32, "bigint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.UInt64, "unsigned big int");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Single, "float");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Double, "double", "double precision");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Decimal, "numeric", "decimal");
+            TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.String, "text", "varchar", "nvarchar", "varying character", "clob", "nchar");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.StringFixedLength, "text");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.AnsiString, "text");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.AnsiStringFixedLength, "text");
+
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Time, "nvarchar(64)");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.TimeTz, "nvarchar(64)");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Date, "nvarchar(64)");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Timestamp, "nvarchar(64)");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.TimestampTz, "nvarchar(64)");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Interval, "nvarchar(64)");
+
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Json, "text");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Xml, "text");
         }
 
         public static string GetSqlType(Type type)
         {
-            var realType = Nullable.GetUnderlyingType(type);
-            if (realType == null) realType = type;
-            foreach (var el in _mapping)
-                if (el.netType == realType)
-                    return el.dataType;
-            return TEXT;
+            return GetSqlType(DBType.GetDBTypeByType(type));
         }
 
-
-        public static bool IsNumber(string sqlType)
+        public static string GetSqlType(DBType dbtype)
         {
-            return _numbers.Contains(sqlType);
+            string sqltype;
+            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.SQLite, dbtype);
+            return sqltype;
+        }
+        public static Type GetNetType(string sqlType)
+        {
+            sqlType = sqlType.Split('(')[0].ToLower();
+            DBType type = TypesMap.GetDBTypeFromSqlType(E_DBMS.SQLite, sqlType);
+            return type.Type;
+        }
+
+        public static DBType GetDBType(string sqlType)
+        {
+            sqlType = sqlType.Split('(')[0].ToLower();
+            DBType type = TypesMap.GetDBTypeFromSqlType(E_DBMS.SQLite, sqlType);
+            return type;
         }
 
         /// <summary>
@@ -74,19 +75,24 @@ namespace DataTools.SQLite
         {
             if (value == null)
                 return "NULL";
-            if (IsNumber(GetSqlType(value.GetType())))
-                return $"{value}".Replace(',', '.');
-
-            switch (value)
+            else
             {
-                case DateTime dt:
-                    if (dt.Year < 1)
-                        dt = new DateTime(1, 1, 1, 0, 0, 0);
-                    return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
-                case byte[] byteArray:
-                    return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
-                default:
-                    return $"'{value}'";
+                if (DBType.GetDBTypeByType(value.GetType()).IsNumber)
+                    return $"{value}".Replace(',', '.');
+                else
+                    switch (value)
+                    {
+                        case DateTime dt:
+                            return $"'{dt:yyyy-MM-dd HH:mm:ss}'";
+                        case DateTimeOffset dto:
+                            return $"'{dto:o}'";
+                        case bool b:
+                            return b ? "1" : "0";
+                        case byte[] byteArray:
+                            return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
+                        default:
+                            return $"'{value.ToString().Replace("'", "''")}'";
+                    }
             }
         }
 
@@ -120,5 +126,6 @@ namespace DataTools.SQLite
         }
     }
 }
+
 
 

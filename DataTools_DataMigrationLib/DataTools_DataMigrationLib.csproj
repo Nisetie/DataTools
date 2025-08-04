@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  <Version>1.0.0</Version>
+	  <DebugType>embedded</DebugType>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataTools_MSSQL_MigrationLib\DataTools_MSSQL_MigrationLib.csproj" />
+    <ProjectReference Include="..\DataTools_PostgreSQL_MigrationLib\DataTools_PostgreSQL_MigrationLib.csproj" />
+    <ProjectReference Include="..\DataTools_SQLite_MigrationLib\DataTools_SQLite_MigrationLib.csproj" />
+  </ItemGroup>
+
+</Project>

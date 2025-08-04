@@ -3,7 +3,7 @@
     public class SqlCustom : SqlExpression
     {
         public string Query;
-        public SqlCustom() { }
+        public SqlCustom() { Query = ""; }
         public SqlCustom(string customQuery) : base() => Query = customQuery;
 
         public override string ToString()

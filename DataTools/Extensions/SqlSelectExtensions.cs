@@ -1,4 +1,5 @@
 ﻿using DataTools.DML;
+using DataTools.Interfaces;
 using DataTools.Meta;
 using System.Linq;
 
@@ -6,6 +7,7 @@ namespace DataTools.Extensions
 {
     public static class SqlSelectExtensions
     {
+
         public static SqlSelect Select(this SqlSelect sql, params string[] selects) => sql.Select(selects.Select(s => new SqlCustom(s)).ToArray());
         /// <summary>
         /// Возвращается подготовленная команда Select: select <see cref="ModelMetadata.Fields"/> from <typeparamref name="ModelT"/>
@@ -15,48 +17,42 @@ namespace DataTools.Extensions
         /// /// <summary>
         public static SqlSelect From<ModelT>(this SqlSelect sqlSelect) where ModelT : class, new()
         {
-            var meta = ModelMetadata<ModelT>.Instance;
-            var fields = meta.Fields;
-            var selectColumns = (from f in fields select new SqlName(f.ColumnName)).ToArray();
-            var orderColumns = (from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray();
-            sqlSelect
-                .From(meta.FullObjectName)
-                .Select(selectColumns);
-            if (orderColumns.Length > 0)
-                sqlSelect.OrderBy(orderColumns);
+            return From(sqlSelect, ModelMetadata<ModelT>.Instance);
+        }
+
+        public static SqlSelect From(this SqlSelect sqlSelect, IModelMetadata metadata)
+        {
+            sqlSelect.From(metadata.FullObjectName).Select(metadata.GetColumnsForSelect().ToArray());
             return sqlSelect;
         }
 
         public static SqlSelect From<ModelT>(this SqlSelect sqlSelect, SqlExpression subquery, string alias) where ModelT : class, new()
         {
-            var meta = ModelMetadata<ModelT>.Instance;
-            var fields = meta.Fields;
-            var selectColumns = (from f in fields select new SqlName(f.ColumnName)).ToArray();
-            var orderColumns = (from f in fields where f.IsSorted orderby f.SortOrder ascending select new SqlOrderByClause(new SqlName(f.ColumnName), f.SortDirection)).ToArray();
-            sqlSelect
-                .From(subquery, alias)
-               .Select(selectColumns);
-            if (orderColumns.Length > 0)
-                sqlSelect.OrderBy(orderColumns);
+            return From(sqlSelect, ModelMetadata<ModelT>.Instance, subquery, alias);
+        }
+        public static SqlSelect From(this SqlSelect sqlSelect, IModelMetadata modelMetadata, SqlExpression subquery, string alias)
+        {
+            sqlSelect.From(subquery, alias).Select(modelMetadata.GetColumnsForSelect().ToArray());
             return sqlSelect;
         }
-
-
         public static SqlSelect From(this SqlSelect sql, string objectName) => sql.From(new SqlName(objectName));
         public static SqlSelect From(this SqlSelect sql, SqlExpression subquery, string alias) => sql.From(new SqlExpressionWithAlias(subquery, alias));
+        public static SqlSelect Where(this SqlSelect sql, string columnName, object value) => sql.Where(new SqlWhere(new SqlName(columnName)).Eq(new SqlConstant(value)));
 
-        /// <summary>
-        /// Дополнить условие
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="columnName"></param>
-        /// <param name="value"></param>
-        /// <returns></returns>
-        public static SqlSelect Where(this SqlSelect sql, string columnName, object value) => sql.Where(new SqlWhereClause(new SqlName(columnName)).Eq(new SqlConstant(value)));
-
-        public static SqlSelect OrderBy(this SqlSelect sql, string columnName)
+        public static SqlSelect OrderBy(this SqlSelect sql, params string[] columnNames)
         {
-            return sql.OrderBy(new SqlOrderByClause(new SqlName(columnName)));
+            if (columnNames == null || columnNames.Length == 0)
+                return sql;
+            else
+                return sql.OrderBy(columnNames.Select(cn => new SqlOrderByClause(new SqlName(cn))).ToArray());
+        }
+
+        public static SqlSelect OrderBy(this SqlSelect sql, params SqlExpression[] custom)
+        {
+            if (custom == null || custom.Length == 0)
+                return sql;
+            else
+                return sql.OrderBy(custom.Select(cn => new SqlOrderByClause(cn)).ToArray());
         }
     }
 }

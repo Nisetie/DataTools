@@ -20,20 +20,14 @@ namespace DataTools.InMemory_SQLite
             _conn.Open();
             _command = _conn.CreateCommand();
         }
-
-        public override void Execute(SqlExpression query) => Execute(_queryParser.ToString(query));
         public override void Execute(SqlExpression query, params SqlParameter[] parameters)
         {
             Execute(_queryParser.ToString(query, parameters));
         }
-
-        public override object ExecuteScalar(SqlExpression query) => ExecuteScalar(_queryParser.ToString(query));
         public override object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteScalar(_queryParser.ToString(query, parameters));
         }
-
-        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query) => ExecuteWithResult(_queryParser.ToString(query));
         public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteWithResult(_queryParser.ToString(query, parameters));
@@ -79,8 +73,10 @@ namespace DataTools.InMemory_SQLite
         public void Dispose()
         {
             _command.Dispose();
+            _command = null;
             _conn.Close();
             _conn.Dispose();
+            _conn = null;
         }
     }
 }

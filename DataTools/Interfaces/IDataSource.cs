@@ -5,9 +5,7 @@ namespace DataTools.Interfaces
 {
     public interface IDataSource
     {
-        void Execute(SqlExpression query);
         void Execute(SqlExpression query, params SqlParameter[] parameters);
-        object ExecuteScalar(SqlExpression query);
         object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
 
         /// <summary>
@@ -17,7 +15,6 @@ namespace DataTools.Interfaces
         /// <param name="query"></param>
         /// <returns></returns>
         IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
-        IEnumerable<object[]> ExecuteWithResult(SqlExpression query);
     }
 }
 

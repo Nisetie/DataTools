@@ -1,6 +1,5 @@
-﻿using NpgsqlTypes;
+﻿using DataTools.Common;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -8,86 +7,65 @@ namespace DataTools.PostgreSQL
 {
     public unsafe static class PostgreSQL_TypesMap
     {
-        private static List<(string sqltype, Type netType, NpgsqlDbType sqldbtype, object defaultValue)> _mapping;
-        private static HashSet<string> _numbers;
-        private static Dictionary<Type, string> _reverseMapping;
         static PostgreSQL_TypesMap()
         {
-            _mapping = new List<(string sqltype, Type netType, NpgsqlDbType NpgsqlDbType, object defaultValue)>
-            {
-                ("boolean", typeof(bool), NpgsqlDbType.Boolean, default(bool)),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Boolean, "bool", "boolean");
 
-                ("smallint", typeof(short),NpgsqlDbType.Smallint, default(short)),
-                ("int", typeof(int), NpgsqlDbType.Integer, default(int)),
-                ("bigint", typeof(long), NpgsqlDbType.Bigint, default(long)),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Binary, "bytea");
 
-                ("real", typeof(float), NpgsqlDbType.Real, default(float)),
-                ("float", typeof(double), NpgsqlDbType.Double, default(double)),
-                ("numeric", typeof(decimal), NpgsqlDbType.Numeric, default(decimal)),
-                ("money", typeof(decimal), NpgsqlDbType.Money, default(decimal)),
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.Byte, "smallint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.SByte, "smallint");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Int16, "smallint", "int2", "smallserial");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Int32, "int", "integer", "int4", "serial");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Int64, "bigint", "int8", "bigserial");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.UInt16, "int");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.UInt32, "bigint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.UInt64, "bigint");
 
-                ("text", typeof(string), NpgsqlDbType.Text, string.Empty),
-                ("char", typeof(char), NpgsqlDbType.Char, default(char)),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Json, "json");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Xml, "xml");
 
-                ("json", typeof(string), NpgsqlDbType.Json, string.Empty),
-                ("jsonb", typeof(string), NpgsqlDbType.Jsonb, string.Empty),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Single, "real", "float4");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Double, "float", "double precision", "float8");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Money, "money");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Decimal, "numeric", "decimal");
 
-                ("xml", typeof(string), NpgsqlDbType.Xml, string.Empty),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.String, "text", "character varying", "varchar", "bpchar");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.StringFixedLength, "char", "character");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Char, "char");
 
-                ("uuid", typeof(Guid), NpgsqlDbType.Uuid, Guid.Empty),
-                ("bytea", typeof(byte[]), NpgsqlDbType.Bytea, default(byte[])),
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Date, "date");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Time, "time without time zone");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Timestamp, "timestamp without time zone");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.TimestampTz, "timestamptz");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Interval, "interval");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.TimeTz, "timetz");
 
-                ("timestamp", typeof(DateTime), NpgsqlDbType.Timestamp, DateTime.Now),
-                ("timestamptz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),
-                ("date", typeof(DateTime), NpgsqlDbType.Date, DateTime.Now),
-                ("time", typeof(TimeSpan), NpgsqlDbType.Timestamp, TimeSpan.Zero),
-                ("timetz", typeof(DateTimeOffset), NpgsqlDbType.TimestampTz, DateTimeOffset.Now),
-                ("interval", typeof(TimeSpan), NpgsqlDbType.Timestamp, TimeSpan.Zero),
-
-                ("bit", typeof(bool), NpgsqlDbType.Bit, default(bool))
-            };
-
-            _reverseMapping = new Dictionary<Type, string>()
-            {
-                { typeof(bool),"boolean" },
-                { typeof(short),"smallint" },
-                { typeof(int),"int" },
-                { typeof(long),"bigint" },
-                { typeof(float),"real" },
-                { typeof(double),"float" },
-                { typeof(decimal),"numeric" },
-                { typeof(Guid),"uuid" },
-                { typeof(byte[]),"bytea" },
-                { typeof(DateTime),"timestamp" },
-                { typeof(DateTimeOffset),"timestamptz" },
-                { typeof(TimeSpan),"time" },
-                { typeof(char),"char" }
-            };
-
-            _numbers = new HashSet<string>()
-            {
-                "smallint",
-                "int",
-                "bigint",
-                "real",
-                "float",
-                "numeric",
-                "money"
-            };
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Guid, "uuid");
         }
 
         public static string GetSqlType(Type type)
         {
-            var realType = Nullable.GetUnderlyingType(type);
-            if (realType == null) realType = type;
-            if (_reverseMapping.TryGetValue(realType, out var t))
-                return t;
-            return "text";
+            return GetSqlType(DBType.GetDBTypeByType(type));
         }
 
-        public static bool IsNumber(string sqlType)
+        public static string GetSqlType(DBType dbtype)
         {
-            return _numbers.Contains(sqlType);
+            string sqltype;
+            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.PostgreSQL, dbtype);
+            return sqltype;
+        }
+
+        public static Type GetNetType(string sqlType)
+        {
+            return GetDBType(sqlType).Type;
+        }
+
+        public static DBType GetDBType(string sqlType)
+        {
+            sqlType = sqlType.Split('(')[0].ToLower();
+            DBType type = TypesMap.GetDBTypeFromSqlType(E_DBMS.PostgreSQL, sqlType);
+            return type;
         }
 
         /// <summary>
@@ -99,9 +77,11 @@ namespace DataTools.PostgreSQL
         {
             if (value == null)
                 return "NULL";
-            var sqlType = GetSqlType(value.GetType());
-            if (IsNumber(sqlType))
-                return $"({value})::{sqlType}".Replace(',', '.');
+
+            var dbType = DBType.GetDBTypeByType(value.GetType());
+            var sqlType = GetSqlType(dbType);
+            if (dbType.IsNumber)
+                return $"({value.ToString().Replace(',', '.')})::{sqlType}";            
 
             switch (value)
             {
@@ -112,12 +92,12 @@ namespace DataTools.PostgreSQL
                 case DateTimeOffset dto:
                     if (dto.Year < 1970)
                         dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
-                    dto = dto.UtcDateTime;
+                    dto = dto.ToUniversalTime();
                     return $"('{dto:o}')::{sqlType}";
                 case byte[] byteArray:
-                    return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
+                    return $"({ByteArrayToHexViaLookup32UnsafeDirect(byteArray)})::bytea";
                 default:
-                    return $"('{value}')::{sqlType}";
+                    return $"('{value.ToString().Replace("'", "''")}')::{sqlType}";
             }
         }
 

@@ -1,12 +1,20 @@
-﻿using DataTools.DML;
+﻿using DataTools.Common;
+using DataTools.DDL;
+using DataTools.DML;
 using DataTools.Interfaces;
 using System;
+using System.Linq;
 using System.Text;
 
 namespace DataTools.SQLite
 {
     public class SQLite_QueryParser : DBMS_QueryParser
     {
+
+        static SQLite_QueryParser()
+        {
+
+        }
 
         protected override string StringifyValue(object value)
         {
@@ -17,23 +25,35 @@ namespace DataTools.SQLite
         {
             var sb = new StringBuilder(256);
             sb.Append("SELECT ");
-
-            foreach (var s in sqlSelect.Selects)
-                sb
-                    .Append(ParseExpression(s))
-                    .Append(',');
-            sb.Length -= 1;
+            if (sqlSelect.Selects == null)
+                sb.Append("*");
+            else
+            {
+                foreach (var s in sqlSelect.Selects)
+                    sb.Append(ParseExpression(s)).Append(',');
+                sb.Length -= 1;
+            }
             sb.AppendLine();
 
             if (sqlSelect.FromSource == null) return sb.ToString(); // select без источника (select getdate())
 
             sb.AppendLine("FROM ");
+            if (sqlSelect.FromSource is SqlSelect sqlSelect1)
+            {
+                sb
+                    .Append("(")
+                    .Append(Parse_SqlSelect(sqlSelect1))
+                    .Append(")");
+            }
+            else
+            {
+                var name = sqlSelect.FromSource.ToString();
+                if (name.IndexOf('.') == name.LastIndexOf('.'))
+                    name = name.Replace('.', '_');
+                sb.Append(name);
+            }
+            sb.AppendLine();
 
-            var name = sqlSelect.FromSource.ToString();
-            if (name.IndexOf('.') == name.LastIndexOf('.'))
-                name = name.Replace('.', '_');
-
-            sb.Append(name).AppendLine();
 
             if (sqlSelect.Wheres != null)
                 sb
@@ -86,6 +106,7 @@ namespace DataTools.SQLite
             sb.Append(name).AppendLine();
             if (sqlDelete.Wheres != null)
                 sb.Append("WHERE ").Append(ParseExpression(sqlDelete.Wheres));
+            sb.AppendLine(";");
             return sb.ToString();
         }
 
@@ -113,6 +134,40 @@ namespace DataTools.SQLite
                 .Remove(sb.Length - 1, 1)
                 .AppendLine("),")
                 .Remove(sb.Length - 3, 3)
+                .AppendLine()
+                .AppendLine("returning *;")
+                .ToString();
+        }
+
+        protected override string Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch)
+        {
+            var sb = new StringBuilder(256);
+            sb.Append("INSERT INTO ");
+
+            var name = sqlInsertBatch.IntoDestination.ToString();
+            if (name.IndexOf('.') == name.LastIndexOf('.'))
+                name = name.Replace('.', '_');
+
+            sb.Append(name).Append("(");
+
+            foreach (var c in sqlInsertBatch.Columns)
+                sb.Append(ParseExpression(c)).Append(",");
+            sb
+                .Remove(sb.Length - 1, 1)
+                .AppendLine(")")
+                .AppendLine("values");
+
+
+            foreach (var valuesRow in sqlInsertBatch.Values)
+            {
+                sb.Append("(");
+                foreach (var value in valuesRow)
+                    sb.Append(ParseExpression(value)).Append(",");
+                sb.Length -= 1;
+                sb.AppendLine("),");
+            }
+            sb.Length -= 3;
+            return sb
                 .AppendLine()
                 .AppendLine("returning *;")
                 .ToString();
@@ -167,6 +222,108 @@ namespace DataTools.SQLite
         protected override string Parse_SqlProcedure(SqlProcedure sqlProcedure)
         {
             throw new NotImplementedException();
+        }
+
+        protected override string Parse_SqlTableForeignKey(SqlTableForeignKey sqlTableForeignKey)
+        {
+            return $"FOREIGN KEY ({string.Join(",", sqlTableForeignKey.Columns)}) REFERENCES {sqlTableForeignKey.ForeignTableName.Replace(".", "_")}({string.Join(",", sqlTableForeignKey.ForeignColumns)})";
+        }
+
+        protected override string Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement)
+        {
+            return $"INTEGER PRIMARY KEY";
+        }
+
+        protected override string Parse_SqlDropTable(SqlDropTable sqlDropTable)
+        {
+            var name = sqlDropTable.TableName.Name;
+            if (name.IndexOf('.') == name.LastIndexOf('.'))
+                name = name.Replace('.', '_');
+            return $"drop table if exists {name};";
+        }
+
+        protected override string Parse_SqlName(SqlName sqlName)
+        {
+            string name = sqlName.Name;
+            name = name.Replace('.', '_');
+            return name.Contains(" ") ? $"[{name}]" : name;
+        }
+
+        protected override string Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
+        {
+            var sb = new StringBuilder(256);
+            var colDefSb = new StringBuilder(64);
+
+            var name = sqlCreateTable.TableName.Name;
+            if (name.IndexOf('.') == name.LastIndexOf('.'))
+                name = name.Replace('.', '_');
+
+            sb.AppendLine($"CREATE TABLE IF NOT EXISTS {name} (");
+
+            foreach (var column in sqlCreateTable.Columns)
+            {
+                colDefSb.Clear();
+
+
+                colDefSb.Append($"{Parse_SqlName(column.ColumnName)} ");
+
+                var colType = column.ColumnType;
+                var sqlType = SQLite_TypesMap.GetSqlType(colType);
+
+                if (colType.HasLength)
+                {
+                    var textLength = column.TextLength;
+                    string textLengthString = string.Empty;
+                    if (textLength != null)
+                    {
+                        if (textLength > 0)
+                            textLengthString = $"({textLength})";
+                    }
+                    colDefSb.Append($"{sqlType}{textLengthString} ");
+                }
+                else
+                {
+                    if (colType.Id == DBType.Decimal.Id)
+                    {
+                        if (column.NumericPrecision != null && column.NumericScale != null)
+                            colDefSb.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                        else
+                            colDefSb.Append($"{sqlType} ");
+                    }
+                    else
+                        colDefSb.Append($"{sqlType} ");
+                }
+
+                if (column.Constraints != null)
+                    foreach (var constraint in column.Constraints)
+                    {
+                        // если объявлен автоинкремент на уровне колонки и первичный целочисленный ключ на уровне таблицы,
+                        // тогда пропустить ограничение автоинкремента для исключения дубля первичного ключа
+                        if (constraint is SqlColumnAutoincrement && sqlCreateTable.Constraints != null && sqlCreateTable.Constraints.Any(tablec => (tablec is SqlTablePrimaryKey sqlTablePrimaryKey && sqlTablePrimaryKey.Columns.Any(pkc => pkc == column.ColumnName.Name)))) continue;
+
+                        colDefSb.Append($"{ParseExpression(constraint)} ");
+                    }
+
+                string colDef = colDefSb.ToString();
+                int firstIndex = colDef.IndexOf("PRIMARY KEY");
+                if (firstIndex != -1)
+                {
+                    // удалить все лишние ограничения для автоинкрементного ID
+                    if (colDef.Contains("INTEGER"))
+                    {
+                        colDef = $"{column.ColumnName} INTEGER PRIMARY KEY";
+                    }
+                }
+
+                sb.AppendLine($"{colDef},");
+            }
+            if (sqlCreateTable.Constraints != null)
+                foreach (var constraint in sqlCreateTable.Constraints)
+                    sb.Append(ParseExpression(constraint)).AppendLine(",");
+
+            sb.Length -= $",{Environment.NewLine}".Length;
+            sb.AppendLine(");");
+            return sb.ToString();
         }
     }
 }

@@ -1,0 +1,129 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Dynamic;
+using System.Linq;
+
+namespace DataTools.Common
+{
+    public class DynamicModel : DynamicObject, IDictionary<string, object>, INotifyPropertyChanged
+    {
+        private Dictionary<string, object> _members;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public ICollection<string> Keys => _members.Keys;
+
+        public ICollection<object> Values => _members.Values;
+
+        public int Count => _members.Count;
+
+        public bool IsReadOnly => false;
+
+        public object this[string key]
+        {
+            get => _members[key];
+            set
+            {
+                _members[key] = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(key));
+            }
+        }
+
+        public DynamicModel()
+        {
+            _members = new Dictionary<string, object>();
+        }
+
+        public override bool TryGetMember(GetMemberBinder binder, out object result)
+        {
+            if (_members.TryGetValue(binder.Name.ToLower(), out result))
+                return true;
+            else
+            {
+                result = null;
+                return true;
+            }
+        }
+
+        public override bool TrySetMember(SetMemberBinder binder, object value)
+        {
+            this[binder.Name.ToLower()] = value;
+            return true;
+        }
+
+        public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
+        {
+            if (_members.ContainsKey(binder.Name.ToLower()))
+            {
+                dynamic invoker = _members[binder.Name.ToLower()];
+                result = (invoker as Delegate).DynamicInvoke(args);
+                return true;
+            }
+            else
+            {
+                result = null;
+                return false;
+            }
+        }
+
+        public void Add(string key, object value)
+        {
+            _members[key] = value;
+        }
+
+        public bool ContainsKey(string key)
+        {
+            return _members.ContainsKey(key);
+        }
+
+        public bool Remove(string key)
+        {
+            return _members.Remove(key);
+        }
+
+        public bool TryGetValue(string key, out object value)
+        {
+            return _members.TryGetValue(key, out value);
+        }
+
+        public void Add(KeyValuePair<string, object> item)
+        {
+            _members[item.Key] = item.Value;
+        }
+
+        public void Clear()
+        {
+            _members.Clear();
+        }
+
+        public bool Contains(KeyValuePair<string, object> item)
+        {
+            return _members.Contains(item);
+        }
+
+        public void CopyTo(KeyValuePair<string, object>[] array, int arrayIndex)
+        {
+            int i = 0;
+            foreach (var kv in _members)
+                array[arrayIndex + i++] = kv;
+        }
+
+        public bool Remove(KeyValuePair<string, object> item)
+        {
+            return _members.Remove(item.Key);
+        }
+
+        public IEnumerator<KeyValuePair<string, object>> GetEnumerator()
+        {
+            return _members.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return _members.GetEnumerator();
+        }
+    }
+}
+

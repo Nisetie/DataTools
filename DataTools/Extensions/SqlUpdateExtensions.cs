@@ -1,4 +1,5 @@
 ﻿using DataTools.DML;
+using DataTools.Interfaces;
 using DataTools.Meta;
 using System.Linq;
 
@@ -6,6 +7,7 @@ namespace DataTools.Extensions
 {
     public static class SqlUpdateExtensions
     {
+
         /// <summary>
         /// Возвращается подготовленная команда Update, в которой остается заполнить значения value.
         /// </summary>
@@ -13,11 +15,14 @@ namespace DataTools.Extensions
         /// <returns></returns>
         public static SqlUpdate From<ModelT>(this SqlUpdate sqlUpdate) where ModelT : class, new()
         {
-            var meta = ModelMetadata<ModelT>.Instance;
-            var fields = meta.Fields;
+            return From(sqlUpdate, ModelMetadata<ModelT>.Instance);
+        }
+        public static SqlUpdate From(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata)
+        {
+            var fields = modelMetadata.Fields;
             var copy = sqlUpdate
-                .From(meta.FullObjectName)
-                .Set((from field in fields where !field.IgnoreChanges select field.ColumnName).ToArray());
+                .From(modelMetadata.FullObjectName)
+                .Set(modelMetadata.GetColumnsForInsertUpdate().ToArray());
             return copy;
         }
         public static SqlUpdate From(this SqlUpdate sqlUpdate, string objectName) => sqlUpdate.From(new SqlName(objectName));

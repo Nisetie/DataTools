@@ -5,10 +5,10 @@ namespace DataTools.DML
     public class SqlDelete : SqlExpression
     {
         protected SqlExpression _from;
-        protected SqlWhereClause _where;
+        protected SqlWhere _where;
 
         public SqlExpression FromSource => _from;
-        public SqlWhereClause Wheres => _where;
+        public SqlWhere Wheres => _where;
 
         public SqlDelete From(SqlName objectName)
         {
@@ -16,7 +16,7 @@ namespace DataTools.DML
             return this;
         }
 
-        public SqlDelete Where(SqlWhereClause where)
+        public SqlDelete Where(SqlWhere where)
         {
             _where = where;
             return this;

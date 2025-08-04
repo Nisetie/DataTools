@@ -1,11 +1,21 @@
-﻿using DataTools.DML;
+﻿using DataTools.Common;
+using DataTools.DDL;
+using DataTools.DML;
 using DataTools.Interfaces;
+using System;
 using System.Text;
 
 namespace DataTools.PostgreSQL
 {
     public class PostgreSQL_QueryParser : DBMS_QueryParser
     {
+        static PostgreSQL_QueryParser _instance;
+        public static PostgreSQL_QueryParser Instance => _instance;
+        static PostgreSQL_QueryParser()
+        {
+        
+        }
+
         protected override string StringifyValue(object value)
         {
             return PostgreSQL_TypesMap.ToStringSQL(value);
@@ -15,19 +25,28 @@ namespace DataTools.PostgreSQL
         {
             var sb = new StringBuilder(256);
             sb.Append("SELECT ");
-            foreach (var s in sqlSelect.Selects)
-                sb
-                    .Append(ParseExpression(s))
-                    .Append(',');
-            sb.Length -= 1;
+            if (sqlSelect.Selects == null)
+                sb.Append("*");
+            else
+            {
+                foreach (var s in sqlSelect.Selects)
+                    sb.Append(ParseExpression(s)).Append(',');
+                sb.Length -= 1;
+            }
             sb.AppendLine();
 
             if (sqlSelect.FromSource == null) return sb.ToString(); // select без источника (select getdate())
 
-            sb
-                .AppendLine("FROM ")
-                .Append(ParseExpression(sqlSelect.FromSource))
-                .AppendLine();
+            sb.AppendLine("FROM ");
+            if (sqlSelect.FromSource is SqlSelect sqlSelect1)
+            {
+                sb
+                    .Append("(")
+                    .Append(Parse_SqlSelect(sqlSelect1))
+                    .Append(")");
+            }
+            else sb.Append(ParseExpression(sqlSelect.FromSource));
+            sb.AppendLine();
 
             if (sqlSelect.Wheres != null)
                 sb
@@ -83,6 +102,7 @@ namespace DataTools.PostgreSQL
                 sb.Append("WHERE ")
                 .Append(ParseExpression(sqlDelete.Wheres));
             }
+            sb.AppendLine(";");
             return sb.ToString();
         }
 
@@ -107,7 +127,36 @@ namespace DataTools.PostgreSQL
                 .AppendLine("),")
                 .Remove(sb.Length - 3, 3)
                 .AppendLine()
-                .AppendLine("returning *")
+                .AppendLine("returning *;")
+                .ToString();
+        }
+
+        protected override string Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch)
+        {
+            var sb = new StringBuilder(256);
+            sb
+                .Append("INSERT INTO ")
+                .Append(ParseExpression(sqlInsertBatch.IntoDestination))
+                .Append("(");
+            foreach (var c in sqlInsertBatch.Columns)
+                sb.Append(ParseExpression(c)).Append(",");
+            sb
+                .Remove(sb.Length - 1, 1)
+                .AppendLine(")")
+                .AppendLine("values");
+
+            foreach (var valuesRow in sqlInsertBatch.Values)
+            {
+                sb.Append("(");
+                foreach (var value in valuesRow)
+                    sb.Append(ParseExpression(value)).Append(",");
+                sb.Length -= 1;
+                sb.AppendLine("),");
+            }
+            sb.Length -= 3;
+            return sb
+                .AppendLine()
+                .AppendLine("returning *;")
                 .ToString();
         }
 
@@ -137,7 +186,7 @@ namespace DataTools.PostgreSQL
                 .Append(ParseExpression(sqlUpdate.Wheres))
                 .AppendLine();
             }
-            return sb.AppendLine("returning *").ToString();
+            return sb.AppendLine("returning *;").ToString();
         }
 
         protected override string Parse_SqlFunction(SqlFunction sqlFunction)
@@ -164,6 +213,79 @@ namespace DataTools.PostgreSQL
                 .Remove(sb.Length - 1, 1)
                 .Append(");")
                 .ToString();
+        }
+
+        protected override string Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement)
+        {
+            return "GENERATED ALWAYS AS IDENTITY";
+        }
+
+        protected override string Parse_SqlDropTable(SqlDropTable sqlDropTable)
+        {
+            var name = sqlDropTable.TableName.Name;
+            return $"DROP TABLE IF EXISTS {name};";
+        }
+
+        protected override string Parse_SqlName(SqlName sqlName)
+        {
+            string name = sqlName.Name.ToLower();
+            if (name.Contains(" "))
+                return $"\"{name}\"";
+            else return name;
+        }
+
+        protected override string Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
+        {
+            var sb = new StringBuilder(256);
+
+            var name = sqlCreateTable.TableName.Name;
+
+            sb.AppendLine($"CREATE TABLE IF NOT EXISTS {sqlCreateTable.TableName} (");
+
+            foreach (var column in sqlCreateTable.Columns)
+            {
+                sb.Append($"{Parse_SqlName(column.ColumnName)} ");
+
+                var colType = column.ColumnType;
+                var sqlType = PostgreSQL_TypesMap.GetSqlType(colType);
+
+                if (colType.HasLength && sqlType != "text")
+                {
+                    var textLength = column.TextLength;
+                    string textLengthString = string.Empty;
+                    if (textLength != null)
+                    {
+                        if (textLength > 0)
+                            textLengthString = $"({textLength})";
+                    }
+                    sb.Append($"{sqlType}{textLengthString} ");
+                }
+                else
+                {
+                    if (colType.Id == DBType.Decimal.Id)
+                    {
+                        if (column.NumericPrecision != null && column.NumericScale != null)
+                            sb.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                        else
+                            sb.Append($"{sqlType} ");
+                    }
+                    else
+                        sb.Append($"{sqlType} ");
+                }
+
+                if (column.Constraints != null)
+                    foreach (var constraint in column.Constraints)
+                        sb.Append($"{ParseExpression(constraint)} ");
+                sb.AppendLine(",");
+            }
+
+            if (sqlCreateTable.Constraints != null)
+                foreach (var constraint in sqlCreateTable.Constraints)
+                    sb.Append(ParseExpression(constraint)).AppendLine(",");
+
+            sb.Length -= $",{Environment.NewLine}".Length;
+            sb.AppendLine(");");
+            return sb.ToString();
         }
     }
 }

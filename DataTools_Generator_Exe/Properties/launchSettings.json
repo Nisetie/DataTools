@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "DataTools_Generator": {
+      "commandName": "Project"
+    },
+    "Профиль 1": {
+      "commandName": "Project",
+      "commandLineArgs": "-n AW -d mssql -r -c \"Data source=localhost\\sqlexpress;Database=AdventureWorksLT2012;Integrated security=true;Trust server certificate=true\" -v"
+    }
+  }
+}

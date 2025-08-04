@@ -1,6 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
+﻿using DataTools.Common;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -8,110 +7,60 @@ namespace DataTools.MSSQL
 {
     public unsafe static class MSSQL_TypesMap
     {
-        private static List<(string sqltype, Type netType, SqlDbType sqldbtype, object defaultValue)> _mapping;
-        private static HashSet<string> _numbers;
-        private static Dictionary<Type, string> _reverseMapping;
-
         static MSSQL_TypesMap()
         {
-            _mapping = new List<(string sqltype, Type netType, SqlDbType sqldbtype, object defaultValue)>
-            {
-                ("tinyint", typeof(byte), SqlDbType.TinyInt, default(byte)),
-                ("smallint", typeof(short), SqlDbType.SmallInt, default(short)),
-                ("int", typeof(int), SqlDbType.Int, default(int)),
-                ("bigint", typeof(long), SqlDbType.BigInt, default(long)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Boolean, "bit");
 
-                ("real", typeof(float), SqlDbType.Real, default(float)),
-                ("float", typeof(double), SqlDbType.Float, default(double)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Binary, "varbinary", "binary", "image", "rowversion");
 
-                ("smallmoney", typeof(decimal), SqlDbType.SmallMoney, default(decimal)),
-                ("money", typeof(decimal), SqlDbType.Decimal, default(decimal)),
-                ("numeric", typeof(decimal), SqlDbType.Decimal, default(decimal)),
-                ("decimal", typeof(decimal), SqlDbType.Decimal, default(decimal)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Guid, "uniqueidentifier");
 
-                ("bit", typeof(bool), SqlDbType.Bit, default(bool)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Byte, "tinyint");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int16, "smallint");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int32, "int");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int64, "bigint");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Single, "real");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Double, "float");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Money, "money", "smallmoney");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Decimal, "decimal", "numeric");
 
-                ("char", typeof(string), SqlDbType.Char, default(string)),
-                ("nchar", typeof(string), SqlDbType.NChar, default(string)),
-                ("varchar", typeof(string), SqlDbType.VarChar, string.Empty),
-                ("nvarchar", typeof(string), SqlDbType.NVarChar, default(string)),
-                ("text", typeof(string), SqlDbType.Text, default(string)),
-                ("ntext", typeof(string), SqlDbType.NText, default(string)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime", "datetime2", "smalldatetime");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.TimestampTz, "datetimeoffset");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Date, "date");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Interval, "time");
 
-                ("smalldatetime", typeof(DateTime), SqlDbType.DateTime, DateTime.Now),
-                ("date", typeof(DateTime), SqlDbType.Date, DateTime.Now),
-                ("datetime", typeof(DateTime), SqlDbType.DateTime, DateTime.Now),
-                ("datetime2", typeof(DateTime), SqlDbType.DateTime2, DateTime.Now),
-                ("", typeof(DateTimeOffset), SqlDbType.DateTimeOffset, default(DateTimeOffset)),
-                ("time", typeof(TimeSpan), SqlDbType.Time, default(TimeSpan)),
-                ("timestamp", typeof(TimeSpan), SqlDbType.Timestamp, default(TimeSpan)),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.String, "nvarchar", "text");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiString, "varchar", "ntext");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.StringFixedLength, "nchar");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiStringFixedLength, "char");
 
-                ("binary", typeof(byte[]), SqlDbType.VarBinary, default(byte[])),
-                ("varbinary", typeof(byte[]), SqlDbType.VarBinary, default(byte[])),
-                ("image", typeof(byte[]), SqlDbType.Binary, default(byte[])),
-                ("rowversion", typeof(Byte[]), SqlDbType.Timestamp, default(byte[])),
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Xml, "xml");
 
-                ("sql_variant", typeof(object), SqlDbType.Variant, default(object)),
-                ("uniqueidentifier", typeof(Guid), SqlDbType.UniqueIdentifier, Guid.Empty),
-                ("xml", typeof(string), SqlDbType.Xml, string.Empty)
-            };
-
-            _reverseMapping = new Dictionary<Type, string>()
-            {
-                { typeof(byte),"tinyint" },
-                { typeof(short),"smallint" },
-                { typeof(int),"int" },
-                { typeof(long),"bigint" },
-                { typeof(float),"real" },
-                { typeof(double),"float" },
-                { typeof(decimal),"numeric(38,19)" },
-                { typeof(Guid),"uniqueidentifier" },
-                { typeof(byte[]),"varbinary(max)" },
-                { typeof(DateTime),"datetime" },
-                { typeof(DateTimeOffset),"datetimeoffset" },
-                { typeof(TimeSpan),"time" },
-                { typeof(bool),"bit" }
-            };
-
-            _numbers = new HashSet<string>()
-            {
-                "bigint",
-                "decimal",
-                "float",
-                "int",
-                "money",
-                "numeric",
-                "numeric(38,19)",
-                "real",
-                "smallint",
-                "smallmoney",
-                "tinyint"
-            };
         }
 
-        public static string GetSqlType(Type type)
+        public static string GetSqlTypeFromType(Type type)
         {
-            var realType = Nullable.GetUnderlyingType(type);
-            if (realType == null) realType = type;
-            if (_reverseMapping.TryGetValue(realType, out var t))
-                return t;
-            return "nvarchar(max)";
+            return GetSqlTypeFromDBType(DBType.GetDBTypeByType(type));
         }
 
-        public static Type GetNetType(string sqlType)
+        public static string GetSqlTypeFromDBType(DBType dbtype)
         {
-            sqlType = sqlType.ToLower();
-            foreach (var el in _mapping)
-            {
-                if (sqlType == el.sqltype)
-                    return el.netType;
-            }
-            return null;
+            string sqltype;
+
+            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.MSSQL, dbtype);
+            return sqltype;
         }
 
-        public static bool IsNumber(string sqlType)
+        public static Type GetNetTypeFromSqlType(string sqlType)
         {
-            return _numbers.Contains(sqlType.ToLower());
+            return GetDBTypeFromSqlType(sqlType).Type;
+        }
+
+        public static DBType GetDBTypeFromSqlType(string sqlType)
+        {
+            sqlType = sqlType.Split('(')[0].ToLower();
+            DBType type = TypesMap.GetDBTypeFromSqlType(E_DBMS.MSSQL, sqlType);
+            return type;
         }
 
         /// <summary>
@@ -123,8 +72,8 @@ namespace DataTools.MSSQL
         {
             if (value == null)
                 return "NULL";
-            var sqlType = GetSqlType(value.GetType());
-            if (IsNumber(sqlType))
+
+            if (DBType.GetDBTypeByType(value.GetType()).IsNumber)
                 return $"{value}".Replace(',', '.');
 
             switch (value)
@@ -142,7 +91,7 @@ namespace DataTools.MSSQL
                 case byte[] byteArray:
                     return ByteArrayToHexViaLookup32UnsafeDirect(byteArray);
                 default:
-                    return $"'{value}'";
+                    return $"'{value.ToString().Replace("'", "''")}'";
 
             }
         }

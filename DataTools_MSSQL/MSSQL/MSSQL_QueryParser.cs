@@ -1,11 +1,19 @@
-﻿using DataTools.DML;
+﻿using DataTools.Common;
+using DataTools.DDL;
+using DataTools.DML;
 using DataTools.Interfaces;
+using System;
 using System.Text;
 
 namespace DataTools.MSSQL
 {
     public sealed class MSSQL_QueryParser : DBMS_QueryParser
     {
+        static MSSQL_QueryParser()
+        {
+
+        }
+
         protected override string StringifyValue(object value)
         {
             return MSSQL_TypesMap.ToStringSQL(value);
@@ -16,18 +24,27 @@ namespace DataTools.MSSQL
             var sb = new StringBuilder(256);
 
             sb.Append("SELECT ");
-            foreach (var s in sqlSelect.Selects)
+            if (sqlSelect.Selects == null)
+                sb.Append("*");
+            else
             {
-                sb.Append(ParseExpression(s));
-                sb.Append(',');
+                foreach (var s in sqlSelect.Selects)
+                    sb.Append(ParseExpression(s)).Append(',');
+                sb.Length -= 1;
             }
-            sb.Length -= 1;
             sb.AppendLine();
 
             if (sqlSelect.FromSource == null) return sb.ToString(); // select без источника (select getdate())
 
             sb.AppendLine("FROM ");
-            sb.Append(ParseExpression(sqlSelect.FromSource));
+            if (sqlSelect.FromSource is SqlSelect sqlSelect1)
+            {
+                sb
+                    .Append("(")
+                    .Append(Parse_SqlSelect(sqlSelect1))
+                    .Append(")");
+            }
+            else sb.Append(ParseExpression(sqlSelect.FromSource));
             sb.AppendLine();
 
             if (sqlSelect.Wheres != null)
@@ -47,6 +64,11 @@ namespace DataTools.MSSQL
                 }
                 sb.Length -= 1;
                 sb.AppendLine();
+            }
+            else
+            {
+                if (sqlSelect.OffsetRows != null)
+                    sb.AppendLine("ORDER BY 1");
             }
 
             if (sqlSelect.OffsetRows != null)
@@ -89,6 +111,7 @@ namespace DataTools.MSSQL
                 sb.Append("WHERE ")
                 .Append(ParseExpression(sqlDelete.Wheres));
             }
+            sb.AppendLine(";");
             return sb.ToString();
         }
 
@@ -113,7 +136,36 @@ namespace DataTools.MSSQL
                 .Remove(sb.Length - 1, 1)
                 .AppendLine("),")
                 .Remove(sb.Length - 3, 3)
-                .AppendLine();
+                .AppendLine(";");
+            return sb.ToString();
+        }
+
+        protected override string Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch)
+        {
+            var sb = new StringBuilder(256);
+            sb
+                .Append("INSERT INTO ")
+                .Append(ParseExpression(sqlInsertBatch.IntoDestination))
+                .Append("(");
+            foreach (var c in sqlInsertBatch.Columns)
+                sb.Append(ParseExpression(c)).Append(",");
+            sb
+                .Remove(sb.Length - 1, 1)
+                .AppendLine(")")
+                .AppendLine("output inserted.*")
+                .AppendLine("values");
+
+            foreach (var valuesRow in sqlInsertBatch.Values)
+            {
+                sb.Append("(");
+                foreach (var value in valuesRow)
+                    sb.Append(ParseExpression(value)).Append(",");
+                sb.Length -= 1;
+                sb.AppendLine("),");
+            }
+            sb.Length -= 3;
+            sb
+                .AppendLine(";");
             return sb.ToString();
         }
 
@@ -146,6 +198,7 @@ namespace DataTools.MSSQL
                 .Append(ParseExpression(sqlUpdate.Wheres))
                 .AppendLine();
             }
+            sb.AppendLine(";");
             return sb.ToString();
         }
 
@@ -171,6 +224,79 @@ namespace DataTools.MSSQL
                 .Remove(sb.Length - 1, 1)
                 .Append(";")
                 .ToString();
+        }
+
+        protected override string Parse_SqlName(SqlName sqlName)
+        {
+            string name = sqlName.Name;
+            if (name.Contains("."))
+            {
+                name = string.Join("].[", name.Split(new char[] { '.' }, options: StringSplitOptions.RemoveEmptyEntries));
+                name = "[" + name + "]";
+                return name;
+            }
+            else
+                return $"[{name}]";
+        }
+
+        protected override string Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
+        {
+            var sb = new StringBuilder(256);
+
+            sb.AppendLine($"if (object_id('{sqlCreateTable.TableName}') is null) CREATE TABLE {sqlCreateTable.TableName} (");
+
+            foreach (var column in sqlCreateTable.Columns)
+            {
+                sb.Append($"{Parse_SqlName(column.ColumnName)} ");
+
+                var colType = column.ColumnType;
+                var sqlType = MSSQL_TypesMap.GetSqlTypeFromType(column.ColumnType.Type);
+
+                if (colType.HasLength)
+                {
+                    var textLength = column.TextLength;
+                    string textLengthString = string.Empty;
+
+                    if (textLength != null && textLength > 0)
+                        textLengthString = $"({textLength})";
+                    else
+                        textLengthString = $"(max)";
+
+                    sb.Append($"{sqlType}{textLengthString} ");
+                }
+                else if (colType.Id == DBType.Decimal.Id)
+                {
+                    if (column.NumericPrecision != null && column.NumericScale != null)
+                        sb.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                    else
+                        sb.Append($"{sqlType}(38,19) ");
+                }
+                else sb.Append($"{sqlType} ");
+
+                if (column.Constraints != null)
+                    foreach (var constraint in column.Constraints)
+                        sb.Append($"{ParseExpression(constraint)} ");
+                sb.AppendLine(",");
+            }
+
+            if (sqlCreateTable.Constraints != null)
+                foreach (var constraint in sqlCreateTable.Constraints)
+                    sb.Append(ParseExpression(constraint)).AppendLine(",");
+
+            sb.Length -= $",{Environment.NewLine}".Length;
+            sb.AppendLine(");");
+            return sb.ToString();
+        }
+
+        protected override string Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement)
+        {
+            return "IDENTITY";
+        }
+
+        protected override string Parse_SqlDropTable(SqlDropTable sqlDropTable)
+        {
+            var name = sqlDropTable.TableName.Name;
+            return $"drop table if exists {name};";
         }
     }
 }
