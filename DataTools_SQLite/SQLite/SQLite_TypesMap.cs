@@ -13,9 +13,10 @@ namespace DataTools.SQLite
 
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Boolean, "int");
 
-            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Guid, "nvarchar(64)");
+            
 
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Byte, "tinyint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.SByte, "smallint");
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int16, "smallint");
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int32, "integer", "int");
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Int64, "bigint");
@@ -25,17 +26,20 @@ namespace DataTools.SQLite
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Single, "float");
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Double, "double", "double precision");
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.Decimal, "numeric", "decimal");
+
             TypesMap.AddTypeLink(E_DBMS.SQLite, DBType.String, "text", "varchar", "nvarchar", "varying character", "clob", "nchar");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.StringFixedLength, "text");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.AnsiString, "text");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.AnsiStringFixedLength, "text");
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Char, "nchar");
 
+            // хранить всё в текстовом виде в формате UTC, т.к. стандарт
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Time, "nvarchar(64)");
-            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.TimeTz, "nvarchar(64)");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Date, "nvarchar(64)");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Timestamp, "nvarchar(64)");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.TimestampTz, "nvarchar(64)");
-            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Interval, "nvarchar(64)");
+
+            TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Guid, "nvarchar(64)");
 
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Json, "text");
             TypesMap.AddForwardLinkOnly(E_DBMS.SQLite, DBType.Xml, "text");
