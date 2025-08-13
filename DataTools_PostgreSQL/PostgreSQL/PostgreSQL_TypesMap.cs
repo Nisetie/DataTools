@@ -31,15 +31,15 @@ namespace DataTools.PostgreSQL
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Decimal, "numeric", "decimal");
 
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.String, "text", "character varying", "varchar", "bpchar");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.AnsiString, "text");
+            TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.AnsiStringFixedLength, "varchar");
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.StringFixedLength, "char", "character");
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Char, "char");
 
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Date, "date");
-            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Time, "time without time zone");
-            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Timestamp, "timestamp without time zone");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Time, "time without time zone", "time");
+            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Timestamp, "timestamp without time zone", "timestamp");
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.TimestampTz, "timestamptz");
-            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Interval, "interval");
-            TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.TimeTz, "timetz");
 
             TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Guid, "uuid");
         }

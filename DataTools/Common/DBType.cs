@@ -39,7 +39,6 @@ namespace DataTools.Common
         public static DBType Double = new DBType(nameof(Double), typeof(double), hasTypePriority: true, isNumber: true);
         
         public static DBType Decimal = new DBType(nameof(Decimal), typeof(decimal), hasTypePriority: true, hasPrecision:true, isNumber: true);
-        public static DBType Numeric = new DBType(nameof(Numeric), typeof(decimal), hasPrecision: true, isNumber: true);
         public static DBType Money = new DBType(nameof(Money), typeof(decimal), hasPrecision: true, isNumber: true);
 
         // Character Types
@@ -62,11 +61,9 @@ namespace DataTools.Common
         // Date/Time Types
         public static DBType Timestamp = new DBType(nameof(Timestamp), typeof(DateTime), hasTypePriority: true);
         public static DBType Date = new DBType(nameof(Date), typeof(DateTime));
-        public static DBType Time = new DBType(nameof(Time), typeof(DateTime));
+        public static DBType Time = new DBType(nameof(Time), typeof(TimeSpan), hasTypePriority:true);
         public static DBType TimestampTz = new DBType(nameof(TimestampTz), typeof(DateTimeOffset), hasTypePriority: true);        
-        public static DBType TimeTz = new DBType(nameof(TimeTz), typeof(DateTimeOffset));        
-        public static DBType Interval = new DBType(nameof(Interval), typeof(TimeSpan), hasTypePriority: true);
-
+        
 
         /// <summary>
         /// 

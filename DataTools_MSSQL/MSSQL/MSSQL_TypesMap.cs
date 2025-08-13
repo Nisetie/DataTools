@@ -16,24 +16,30 @@ namespace DataTools.MSSQL
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Guid, "uniqueidentifier");
 
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Byte, "tinyint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.SByte, "smallint");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int16, "smallint");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int32, "int");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int64, "bigint");
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt16, "int");
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt32, "int");
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt64, "bigint");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Single, "real");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Double, "float");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Money, "money", "smallmoney");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Decimal, "decimal", "numeric");
-
+            //TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Numeric, "decimal");
+            
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime", "datetime2", "smalldatetime");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.TimestampTz, "datetimeoffset");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Date, "date");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Interval, "time");
+            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Time, "time");
 
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.String, "nvarchar", "text");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiString, "varchar", "ntext");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.StringFixedLength, "nchar");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiStringFixedLength, "char");
-
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Char, "char");
+            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Json, "text");
             TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Xml, "xml");
 
         }
