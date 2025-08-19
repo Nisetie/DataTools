@@ -92,9 +92,10 @@ with primaryKeys as (
         ,c.ORDINAL_POSITION
         ,iif(c.IS_NULLABLE = 'YES', 1, 0) as IS_NULLABLE
         ,IIF(c.column_default is not null, 1, 0) as [Generated]
+        ,iif(t.TABLE_TYPE = 'VIEW',1,0) as [IsView]
     from INFORMATION_SCHEMA.TABLES t
     join INFORMATION_SCHEMA.COLUMNS c on t.TABLE_SCHEMA = c.TABLE_SCHEMA and t.TABLE_NAME = c.TABLE_NAME
-	where t.TABLE_TYPE = 'BASE TABLE' -- ignore views
+	where t.TABLE_TYPE IN ('BASE TABLE','VIEW') -- ignore views
     order by t.TABLE_CATALOG, t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION
 )
 select
@@ -102,6 +103,7 @@ tablesAndColums.TABLE_CATALOG
 ,tablesAndColums.TABLE_SCHEMA
 ,tablesAndColums.TABLE_NAME
 ,tablesAndColums.TABLE_TYPE
+,tablesAndColums.IsView
 ,tablesAndColums.COLUMN_NAME
 ,tablesAndColums.DATA_TYPE
 ,tablesAndColums.DATA_LENGTH

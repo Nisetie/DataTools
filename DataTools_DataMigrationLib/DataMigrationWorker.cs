@@ -83,6 +83,7 @@ namespace DataTools.Deploy
             var metas = MetadataHelper.SortForUndeploy(Metadatas).ToArray();
             foreach (var meta in metas)
             {
+                if (meta.IsView) continue;
                 //yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.BEFORE, Metadata = meta };
                 _toContext.Execute(_toMigrator.GetClearTableQuery(meta));
             }
@@ -90,6 +91,7 @@ namespace DataTools.Deploy
             metas = MetadataHelper.SortForDeploy(Metadatas).ToArray();
             foreach (var meta in metas)
             {
+                if (meta.IsView) continue;
                 var queryBefore = _toMigrator.BeforeMigration(meta);
                 if (!string.IsNullOrEmpty(queryBefore.ToString()))
                     _toContext.Execute(queryBefore);

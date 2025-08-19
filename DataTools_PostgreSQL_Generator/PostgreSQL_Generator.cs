@@ -98,9 +98,10 @@ with primaryKeys as (
         ,case when c.IS_NULLABLE = 'YES' then 1 else 0 end as IS_NULLABLE
         ,case when c.column_default is not null then 1 else 0 end as Generated
 		,case when c.is_identity = 'YES' then 1 else 0 end as IS_IDENTITY
+        ,case when t.TABLE_TYPE = 'VIEW' then 1 else 0 end as IsView
     from INFORMATION_SCHEMA.TABLES t
     join INFORMATION_SCHEMA.COLUMNS c on t.TABLE_SCHEMA = c.TABLE_SCHEMA and t.TABLE_NAME = c.TABLE_NAME
-	where t.TABLE_TYPE = 'BASE TABLE' -- ignore views
+	where t.TABLE_TYPE IN ('BASE TABLE','VIEW')
     order by t.TABLE_CATALOG, t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION
 )
 select
@@ -108,6 +109,7 @@ tablesAndColums.TABLE_CATALOG
 ,tablesAndColums.TABLE_SCHEMA
 ,tablesAndColums.TABLE_NAME
 ,tablesAndColums.TABLE_TYPE
+,cast(tablesAndColums.IsView as bool) as IsView
 ,tablesAndColums.COLUMN_NAME
 ,tablesAndColums.DATA_TYPE
 ,tablesAndColums.DATA_LENGTH

@@ -2,7 +2,12 @@
 using DataTools.Extensions;
 using DataTools.Interfaces;
 using DataTools.Meta;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.ComponentModel.Design;
+using System.Linq.Expressions;
+using System.Reflection;
 namespace DataTools.Commands
 {
     public interface ISelectCommand<SelectCommandT>
@@ -18,7 +23,8 @@ namespace DataTools.Commands
         SelectCommandT Where(string columnName, object value);
     }
 
-    public interface ISelectCommandDynamicResult{
+    public interface ISelectCommandDynamicResult
+    {
         IEnumerable<dynamic> Select();
         IEnumerable<dynamic> Select(params SqlParameter[] parameters);
     }
@@ -30,7 +36,7 @@ namespace DataTools.Commands
         IEnumerable<ModelT> Select(params SqlParameter[] parameters);
     }
 
-    public abstract class SelectCommandBase<SelectCommandT> : ISelectCommand<SelectCommandT> where SelectCommandT: SelectCommandBase<SelectCommandT>
+    public abstract class SelectCommandBase<SelectCommandT> : ISelectCommand<SelectCommandT> where SelectCommandT : SelectCommandBase<SelectCommandT>
     {
         public IDataContext Context { get; set; }
         public IModelMetadata Metadata { get; set; }
@@ -91,15 +97,121 @@ namespace DataTools.Commands
         }
 
         public IEnumerable<dynamic> Select() => Context.Select(Metadata, Query);
-        public IEnumerable<dynamic> Select(params SqlParameter[] parameters) => Context.Select(Metadata, Query, parameters);        
+        public IEnumerable<dynamic> Select(params SqlParameter[] parameters) => Context.Select(Metadata, Query, parameters);
     }
 
     public class SelectCommand<ModelT> : SelectCommandBase<SelectCommand<ModelT>>, ISelectCommandExactResult<ModelT> where ModelT : class, new()
     {
-        public SelectCommand(IDataContext context) :base(context, ModelMetadata<ModelT>.Instance)  { }
+        public SelectCommand(IDataContext context) : base(context, ModelMetadata<ModelT>.Instance) { }
 
         public IEnumerable<ModelT> Select() => Context.Select<ModelT>(Query);
 
         public IEnumerable<ModelT> Select(params SqlParameter[] parameters) => Context.Select<ModelT>(Query, parameters);
+
+        public SelectCommand<ModelT> Where(Expression<Func<ModelT, bool>> filterExpression)
+        {
+            return this.Where(new SqlWhere(ProcessExpression(filterExpression.Body)));
+        }
+
+        private SqlExpression ProcessExpression(Expression expression)
+        {
+            var where = new SqlWhere();
+
+            switch (expression)
+            {
+                case BinaryExpression binaryExpression:
+                    return new SqlWhere(ProcessBinaryExpression(binaryExpression));
+                case UnaryExpression unaryExpression:
+                    return ProcessUnaryExpression(unaryExpression);
+                case MemberExpression memberExpression:
+                    return ProcessMemberExpression(memberExpression);
+                case InvocationExpression invocationExpression:
+                    return ProcessInvocationExpression(invocationExpression);
+                    break;
+                case ConstantExpression constantExpression:
+                    if (constantExpression.Value != null)
+                        return new SqlConstant(constantExpression.Value);
+                    else
+                        return new SqlIsNull();
+            }
+            return where;
+        }
+
+        private SqlExpression ProcessInvocationExpression(InvocationExpression invocationExpression)
+        {
+            return new SqlConstant(Expression.Lambda(invocationExpression).Compile().DynamicInvoke());
+        }
+
+        private SqlExpression ProcessMemberExpression(MemberExpression memberExpression)
+        {
+            var modelType = memberExpression.Expression.Type;
+            if (modelType == Type.GetType(Metadata.ModelTypeName))
+            {
+                return new SqlName(Metadata.GetField(memberExpression.Member.Name).ColumnName);
+            }
+            else
+            {
+                return new SqlConstant(Expression.Lambda(memberExpression).Compile().DynamicInvoke());
+            }
+            //else if (memberExpression.Expression is ConstantExpression constantExpression)
+            //{
+            //    if (memberExpression.Member is FieldInfo fieldInfo)
+            //    {
+            //        object value = fieldInfo.GetValue(constantExpression.Value);
+            //        return new SqlConstant(value);
+            //    }
+            //    if (memberExpression.Member is PropertyInfo propertyInfo)
+            //    {
+            //        object value = propertyInfo.GetValue(constantExpression.Value, null);
+            //        return new SqlConstant(value);
+            //    }
+            //}
+            //else if (memberExpression.Expression is MemberExpression memberExpression1)
+            //    //return Expression.Lambda(memberExpression1).Compile().DynamicInvoke();// ProcessMemberExpression(memberExpression1);
+            //    throw new NotSupportedException();
+
+        }
+
+        private SqlExpression ProcessUnaryExpression(UnaryExpression unaryExpression)
+        {
+            if (unaryExpression.NodeType == ExpressionType.Not)
+                return new SqlWhere().Not(ProcessExpression(unaryExpression.Operand));
+            if (unaryExpression.NodeType == ExpressionType.Convert)
+                return ProcessExpression(unaryExpression.Operand);
+            throw new NotImplementedException();
+        }
+
+        private SqlExpression ProcessBinaryExpression(BinaryExpression binaryExpression)
+        {
+            var left = binaryExpression.Left;
+            var right = binaryExpression.Right;
+
+            switch (binaryExpression.NodeType)
+            {
+                case ExpressionType.AndAlso:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).And(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.OrElse:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Or(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.Equal:
+                    var l = ProcessExpression(binaryExpression.Left);
+                    var r = ProcessExpression(binaryExpression.Right);
+                    if (r is SqlIsNull)
+                        return new SqlWhere(l).IsNull();
+                    else
+                        return new SqlWhere(ProcessExpression(binaryExpression.Left)).Eq(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.GreaterThan:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Gt(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.GreaterThanOrEqual:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Ge(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.LessThan:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Lt(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.LessThanOrEqual:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Le(ProcessExpression(binaryExpression.Right));
+                case ExpressionType.NotEqual:
+                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Ne(ProcessExpression(binaryExpression.Right));
+                default:
+                    throw new NotImplementedException();
+            }
+        }
     }
 }

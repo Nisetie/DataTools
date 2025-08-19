@@ -132,12 +132,14 @@ namespace DataTools.Deploy
 
         private void Deploy(IModelMetadata metadata)
         {
-            _context.CreateTable(metadata);
+            if (!metadata.IsView)
+                _context.CreateTable(metadata);
         }
 
         private void Undeploy(IModelMetadata metadata)
         {
-            _context.DropTable(metadata);
+            if (!metadata.IsView)
+                _context.DropTable(metadata);
         }
     }
 }

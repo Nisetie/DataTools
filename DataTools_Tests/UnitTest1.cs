@@ -1349,6 +1349,81 @@ namespace DataTools_Tests
             return ar.Length;
         }
 
+        [Test]
+        public void TestWhereExpression()
+        {
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == 1);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        [Test]
+        public void TestWhereExpression1()
+        {
+            var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id >=2);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 2);
+        }
+
+        [Test]
+        public void TestWhereExpression2()
+        {
+            var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id == null);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == null);
+        }
+
+        [Test]
+        public void TestWhereExpression3()
+        {
+            int a = 1;
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        [Test]
+        public void TestWhereExpression4()
+        {
+            var a = new
+            {
+                i = 1
+            };
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a.i);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        class TestWhereExpression5Test
+        {
+            public int a = 1;
+        }
+
+        [Test]
+        public void TestWhereExpression5()
+        {
+            var a = new TestWhereExpression5Test();
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a.a);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        [Test]
+        public void TestWhereExpression6()
+        {
+            var f = () => 1;
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == f());
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Select().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
         [Category("Select")]
         [Test]
         public void TestWhereIsNull()

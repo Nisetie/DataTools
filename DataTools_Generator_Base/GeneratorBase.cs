@@ -72,6 +72,7 @@ namespace DataTools.Deploy
                     tableCache.Catalog = row.TABLE_CATALOG;
                     tableCache.Schema = row.TABLE_SCHEMA;
                     tableCache.Name = row.TABLE_NAME;
+                    tableCache.IsView = row.IsView;
                     ordinalPosition = 0;
                 }
 
@@ -114,6 +115,7 @@ namespace DataTools.Deploy
                 modelMetadata = new ModelMetadata();
                 modelMetadata.ObjectName = tableName;
                 modelMetadata.SchemaName = tableSchema;
+                modelMetadata.IsView = tableCache.IsView;
 
                 if (modelMetas.ContainsKey(modelMetadata.FullObjectName)) continue;
 
@@ -256,6 +258,7 @@ namespace DataTools.Deploy
                     .AppendLine()
                     .AppendLine($"namespace {tableCatalog}.{tableSchema} {{")
                     .AppendLine($"\t[{nameof(ObjectNameAttribute)}(\"{tableName}\",\"{tableSchema}\")]")
+                    .AppendLine($"{(modelMetadata.IsView ? $"\t[{nameof(NoUniqueAttribute)}]" : string.Empty)}")
                     .AppendLine($"\tpublic class {tableName.Replace(" ", "_")} {{")
                     .AppendLine();
                 else
@@ -264,6 +267,7 @@ namespace DataTools.Deploy
                     .AppendLine()
                     .AppendLine($"namespace {tableCatalog} {{")
                     .AppendLine($"\t[{nameof(ObjectNameAttribute)}(\"{tableName}\")]")
+                    .AppendLine($"{(modelMetadata.IsView ? $"\t[{nameof(NoUniqueAttribute)}]" : string.Empty)}")
                     .AppendLine($"\tpublic class {tableName.Replace(" ", "_")} {{")
                     .AppendLine();
 
@@ -345,12 +349,14 @@ namespace DataTools.Deploy
                 yield return new ModelDefinition() { Catalog = tableCatalog, Schema = tableSchema, Name = tableName, ModelCode = modelCode.ToString(), ModelMetadata = modelMetadata };
             }
         }
-        
+
         internal class TableCachedInfo
         {
             public string Catalog { get; set; }
             public string Schema { get; set; }
             public string Name { get; set; }
+
+            public bool IsView { get; set; }
             public Dictionary<string, ColumnCachedInfo> Columns { get; set; } = new Dictionary<string, ColumnCachedInfo>();
         }
 
@@ -380,6 +386,7 @@ namespace DataTools.Deploy
             public string TABLE_SCHEMA { get; set; }
             public string TABLE_NAME { get; set; }
             public string TABLE_TYPE { get; set; }
+            public bool IsView { get; set; }
             public string COLUMN_NAME { get; set; }
             public string DATA_TYPE { get; set; }
             public int? DATA_LENGTH { get; set; }

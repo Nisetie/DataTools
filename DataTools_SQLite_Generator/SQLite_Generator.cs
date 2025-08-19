@@ -49,7 +49,7 @@ with tablesAndColums as (
 		    , iif(instr(c.type,'(') > 0,substr(c.type, instr(c.type,'(')+1,instr(c.type,')') - instr(c.type,'(') -1),null) as DATA_LENGTH
 	    from sqlite_master t
 	    join pragma_table_info(t.name) c
-	    where t.type='table'
+	    where t.type in ('table','view')
     ) 
 )
 ,primaryKeys as (
@@ -96,6 +96,7 @@ tablesAndColums.TABLE_CATALOG
 ,tablesAndColums.TABLE_SCHEMA
 ,tablesAndColums.TABLE_NAME
 ,tablesAndColums.TABLE_TYPE
+,iif(tablesAndColums.TABLE_TYPE='view',1,0) as IsView
 ,tablesAndColums.COLUMN_NAME
 ,tablesAndColums.DATA_TYPE
 ,tablesAndColums.DATA_LENGTH

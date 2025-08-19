@@ -1,4 +1,8 @@
-﻿using DataTools.DML;
+﻿using DataTools.Commands;
+using DataTools.DML;
+using DataTools.Meta;
+using System;
+using System.Linq.Expressions;
 
 namespace DataTools.Extensions
 {
@@ -17,6 +21,7 @@ namespace DataTools.Extensions
         public static SqlWhere Le(this SqlWhere left, SqlExpression right) => _Combine(_Combine(left, new SqlLessOrEqual()), right);
         public static SqlWhere And(this SqlWhere left, SqlExpression right) => _Combine(_Combine(left, new SqlAnd()), right);
         public static SqlWhere Or(this SqlWhere left, SqlExpression right) => _Combine(_Combine(left, new SqlOr()), right);
+        public static SqlWhere Not(this SqlWhere left, SqlExpression right) => _Combine(_Combine(left, new SqlNot()), right);
         public static SqlWhere IsNull(this SqlWhere left) => _Combine(left, new SqlIsNull());
 
         public static SqlWhere EqValue(this SqlWhere left, object custom) => Eq(left, new SqlConstant(custom));
