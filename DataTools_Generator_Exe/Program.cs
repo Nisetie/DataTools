@@ -13,8 +13,10 @@ namespace DataTools.Deploy
         private static string _folderPath = null;
         private static string _connectionString;
         private static bool _forceRecreate = false;
-        private static string _schemaNameFilter = "";
-        private static string _tableNameFilter = "";
+        private static string _schemaNameIncludeFilter = "";
+        private static string _tableNameIncludeFilter = "";
+        private static string _schemaNameExcludeFilter = "";
+        private static string _tableNameExcludeFilter = "";
         private static E_DBMS _dbms;
 
         private static string _savePath;
@@ -46,8 +48,10 @@ namespace DataTools.Deploy
             {
                 _dbms = _dbmsKeys[dbms];
             }), true);
-            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name filter (ex. 'dbo', '%test%')", (string schemaFilter) => { _schemaNameFilter = schemaFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name filter (ex. 'Student', '%Test%')", (string tableFilter) => { _tableNameFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. 'dbo', 'test')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. 'Student', 'Test')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. 'dbo', 'test')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. 'Student', 'Test')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
             _arguments.AddParameter(new InputArgumentWithInput("-p", "Save path", (string path) => { _folderPath = Path.GetFullPath(path, processCatalog); }), false);
             _arguments.AddParameter(new InputArgument("-r", "Recreate project folder", () => { _forceRecreate = true; }), false);
             _arguments.AddParameter(new InputArgumentWithInput("-c", "Connection string", (string cs) => { _connectionString = cs; }), true, "-f");
@@ -81,8 +85,10 @@ namespace DataTools.Deploy
                 DBMS = _dbms,
                 ConnectionString = _connectionString,
                 NamespaceName = _namespaceName,
-                SchemaNameFilter = _schemaNameFilter,
-                TableNameFilter = _tableNameFilter
+                SchemaIncludeNameFilter = _schemaNameIncludeFilter,
+                TableIncludeNameFilter = _tableNameIncludeFilter,
+                SchemaExcludeNameFilter = _schemaNameExcludeFilter,
+                TableExcludeNameFilter = _tableNameExcludeFilter
             };
 
             _worker = new GeneratorWorker(opts);

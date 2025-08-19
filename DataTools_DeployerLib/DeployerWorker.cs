@@ -53,7 +53,7 @@ namespace DataTools.Deploy
 
         public void Run()
         {
-            foreach (var _ in RunProgress()) { }
+            RunProgress().Last();
         }
 
         public IEnumerable<DeployInfo> RunProgress()

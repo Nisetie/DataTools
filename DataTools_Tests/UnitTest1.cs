@@ -543,7 +543,7 @@ namespace DataTools_Tests
 
             var generator = GetGenerator();
 
-            var defs = generator.GetModelDefinitions(schemaNameFilter: "dbo").ToList();
+            var defs = generator.GetModelDefinitions(schemaIncludeNameFilter: "dbo").ToList();
 
 
             var forCreate = new List<ModelDefinition>(defs);
@@ -2694,8 +2694,8 @@ as
                     DBMS = t,
                     ConnectionString = _fromConnectionStrings[i],
                     NamespaceName = "Test",
-                    SchemaNameFilter = "dbo",
-                    TableNameFilter = ""
+                    SchemaIncludeNameFilter = "dbo",
+                    TableIncludeNameFilter = ""
                 };
                 var generator = new DataTools.Deploy.GeneratorWorker(generatorOptions);
                 var metadatas = generator.GetModelDefinitions().ToArray();

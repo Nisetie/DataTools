@@ -248,8 +248,9 @@ namespace DataTools.PostgreSQL
 
                 var colType = column.ColumnType;
                 var sqlType = PostgreSQL_TypesMap.GetSqlType(colType);
+                if (sqlType == null) throw new NullReferenceException($"{nameof(PostgreSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
 
-                if (colType.HasLength && sqlType != "text")
+                if (colType.HasLength && sqlType != "text" && sqlType != "bytea")
                 {
                     var textLength = column.TextLength;
                     string textLengthString = string.Empty;

@@ -35,7 +35,7 @@ namespace DataTools.Deploy
 
         private Dictionary<string, TableCachedInfo> tableCaches;
 
-        public IEnumerable<ModelDefinition> GetModelDefinitions(string objectNameFilter = "", string schemaNameFilter = "")
+        public IEnumerable<ModelDefinition> GetModelDefinitions(string objectIncludeNameFilter = "", string schemaIncludeNameFilter = "", string objectExcludeNameFilter = "", string schemaExcludeNameFilter = "")
         {
             string query = GetMetadataQuery();
 
@@ -63,8 +63,22 @@ namespace DataTools.Deploy
 
             foreach (var row in context.Select<Metadata>(new SqlCustom(query)))
             {
-                if (!string.IsNullOrEmpty(schemaNameFilter) && row.TABLE_SCHEMA != null && !row.TABLE_SCHEMA.Contains(schemaNameFilter)) continue;
-                if (!string.IsNullOrEmpty(objectNameFilter) && !row.TABLE_NAME.Contains(objectNameFilter)) continue;
+                if (row.TABLE_SCHEMA != null)
+                {
+                    if (!string.IsNullOrEmpty(schemaIncludeNameFilter))
+                        if (!row.TABLE_SCHEMA.Contains(schemaIncludeNameFilter))
+                            continue;
+                    if (!string.IsNullOrEmpty(schemaExcludeNameFilter))
+                        if (row.TABLE_SCHEMA.Contains(schemaExcludeNameFilter))
+                            continue;
+                }
+
+                if (!string.IsNullOrEmpty(objectIncludeNameFilter))
+                    if (!row.TABLE_NAME.Contains(objectIncludeNameFilter))
+                        continue;
+                if (!string.IsNullOrEmpty(objectExcludeNameFilter))
+                    if (row.TABLE_NAME.Contains(objectExcludeNameFilter))
+                        continue;
 
                 if (!tableCaches.TryGetValue($"{row.TABLE_SCHEMA}.{row.TABLE_NAME}", out var tableCache))
                 {
@@ -149,6 +163,7 @@ namespace DataTools.Deploy
                     colName = columnMetadata.COLUMN_NAME;
 
                     Type netType = typeParser(columnMetadata.DATA_TYPE);
+                    if (netType == null) throw new NotSupportedException();
                     string fieldTypeName = netType.FullName;
                     bool isValueType = netType.IsValueType;
 
@@ -157,6 +172,7 @@ namespace DataTools.Deploy
                     modelField.FieldTypeName = netType.AssemblyQualifiedName;
 
                     modelField.ColumnType = dbtypeParser(columnMetadata.DATA_TYPE);
+                    if (modelField.ColumnType == null) throw new NotSupportedException();
                     modelField.FieldOrder = columnMetadata.ORDINAL_POSITION;
                     modelField.TextLength = columnMetadata.DATA_LENGTH;
                     modelField.NumericPrecision = columnMetadata.NUMERIC_PRECISION;
@@ -179,8 +195,8 @@ namespace DataTools.Deploy
                 tableSchema = tableCache.Schema;
                 tableName = tableCache.Name;
 
-                if (tableSchema != null && !tableSchema.Contains(schemaNameFilter)) continue;
-                if (!tableName.Contains(objectNameFilter)) continue;
+                if (tableSchema != null && !tableSchema.Contains(schemaIncludeNameFilter)) continue;
+                if (!tableName.Contains(objectIncludeNameFilter)) continue;
 
                 modelMetadata = new ModelMetadata();
                 modelMetadata.ObjectName = tableName;
@@ -243,8 +259,8 @@ namespace DataTools.Deploy
                 tableSchema = tableCache.Schema;
                 tableName = tableCache.Name;
 
-                if (tableSchema != null && !tableSchema.Contains(schemaNameFilter)) continue;
-                if (!tableName.Contains(objectNameFilter)) continue;
+                if (tableSchema != null && !tableSchema.Contains(schemaIncludeNameFilter)) continue;
+                if (!tableName.Contains(objectIncludeNameFilter)) continue;
 
                 modelMetadata = new ModelMetadata();
                 modelMetadata.ObjectName = tableName;
@@ -300,6 +316,10 @@ namespace DataTools.Deploy
 
                         if (modelField.IsUnique)
                             modelCode.AppendLine($"\t\t[{nameof(UniqueAttribute)}]");
+
+                        foreignTableName = foreignColumn.ForeignTableName;
+                        foreignModelName = $"{tableCatalog}.{foreignTableSchema}.{foreignTableName}";
+
                         modelCode.AppendLine($"\t\tpublic {foreignModelName} {foreignTableName} {{get; set;}}");
                     }
                     else

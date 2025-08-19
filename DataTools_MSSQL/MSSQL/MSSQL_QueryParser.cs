@@ -251,6 +251,7 @@ namespace DataTools.MSSQL
 
                 var colType = column.ColumnType;
                 var sqlType = MSSQL_TypesMap.GetSqlTypeFromType(column.ColumnType.Type);
+                if (sqlType == null) throw new NullReferenceException($"{nameof(MSSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {sqlCreateTable.TableName}.{column.ColumnName} {colType}");
 
                 if (colType.HasLength)
                 {

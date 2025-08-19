@@ -22,7 +22,7 @@ namespace DataTools.Extensions
 
         public static SqlSelect From(this SqlSelect sqlSelect, IModelMetadata metadata)
         {
-            sqlSelect.From(metadata.FullObjectName).Select(metadata.GetColumnsForSelect().ToArray());
+            sqlSelect.From(metadata.FullObjectName).Select(metadata.GetColumnsForSelect().Select(colName => new SqlName(colName)).ToArray());
             return sqlSelect;
         }
 
@@ -32,7 +32,7 @@ namespace DataTools.Extensions
         }
         public static SqlSelect From(this SqlSelect sqlSelect, IModelMetadata modelMetadata, SqlExpression subquery, string alias)
         {
-            sqlSelect.From(subquery, alias).Select(modelMetadata.GetColumnsForSelect().ToArray());
+            sqlSelect.From(subquery, alias).Select(modelMetadata.GetColumnsForSelect().Select(colName => new SqlName(colName)).ToArray());
             return sqlSelect;
         }
         public static SqlSelect From(this SqlSelect sql, string objectName) => sql.From(new SqlName(objectName));

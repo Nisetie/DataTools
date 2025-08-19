@@ -269,6 +269,7 @@ namespace DataTools.SQLite
 
                 var colType = column.ColumnType;
                 var sqlType = SQLite_TypesMap.GetSqlType(colType);
+                if (sqlType == null) throw new NullReferenceException($"{nameof(SQLite_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
 
                 if (colType.HasLength)
                 {

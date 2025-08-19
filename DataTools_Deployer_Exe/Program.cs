@@ -3,6 +3,7 @@ using DataTools.Extensions;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System.Reflection;
+using System.Text;
 using System.Text.Json;
 using Tools.InputArguments;
 
@@ -142,10 +143,23 @@ namespace DataTools.Deploy
             if (_verbose)
                 ConsoleWriteLine("Run worker...");
 
-            if (_verbose)
-                foreach (var info in _worker.RunProgress())
-                    ConsoleWriteLine($"{info.Metadata.FullObjectName}: {info.Mode}");
-            _worker.Run();
+            try
+            {
+                if (_verbose)
+                    foreach (var info in _worker.RunProgress())
+                        ConsoleWriteLine($"{info.Metadata.FullObjectName}: {info.Mode}");
+                else _worker.Run();
+            }
+            catch (Exception e)
+            {
+                var sb = new StringBuilder();
+                while (e != null) {
+                    sb.AppendLine(e.Message);
+                    sb.AppendLine(e.StackTrace);
+                    e = e.InnerException;
+                }
+                ConsoleWriteLine(sb.ToString());
+            }
         }
 
         private static IEnumerable<IModelMetadata> ProcessAssembly()
@@ -211,27 +225,28 @@ namespace DataTools.Deploy
             {
                 var meta = metas[i];
                 var metaj = metajs[i];
-                foreach (var metafj in metaj.Fields)
+                foreach (var ModelFieldMetadataJSON in metaj.Fields)
                 {
-                    var mfm = new ModelFieldMetadata();
-                    mfm.FieldName = metafj.FieldName;
-                    mfm.ColumnName = metafj.ColumnName;
-                    mfm.ColumnNames = metafj.ColumnNames.Clone() as string[];
-                    mfm.ColumnDisplayName = metafj.ColumnDisplayName;
-                    mfm.ColumnType = metafj.ColumnType;
-                    mfm.FieldTypeName = metafj.FieldTypeName;
-                    mfm.TextLength = metafj.TextLength;
-                    mfm.NumericPrecision = metafj.NumericPrecision;
-                    mfm.NumericScale = metafj.NumericScale;
-                    mfm.FieldOrder = metafj.FieldOrder;
-                    mfm.ForeignColumnNames = metafj.ForeignColumnNames.Clone() as string[];
-                    mfm.ForeignModel = string.IsNullOrEmpty(metafj.ForeignModelTypeName) ? null : metas.Where(m => m.FullObjectName == metafj.ForeignModelTypeName).First();
-                    mfm.IgnoreChanges = metafj.IgnoreChanges;
-                    mfm.IsAutoincrement = metafj.IsAutoincrement;
-                    mfm.IsForeignKey = metafj.IsForeignKey;
-                    mfm.IsPrimaryKey = metafj.IsPrimaryKey;
-                    mfm.IsUnique = metafj.IsUnique;
-                    meta.AddField(mfm);
+                    var modelFieldMetadata = new ModelFieldMetadata();
+                    modelFieldMetadata.FieldName = ModelFieldMetadataJSON.FieldName;
+                    modelFieldMetadata.ColumnName = ModelFieldMetadataJSON.ColumnName;
+                    modelFieldMetadata.ColumnNames = ModelFieldMetadataJSON.ColumnNames.Clone() as string[];
+                    modelFieldMetadata.ColumnDisplayName = ModelFieldMetadataJSON.ColumnDisplayName;
+                    modelFieldMetadata.ColumnType = ModelFieldMetadataJSON.ColumnType;
+                    modelFieldMetadata.FieldTypeName = ModelFieldMetadataJSON.FieldTypeName;
+                    modelFieldMetadata.TextLength = ModelFieldMetadataJSON.TextLength;
+                    modelFieldMetadata.NumericPrecision = ModelFieldMetadataJSON.NumericPrecision;
+                    modelFieldMetadata.NumericScale = ModelFieldMetadataJSON.NumericScale;
+                    modelFieldMetadata.FieldOrder = ModelFieldMetadataJSON.FieldOrder;
+                    modelFieldMetadata.ForeignColumnNames = ModelFieldMetadataJSON.ForeignColumnNames.Clone() as string[];
+                    modelFieldMetadata.ForeignModel = string.IsNullOrEmpty(ModelFieldMetadataJSON.ForeignModelTypeName) ? null : metas.Where(m => m.FullObjectName == ModelFieldMetadataJSON.ForeignModelTypeName).First();
+                    modelFieldMetadata.IgnoreChanges = ModelFieldMetadataJSON.IgnoreChanges;
+                    modelFieldMetadata.IsAutoincrement = ModelFieldMetadataJSON.IsAutoincrement;
+                    modelFieldMetadata.IsForeignKey = ModelFieldMetadataJSON.IsForeignKey;
+                    modelFieldMetadata.IsPrimaryKey = ModelFieldMetadataJSON.IsPrimaryKey;
+                    modelFieldMetadata.IsUnique = ModelFieldMetadataJSON.IsUnique;
+                    modelFieldMetadata.UniqueConstraintName = ModelFieldMetadataJSON.UniqueConstraintName;
+                    meta.AddField(modelFieldMetadata);
                 }
             }
 
