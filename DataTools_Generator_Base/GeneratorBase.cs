@@ -97,7 +97,7 @@ namespace DataTools.Deploy
                     {
                         tableCache.Columns[row.foreignKeyConstraintName] = foreignColumnCache = new ForeignColumnCachedInfo();
                         foreignColumnCache.IsForeignKey = true;
-                        foreignColumnCache.OrdinalPosition = ordinalPosition++; //row.ORDINAL_POSITION;
+                        foreignColumnCache.OrdinalPosition = ordinalPosition++;
                         (foreignColumnCache as ForeignColumnCachedInfo).ConstraintName = row.foreignKeyConstraintName;
                         (foreignColumnCache as ForeignColumnCachedInfo).SchemaName = row.TABLE_SCHEMA;
                         (foreignColumnCache as ForeignColumnCachedInfo).TableName = row.TABLE_NAME;
@@ -110,7 +110,7 @@ namespace DataTools.Deploy
                 {
                     var columnCachedInfo = tableCache.Columns[row.COLUMN_NAME] = new ColumnCachedInfo();
                     columnCachedInfo.IsForeignKey = false;
-                    columnCachedInfo.OrdinalPosition = ordinalPosition++; //row.ORDINAL_POSITION;
+                    columnCachedInfo.OrdinalPosition = ordinalPosition++;
                     columnCachedInfo.Metadata = row;
                 }
             }
@@ -174,7 +174,7 @@ namespace DataTools.Deploy
 
                     modelField.ColumnType = dbtypeParser(columnMetadata.DATA_TYPE);
                     if (modelField.ColumnType == null) throw new NotSupportedException();
-                    modelField.FieldOrder = columnMetadata.ORDINAL_POSITION;
+                    modelField.FieldOrder = column.OrdinalPosition;
                     modelField.TextLength = columnMetadata.DATA_LENGTH;
                     modelField.NumericPrecision = columnMetadata.NUMERIC_PRECISION;
                     modelField.NumericScale = columnMetadata.NUMERIC_SCALE;
@@ -217,7 +217,7 @@ namespace DataTools.Deploy
 
                     modelField.FieldName = modelField.ColumnName = colName;
                     modelField.ColumnDisplayName = colName;
-                    modelField.FieldOrder = foreignColumn.Metadatas[0].ORDINAL_POSITION;
+                    modelField.FieldOrder = column.OrdinalPosition;
 
                     if (foreignColumn.Metadatas.Any(m => m.isPrimaryKey))
                         modelField.IsPrimaryKey = true;
@@ -243,6 +243,23 @@ namespace DataTools.Deploy
                     modelField.FieldTypeName = foreignModelName;
 
                     modelMetadata.AddField(modelField);
+                }
+            }
+
+            // после добавления простых полей, потом полей внешних связей надо восстановить исходный порядок колонок
+            List<IModelFieldMetadata> fields = new List<IModelFieldMetadata>();
+            foreach (var mm in modelMetas)
+            {
+                fields.Clear();
+                foreach (var f in mm.Value.Fields.ToArray())
+                {
+                    mm.Value.RemoveField(f);
+                    fields.Add(f);
+                }
+                fields = fields.OrderBy(f => f.FieldOrder).ToList();
+                foreach (var f in fields)
+                {
+                    mm.Value.AddField(f);
                 }
             }
 

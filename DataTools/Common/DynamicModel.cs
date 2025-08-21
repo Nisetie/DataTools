@@ -68,6 +68,11 @@ namespace DataTools.Common
             }
         }
 
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            return _members.Keys;
+        }
+
         public void Add(string key, object value)
         {
             _members[key] = value;
