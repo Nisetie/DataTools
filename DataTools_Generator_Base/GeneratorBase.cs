@@ -195,9 +195,6 @@ namespace DataTools.Deploy
                 tableSchema = tableCache.Schema;
                 tableName = tableCache.Name;
 
-                if (tableSchema != null && !tableSchema.Contains(schemaIncludeNameFilter)) continue;
-                if (!tableName.Contains(objectIncludeNameFilter)) continue;
-
                 modelMetadata = new ModelMetadata();
                 modelMetadata.ObjectName = tableName;
                 modelMetadata.SchemaName = tableSchema;

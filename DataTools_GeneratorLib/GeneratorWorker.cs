@@ -7,10 +7,10 @@ namespace DataTools.Deploy
     {
         public string NamespaceName { get; set; }
         public string ConnectionString { get; set; }
-        public string SchemaIncludeNameFilter { get; set; }
-        public string TableIncludeNameFilter { get; set; }
-        public string SchemaExcludeNameFilter { get; set; }
-        public string TableExcludeNameFilter { get; set; }
+        public string SchemaIncludeNameFilter { get; set; } = "";
+        public string TableIncludeNameFilter { get; set; } = "";
+        public string SchemaExcludeNameFilter { get; set; } = "";
+        public string TableExcludeNameFilter { get; set; } = "";
 
         public E_DBMS DBMS { get; set; }
     }
