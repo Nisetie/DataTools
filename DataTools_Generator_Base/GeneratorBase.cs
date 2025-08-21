@@ -133,6 +133,7 @@ namespace DataTools.Deploy
 
                 if (modelMetas.ContainsKey(modelMetadata.FullObjectName)) continue;
 
+                modelMetadata.ModelName = tableName;
                 modelMetadata.ModelTypeName = tableName;
                 modelMetadata.DisplayModelName = tableName;
 
