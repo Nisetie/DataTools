@@ -145,7 +145,8 @@ namespace DataTools.Common
                 if (f.IsForeignKey)
                     foreach (var fk in f.ForeignColumnNames)
                         valuesFromFields.Add(Expression.Condition(
-                             Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Convert(Expression.Constant(null), Type.GetType(f.FieldTypeName)))
+                             //Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Convert(Expression.Constant(null), Type.GetType(f.FieldTypeName)))
+                             Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Constant(null))
                              , Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, f.FieldName), fk), typeof(object))
                              , Expression.Convert(Expression.Constant(null), typeof(object))));
                 else
@@ -366,17 +367,17 @@ namespace DataTools.Common
                 Expression.Block(
                     from f
                     in fields
-                        // для поля с простым типом данных
+                    where !f.IsForeignKey
+                    // для поля с простым типом данных
                     let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement
                     let fieldType = Type.GetType(f.FieldTypeName)
-                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
+                    let UnboxedType = Nullable.GetUnderlyingType(fieldType) // TODO GetFieldType (ModelT or DynamicModel)
                     let IsNullable = UnboxedType != null
                     let RealType = IsNullable ? UnboxedType : fieldType
                     let IsConvertible = RealType.GetInterface(nameof(IConvertible)) != null
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
                     let IsParsable = ParseMethod != null
-                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
-                    where !f.IsForeignKey
+                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })                    
                     orderby f.FieldOrder
                     select Expression.Block(
                         Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
@@ -387,10 +388,6 @@ namespace DataTools.Common
                             , Expression.Block(
                                 Expression.IfThenElse(
                                     Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
-                                    //Expression.AndAlso(
-                                    //    Expression.NotEqual(param_customTypeConverters, Expression.Constant(null))
-                                    //    , Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
-                                    //    )
                                     , GetModelPropertySetterExpressionFunction(var_m, f.FieldName, Expression.Convert(Expression.Invoke(var_customConverter, var_value), fieldType))
                                     , GetModelPropertySetterExpressionFunction(var_m, f.FieldName,
                                     IsConvertible

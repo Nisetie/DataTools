@@ -534,6 +534,26 @@ namespace DataTools_Tests
 
         [Category("Generator")]
         [Test]
+        public void GetDataFromDynamicMetadata()
+        {
+            if (DataContext is InMemory_SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} unsupported.");
+
+
+            var generator = GetGenerator();
+
+            var defs = generator.GetModelDefinitions(schemaIncludeNameFilter: "dbo").ToList();
+
+            foreach (var d in defs)
+            {
+                var r = DataContext.Select(d.ModelMetadata).ToArray();
+            }
+
+
+        }
+
+        [Category("Generator")]
+        [Test]
         public void GetMetadata()
         {
 
