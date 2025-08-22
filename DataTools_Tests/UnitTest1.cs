@@ -421,6 +421,8 @@ namespace DataTools_Tests
         [NUnit.Framework.TearDown]
         public virtual void Teardown()
         {
+            DynamicMapper.ClearMappers();
+
             TeardownScripts();
 
             TeardownStatic(DataContext);
@@ -1197,23 +1199,28 @@ namespace DataTools_Tests
         [Category("Delete")]
         [Test]
         public void TestDeletePrimaryKeyAsForeignKeyDynamic()
-        {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+        {try
+            {
+                var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
 
-            var a = result[0];
+                var a = result[0];
 
-            DataContext.Delete(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance, a);
+                DataContext.Delete(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance, a);
 
-            result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+                result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
 
-            bool check1 = result.Length == 5;
-            bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
-            bool check3 = result[1].Child.i == 2 && result[1].Child.j == 2 && result[1].k == "def";
-            bool check5 = result[2].Child.i == 2 && result[2].Child.j == 3 && result[2].k == "jkl";
-            bool check6 = result[3].Child.i == 3 && result[3].Child.j == 3 && result[3].k == "mno";
-            bool check7 = result[4].Child.i == 4 && result[4].Child.j == 1 && result[4].k == "pqr";
+                bool check1 = result.Length == 5;
+                bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
+                bool check3 = result[1].Child.i == 2 && result[1].Child.j == 2 && result[1].k == "def";
+                bool check5 = result[2].Child.i == 2 && result[2].Child.j == 3 && result[2].k == "jkl";
+                bool check6 = result[3].Child.i == 3 && result[3].Child.j == 3 && result[3].k == "mno";
+                bool check7 = result[4].Child.i == 4 && result[4].Child.j == 1 && result[4].k == "pqr";
 
-            Assert.That(check1 && check3 && check4 && check5 && check6 && check7);
+                Assert.That(check1 && check3 && check4 && check5 && check6 && check7);
+            }catch
+            {
+                throw;
+            }
         }
 
         [Category("Select")]
