@@ -1,6 +1,7 @@
 ﻿using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
+using DataTools.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,15 +12,6 @@ namespace DataTools.Common
 {
     public static class MappingHelper
     {
-        public static IEnumerable<IModelFieldMetadata> GetChangeableFields(IModelMetadata metadata)
-        {
-            return from field
-                   in metadata.Fields
-                   where !(field.IgnoreChanges || field.IsAutoincrement)
-                   orderby field.FieldOrder
-                   select field;
-        }
-
         private static bool ForeignKeysAreEmpty(params object[] keys)
         {
             for (int i = 0; i < keys.Length; i++)
@@ -49,12 +41,7 @@ namespace DataTools.Common
         public static IEnumerable<IModelFieldMetadata> GetPrimaryKeys(IModelMetadata modelMetadata)
         {
             List<IModelFieldMetadata> primaryKeys = new List<IModelFieldMetadata>();
-            foreach (var f in modelMetadata.Fields)
-            {
-                if (!(f.IsAutoincrement || f.IsUnique || f.IsPrimaryKey))
-                    continue;
-                primaryKeys.Add(f);
-            }
+            primaryKeys.AddRange(modelMetadata.GetFilterableFields());
             if (primaryKeys.Count == 0)
                 foreach (var f in modelMetadata.Fields)
                     primaryKeys.Add(f);
@@ -136,7 +123,7 @@ namespace DataTools.Common
             ParameterExpression param_insertBuilder = Expression.Parameter(typeof(SqlInsert), "insertBuilder");
             ParameterExpression param_m = GetModelInputParameterExpressionFunction();
 
-            var changeableFields = GetChangeableFields(metadata);
+            var changeableFields = metadata.GetChangeableFields();
 
             var valuesFromFields = new List<Expression>();
             var valuesFromModelFields = new List<Expression>();
@@ -145,7 +132,6 @@ namespace DataTools.Common
                 if (f.IsForeignKey)
                     foreach (var fk in f.ForeignColumnNames)
                         valuesFromFields.Add(Expression.Condition(
-                             //Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Convert(Expression.Constant(null), Type.GetType(f.FieldTypeName)))
                              Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Constant(null))
                              , Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, f.FieldName), fk), typeof(object))
                              , Expression.Convert(Expression.Constant(null), typeof(object))));
@@ -168,19 +154,15 @@ namespace DataTools.Common
         /// Внимание! Если сущность не имеет уникального ключа, тогда обновление недопустимо.
         /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
         /// </summary>
-        public static T PrepareUpdateCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
+        public static T PrepareBindUpdateValuesCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
         {
             var param_updateBuilder = Expression.Parameter(typeof(SqlUpdate), "updateBuilder");
             var param_m = GetModelInputParameterExpressionFunction();
 
-            var var_where = Expression.Variable(typeof(SqlWhere));
-
             var valueExpressions = new List<Expression>();
 
-            foreach (var field in metadata.Fields)
+            foreach (var field in metadata.GetChangeableFields())
             {
-                if (field.IgnoreChanges || field.IsAutoincrement) continue;
-
                 if (field.IsForeignKey)
                 {
                     foreach (var foreignColumn in field.ForeignColumnNames)
@@ -196,12 +178,24 @@ namespace DataTools.Common
                     valueExpressions.Add(Expression.Convert(GetModelPropertyExpressionFunction(param_m, field.FieldName), typeof(object)));
             }
 
+            var all_scripts = Expression.Block(
+                Expression.Call(typeof(SqlUpdateExtensions), nameof(SqlUpdateExtensions.Value), null, param_updateBuilder, Expression.NewArrayInit(typeof(object), valueExpressions))
+                );
+
+            return Expression.Lambda<T>(all_scripts, param_updateBuilder, param_m).Compile();
+        }
+
+        public static T PrepareBindUpdateWhereCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
+        {
+            var param_updateBuilder = Expression.Parameter(typeof(SqlUpdate), "updateBuilder");
+            var param_m = GetModelInputParameterExpressionFunction();
+
+            var var_where = Expression.Variable(typeof(SqlWhere));
+
             var whereExpressions = new List<Expression>();
 
-            foreach (var f in metadata.Fields)
+            foreach (var f in metadata.GetFilterableFields())
             {
-                if (!(f.IsUnique || f.IsPrimaryKey || f.IsAutoincrement)) continue;
-
                 if (f.IsForeignKey)
                 {
                     for (int i = 0; i < f.ForeignColumnNames.Length; i++)
@@ -226,7 +220,6 @@ namespace DataTools.Common
 
             var all_scripts = Expression.Block(
                 variables: new ParameterExpression[] { var_where }
-                , Expression.Call(typeof(SqlUpdateExtensions), nameof(SqlUpdateExtensions.Value), null, param_updateBuilder, Expression.NewArrayInit(typeof(object), valueExpressions))
                 , Expression.Assign(var_where, Expression.New(typeof(SqlWhere)))
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.Value), null, var_where, Expression.Constant(1, typeof(object)))
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Constant(1, typeof(object)))
@@ -242,7 +235,7 @@ namespace DataTools.Common
         /// Внимание! Если сущность не имеет уникального ключа, тогда удаление недопустимо.
         /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
         /// </summary>
-        public static T PrepareDeleteCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
+        public static T PrepareDeleteWhereCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
         {
             var param_deleteBuilder = Expression.Parameter(typeof(SqlDelete), "deleteBuilder");
             var param_m = GetModelInputParameterExpressionFunction();

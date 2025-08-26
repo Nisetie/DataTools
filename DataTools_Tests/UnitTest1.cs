@@ -1111,6 +1111,54 @@ namespace DataTools_Tests
 
         [Category("Update")]
         [Test]
+        public void TestUpdatePrimaryKey()
+        {
+            var m = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(m => m.i == 1 && m.j == 1).Select().ToArray()[0];
+            var m1 = new TestModelCompositePrimaryKey();
+            ModelMapper<TestModelCompositePrimaryKey>.CopyValues(m, m1);
+            m1.i = 500;
+            var sql = new SqlUpdate().From<TestModelCompositePrimaryKey>().Where(m).Value(m1);
+            DataContext.Execute(sql);
+
+            var result = DataContext.SelectFrom<TestModelCompositePrimaryKey>().OrderBy("i", "j").Select().ToArray();
+            Assert.That(
+                result.Length == 6 &&
+                result[0].i == 1 && result[0].j == 2 && result[0].k == "ghi" &&
+                result[1].i == 2 && result[1].j == 2 && result[1].k == "def" &&
+                result[2].i == 2 && result[2].j == 3 && result[2].k == "jkl" &&
+                result[3].i == 3 && result[3].j == 3 && result[3].k == "mno" &&
+                result[4].i == 4 && result[4].j == 1 && result[4].k == "pqr" &&
+                result[5].i == 500 && result[5].j == 1 && result[5].k == "abc"
+                );
+        }
+
+        [Category("Update")]
+        [Test]
+        public void TestUpdatePrimaryKeyDynamic()
+        {
+            dynamic m = DataContext.SelectFrom(ModelMetadata< TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("j").EqValue(1)).Select().ToArray()[0];
+            dynamic m1 = new DynamicModel();
+            DynamicMapper.CopyValues(ModelMetadata<TestModelCompositePrimaryKey>.Instance, m, m1);
+            m1.i = 500;
+            var sql = new SqlUpdate().From(ModelMetadata<TestModelCompositePrimaryKey>.Instance);
+            SqlUpdateExtensions.WhereDynamic(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m);
+            SqlUpdateExtensions.ValueDynamic(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m1);
+            DataContext.Execute(sql);
+
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j").Select().ToArray();
+            Assert.That(
+                result.Length == 6 &&
+                result[0].i == 1 && result[0].j == 2 && result[0].k == "ghi" &&
+                result[1].i == 2 && result[1].j == 2 && result[1].k == "def" &&
+                result[2].i == 2 && result[2].j == 3 && result[2].k == "jkl" &&
+                result[3].i == 3 && result[3].j == 3 && result[3].k == "mno" &&
+                result[4].i == 4 && result[4].j == 1 && result[4].k == "pqr" &&
+                result[5].i == 500 && result[5].j == 1 && result[5].k == "abc"
+                );
+        }
+
+        [Category("Update")]
+        [Test]
         public void TestUpdatePrimaryKeyAsForeignKey()
         {
             var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
@@ -1199,7 +1247,8 @@ namespace DataTools_Tests
         [Category("Delete")]
         [Test]
         public void TestDeletePrimaryKeyAsForeignKeyDynamic()
-        {try
+        {
+            try
             {
                 var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
 
@@ -1217,7 +1266,8 @@ namespace DataTools_Tests
                 bool check7 = result[4].Child.i == 4 && result[4].Child.j == 1 && result[4].k == "pqr";
 
                 Assert.That(check1 && check3 && check4 && check5 && check6 && check7);
-            }catch
+            }
+            catch
             {
                 throw;
             }
@@ -1388,7 +1438,7 @@ namespace DataTools_Tests
         [Test]
         public void TestWhereExpression1()
         {
-            var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id >=2);
+            var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id >= 2);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
             var result = cmd.Select().ToArray();
             Assert.That(result.Length == 2);
@@ -2766,7 +2816,7 @@ as
 
                         var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty("MapModel");
 
-                        var orderArray = meta.GetColumnsForOrdering().ToArray();
+                        var orderArray = meta.GetColumnsForFilterOrder().ToArray();
                         if (orderArray.Length == 0)
                             orderArray = meta.GetColumnsForSelect().ToArray();
 

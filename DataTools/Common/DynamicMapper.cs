@@ -3,6 +3,7 @@ using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace DataTools.Common
 {
@@ -20,7 +21,8 @@ namespace DataTools.Common
 
         public Action<SqlInsert, dynamic> BindInsertValues { get; private set; }
         public Action<SqlUpdate, dynamic> BindUpdateValues { get; private set; }
-        public Action<SqlDelete, dynamic> BindDeleteValues { get; private set; }
+        public Action<SqlUpdate, dynamic> BindUpdateWhere { get; private set; }
+        public Action<SqlDelete, dynamic> BindDeleteWhere { get; private set; }
         public Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic> MapModel { get; private set; }
 
         public SqlSelect CachedSelect { get; private set; }
@@ -109,8 +111,9 @@ namespace DataTools.Common
         public DynamicMapper(IModelMetadata metadata)
         {
             BindInsertValues = MappingHelper.PrepareInsertCommand<Action<SqlInsert, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindUpdateValues = MappingHelper.PrepareUpdateCommand<Action<SqlUpdate, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindDeleteValues = MappingHelper.PrepareDeleteCommand<Action<SqlDelete, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindUpdateValues = MappingHelper.PrepareBindUpdateValuesCommand<Action<SqlUpdate, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindUpdateWhere = MappingHelper.PrepareBindUpdateWhereCommand<Action<SqlUpdate, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindDeleteWhere = MappingHelper.PrepareDeleteWhereCommand<Action<SqlDelete, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
             MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic>>(
                 metadata,
                 GetModelInputParameterExpression,
@@ -127,6 +130,14 @@ namespace DataTools.Common
             CachedSelect = preparedQuery.query;
             CachedParameters = preparedQuery.parameters;
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<dynamic, string>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+        }
+
+        public static void CopyValues(IModelMetadata modelMetadata, dynamic from, dynamic to)
+        {
+            foreach (var f in modelMetadata.Fields)
+            {
+                to[f.FieldName] = from[f.FieldName];
+            }
         }
     }
 }

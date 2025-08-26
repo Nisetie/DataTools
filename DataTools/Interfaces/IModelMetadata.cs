@@ -49,12 +49,12 @@ namespace DataTools.Interfaces
         IEnumerable<string> GetColumnsForInsertUpdate();
 
         /// <summary>
-        /// Получить перечеть имен колонок, по которым имеет смысл сортировать выборку, т.к.
-        /// эти колонки имеют сортирующие ограничения: автоинкремент, первичный ключ и т.д.
+        /// Получить перечеть имен колонок, по которым имеет смысл фильтровать (UPDATE, DELETE) или сортировать выборку.
         /// </summary>
         /// <returns></returns>
-        IEnumerable<string> GetColumnsForOrdering();
+        IEnumerable<string> GetColumnsForFilterOrder();
         IEnumerable<IModelFieldMetadata> GetChangeableFields();
+        IEnumerable<IModelFieldMetadata> GetFilterableFields();
 
         int FieldsCount { get; }
         bool IsView { get; set; }

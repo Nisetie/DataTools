@@ -68,6 +68,33 @@ namespace DataTools.Common
             }
         }
 
+        public override bool TryGetIndex(GetIndexBinder binder, object[] indexes, out object result)
+        {
+            result = null;
+            if (indexes.Length != 1)
+                return false;
+
+            object index = indexes[0];
+            if (index is string key)
+                result = _members[key];
+            else return false;
+
+            return true;
+        }
+
+        public override bool TrySetIndex(SetIndexBinder binder, object[] indexes, object value)
+        {
+            if (indexes.Length != 1)
+                return false;
+
+            object index = indexes[0];
+            if (index is string key)
+                _members[key] = value;
+            else return false;
+
+            return true;
+        }
+
         public void Add(string key, object value)
         {
             _members[key] = value;

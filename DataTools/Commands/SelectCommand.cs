@@ -110,23 +110,26 @@ namespace DataTools.Commands
 
         public SelectCommand<ModelT> Where(Expression<Func<ModelT, bool>> filterExpression)
         {
-            return this.Where(new SqlWhere(ProcessExpression(filterExpression.Body)));
+            return this.Where(new SqlWhere(SelectCommandHelper.ProcessExpression(Metadata, filterExpression.Body)));
         }
+    }
 
-        private SqlExpression ProcessExpression(Expression expression)
+    public static class SelectCommandHelper
+    {
+        public static SqlExpression ProcessExpression(IModelMetadata modelMetadata, Expression expression)
         {
             var where = new SqlWhere();
 
             switch (expression)
             {
                 case BinaryExpression binaryExpression:
-                    return new SqlWhere(ProcessBinaryExpression(binaryExpression));
+                    return new SqlWhere(ProcessBinaryExpression(modelMetadata, binaryExpression));
                 case UnaryExpression unaryExpression:
-                    return ProcessUnaryExpression(unaryExpression);
+                    return ProcessUnaryExpression(modelMetadata, unaryExpression);
                 case MemberExpression memberExpression:
-                    return ProcessMemberExpression(memberExpression);
+                    return ProcessMemberExpression(modelMetadata, memberExpression);
                 case InvocationExpression invocationExpression:
-                    return ProcessInvocationExpression(invocationExpression);
+                    return ProcessInvocationExpression(modelMetadata, invocationExpression);
                     break;
                 case ConstantExpression constantExpression:
                     if (constantExpression.Value != null)
@@ -137,51 +140,34 @@ namespace DataTools.Commands
             return where;
         }
 
-        private SqlExpression ProcessInvocationExpression(InvocationExpression invocationExpression)
+        public static SqlExpression ProcessInvocationExpression(IModelMetadata modelMetadata, InvocationExpression invocationExpression)
         {
             return new SqlConstant(Expression.Lambda(invocationExpression).Compile().DynamicInvoke());
         }
 
-        private SqlExpression ProcessMemberExpression(MemberExpression memberExpression)
+        public static SqlExpression ProcessMemberExpression(IModelMetadata modelMetadata, MemberExpression memberExpression)
         {
             var modelType = memberExpression.Expression.Type;
-            if (modelType == Type.GetType(Metadata.ModelTypeName))
+            if (modelType == Type.GetType(modelMetadata.ModelTypeName))
             {
-                return new SqlName(Metadata.GetField(memberExpression.Member.Name).ColumnName);
+                return new SqlName(modelMetadata.GetField(memberExpression.Member.Name).ColumnName);
             }
             else
             {
                 return new SqlConstant(Expression.Lambda(memberExpression).Compile().DynamicInvoke());
             }
-            //else if (memberExpression.Expression is ConstantExpression constantExpression)
-            //{
-            //    if (memberExpression.Member is FieldInfo fieldInfo)
-            //    {
-            //        object value = fieldInfo.GetValue(constantExpression.Value);
-            //        return new SqlConstant(value);
-            //    }
-            //    if (memberExpression.Member is PropertyInfo propertyInfo)
-            //    {
-            //        object value = propertyInfo.GetValue(constantExpression.Value, null);
-            //        return new SqlConstant(value);
-            //    }
-            //}
-            //else if (memberExpression.Expression is MemberExpression memberExpression1)
-            //    //return Expression.Lambda(memberExpression1).Compile().DynamicInvoke();// ProcessMemberExpression(memberExpression1);
-            //    throw new NotSupportedException();
-
         }
 
-        private SqlExpression ProcessUnaryExpression(UnaryExpression unaryExpression)
+        public static SqlExpression ProcessUnaryExpression(IModelMetadata modelMetadata, UnaryExpression unaryExpression)
         {
             if (unaryExpression.NodeType == ExpressionType.Not)
-                return new SqlWhere().Not(ProcessExpression(unaryExpression.Operand));
+                return new SqlWhere().Not(ProcessExpression(modelMetadata, unaryExpression.Operand));
             if (unaryExpression.NodeType == ExpressionType.Convert)
-                return ProcessExpression(unaryExpression.Operand);
+                return ProcessExpression(modelMetadata, unaryExpression.Operand);
             throw new NotImplementedException();
         }
 
-        private SqlExpression ProcessBinaryExpression(BinaryExpression binaryExpression)
+        public static SqlExpression ProcessBinaryExpression(IModelMetadata modelMetadata, BinaryExpression binaryExpression)
         {
             var left = binaryExpression.Left;
             var right = binaryExpression.Right;
@@ -189,26 +175,26 @@ namespace DataTools.Commands
             switch (binaryExpression.NodeType)
             {
                 case ExpressionType.AndAlso:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).And(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).And(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.OrElse:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Or(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Or(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.Equal:
-                    var l = ProcessExpression(binaryExpression.Left);
-                    var r = ProcessExpression(binaryExpression.Right);
+                    var l = ProcessExpression(modelMetadata, binaryExpression.Left);
+                    var r = ProcessExpression(modelMetadata, binaryExpression.Right);
                     if (r is SqlIsNull)
                         return new SqlWhere(l).IsNull();
                     else
-                        return new SqlWhere(ProcessExpression(binaryExpression.Left)).Eq(ProcessExpression(binaryExpression.Right));
+                        return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Eq(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.GreaterThan:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Gt(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Gt(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.GreaterThanOrEqual:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Ge(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Ge(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.LessThan:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Lt(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Lt(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.LessThanOrEqual:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Le(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Le(ProcessExpression(modelMetadata, binaryExpression.Right));
                 case ExpressionType.NotEqual:
-                    return new SqlWhere(ProcessExpression(binaryExpression.Left)).Ne(ProcessExpression(binaryExpression.Right));
+                    return new SqlWhere(ProcessExpression(modelMetadata, binaryExpression.Left)).Ne(ProcessExpression(modelMetadata, binaryExpression.Right));
                 default:
                     throw new NotImplementedException();
             }

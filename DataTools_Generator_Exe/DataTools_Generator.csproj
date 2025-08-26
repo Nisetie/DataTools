@@ -1,26 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-	  <Version>1.0.1</Version>
-    <TargetFramework>net9.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-	<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-	<DebugType>embedded</DebugType>
-	<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<DebugType>embedded</DebugType>
+		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="InputArguments" Version="1.0.3" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="InputArguments" Version="1.0.3" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Properties\PublishProfiles\" />
-  </ItemGroup>
+	<ItemGroup>
+		<Folder Include="Properties\PublishProfiles\" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\DataTools_GeneratorLib\DataTools_GeneratorLib.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\DataTools_GeneratorLib\DataTools_GeneratorLib.csproj" />
+	</ItemGroup>
 
 </Project>
