@@ -152,6 +152,7 @@ namespace DataTools.Common
             {
                 var updateBuilder = new SqlUpdate().From<ModelT>();
                 ModelMapper<ModelT>.BindUpdateValues(updateBuilder, model);
+                ModelMapper<ModelT>.BindUpdateWhere(updateBuilder, model);
 
                 var result = ds.ExecuteWithResult(updateBuilder).ToArray()[0];
                 var queryCache = new SelectCache();
@@ -177,6 +178,7 @@ namespace DataTools.Common
                 var mapper = DynamicMapper.GetMapper(modelMetadata);
 
                 mapper.BindUpdateValues(updateBuilder, model);
+                mapper.BindUpdateWhere(updateBuilder, model);
 
                 var result = ds.ExecuteWithResult(updateBuilder).ToArray()[0];
 
@@ -198,7 +200,7 @@ namespace DataTools.Common
             try
             {
                 var deleteBuilder = new SqlDelete().From<ModelT>();
-                ModelMapper<ModelT>.BindDeleteValues(deleteBuilder, model);
+                ModelMapper<ModelT>.BindDeleteWhere(deleteBuilder, model);
                 ds.Execute(deleteBuilder);
             }
             finally
@@ -213,7 +215,7 @@ namespace DataTools.Common
             {
                 var deleteBuilder = new SqlDelete().From(modelMetadata);
                 var mapper = DynamicMapper.GetMapper(modelMetadata);
-                mapper.BindDeleteValues(deleteBuilder, model);
+                mapper.BindDeleteWhere(deleteBuilder, model);
                 ds.Execute(deleteBuilder);
             }
             finally

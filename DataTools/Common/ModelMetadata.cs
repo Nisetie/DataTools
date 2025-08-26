@@ -69,7 +69,7 @@ namespace DataTools.Meta
             }
         }
 
-        public IEnumerable<string> GetColumnsForOrdering()
+        public IEnumerable<string> GetColumnsForFilterOrder()
         {
             foreach (var f in _fields)
             {
@@ -111,6 +111,14 @@ namespace DataTools.Meta
             return from field
                    in Fields
                    where !(field.IgnoreChanges || field.IsAutoincrement)
+                   select field;
+        }
+
+        public IEnumerable<IModelFieldMetadata> GetFilterableFields()
+        {
+            return from field
+                   in Fields
+                   where field.IsPrimaryKey || field.IsAutoincrement || field.IsUnique
                    select field;
         }
 

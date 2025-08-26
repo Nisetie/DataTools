@@ -127,7 +127,7 @@ namespace DataTools.Deploy
                 long rowsPerPage = RowsPerBatch;
                 long pages = count / rowsPerPage;
 
-                var orderedFields = meta.GetColumnsForOrdering().ToArray();
+                var orderedFields = meta.GetColumnsForFilterOrder().ToArray();
 
                 var offset = new SqlConstant(startBound);
 

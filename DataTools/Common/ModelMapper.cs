@@ -14,6 +14,7 @@ namespace DataTools.Common
     public static class ModelMapper<ModelT> where ModelT : class, new()
     {
         private static IModelMetadata Metadata = ModelMetadata<ModelT>.Instance;
+        private static Action<ModelT, ModelT> _modelCopier;
         public static Action<SqlInsert, ModelT> BindInsertValues { get; private set; }
 
         /// <summary>
@@ -27,7 +28,8 @@ namespace DataTools.Common
         public static Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT> MapModel { get; private set; }
 
         public static Action<SqlUpdate, ModelT> BindUpdateValues { get; private set; }
-        public static Action<SqlDelete, ModelT> BindDeleteValues { get; private set; }
+        public static Action<SqlUpdate, ModelT> BindUpdateWhere { get; private set; }
+        public static Action<SqlDelete, ModelT> BindDeleteWhere { get; private set; }
 
         public static SqlSelect CachedSelect { get; private set; }
         public static Dictionary<string, SqlParameter> CachedParameters { get; private set; } = new Dictionary<string, SqlParameter>();
@@ -121,7 +123,8 @@ namespace DataTools.Common
         /// </summary>
         private static void PrepareUpdateCommand()
         {
-            BindUpdateValues = MappingHelper.PrepareUpdateCommand<Action<SqlUpdate, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindUpdateValues = MappingHelper.PrepareBindUpdateValuesCommand<Action<SqlUpdate, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindUpdateWhere = MappingHelper.PrepareBindUpdateWhereCommand<Action<SqlUpdate, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
         }
 
         /// <summary>
@@ -132,7 +135,21 @@ namespace DataTools.Common
         /// </summary>
         private static void PrepareDeleteCommand()
         {
-            BindDeleteValues = MappingHelper.PrepareDeleteCommand<Action<SqlDelete, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            BindDeleteWhere = MappingHelper.PrepareDeleteWhereCommand<Action<SqlDelete, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+        }
+
+        private static void PrepareModelCopier()
+        {
+            var param_from = Expression.Parameter(typeof(ModelT));
+            var param_to = Expression.Parameter(typeof(ModelT));
+
+            List<BinaryExpression> assigns = new List<BinaryExpression>();
+            foreach (var f in Metadata.Fields)
+            {
+                assigns.Add(Expression.Assign(Expression.Property(param_to, f.FieldName), Expression.Property(param_from, f.FieldName)));
+            }
+
+            _modelCopier = Expression.Lambda<Action<ModelT, ModelT>>(Expression.Block(assigns), param_from, param_to).Compile();
         }
 
         static ModelMapper()
@@ -145,8 +162,12 @@ namespace DataTools.Common
             CachedSelect = preparedQuery.query;
             CachedParameters = preparedQuery.parameters;
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<ModelT, string>>(ModelMetadata<ModelT>.Instance, GetModelInputParameterExpression, GetModelPropertyExpression);
+            PrepareModelCopier();
         }
 
+        public static void CopyValues(ModelT from, ModelT to)
+        {
+            _modelCopier(from, to);
+        }
     }
 }
-
