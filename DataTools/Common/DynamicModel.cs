@@ -38,7 +38,7 @@ namespace DataTools.Common
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
-            if (_members.TryGetValue(binder.Name.ToLower(), out result))
+            if (_members.TryGetValue(binder.Name, out result))
                 return true;
             else
             {
@@ -49,15 +49,15 @@ namespace DataTools.Common
 
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            this[binder.Name.ToLower()] = value;
+            this[binder.Name] = value;
             return true;
         }
 
         public override bool TryInvokeMember(InvokeMemberBinder binder, object[] args, out object result)
         {
-            if (_members.ContainsKey(binder.Name.ToLower()))
+            if (_members.ContainsKey(binder.Name))
             {
-                dynamic invoker = _members[binder.Name.ToLower()];
+                dynamic invoker = _members[binder.Name];
                 result = (invoker as Delegate).DynamicInvoke(args);
                 return true;
             }
