@@ -26,12 +26,19 @@ namespace DataTools_DataMigration
         private static bool _verbose = false;
 
         private static Dictionary<string, E_DBMS> _dbmsKeys;
+        private static Dictionary<string, DataMigrationMode> _modes;
 
         private static bool _ignoreCostraints = false;
 
         private static bool _debug = false;
 
         private static int _rowsPerBatch = 1000;
+
+        private static DataMigrationMode _mode = DataMigrationMode.only_data;
+        private static string _schemaNameIncludeFilter = "";
+        private static string _tableNameIncludeFilter = "";
+        private static string _schemaNameExcludeFilter = "";
+        private static string _tableNameExcludeFilter = "";
 
         private static DataMigrationWorker _worker;
 
@@ -42,6 +49,13 @@ namespace DataTools_DataMigration
             foreach (var name in names)
             {
                 _dbmsKeys[name.ToLower()] = Enum.Parse<E_DBMS>(name);
+            }
+
+            _modes = new Dictionary<string, DataMigrationMode>();
+            var names1 = Enum.GetNames<DataMigrationMode>();
+            foreach (var name in names1)
+            {
+                _modes[name.ToLower()] = Enum.Parse<DataMigrationMode>(name);
             }
         }
 
@@ -57,8 +71,8 @@ namespace DataTools_DataMigration
             _arguments = new ArgumentsCollection();
 
 
-            _arguments.AddParameter(new InputArgumentWithInput("-a", "Assembly file path.", (string path) => _assemblyFileName = Path.GetFullPath(path, processCatalog)), true, "-m");
-            _arguments.AddParameter(new InputArgumentWithInput("-m", "Metamodels file path.", (string path) => _metamodelsFileName = Path.GetFullPath(path, processCatalog)), true, "-a");
+            _arguments.AddParameter(new InputArgumentWithInput("-a", "Assembly file path.", (string path) => _assemblyFileName = Path.GetFullPath(path, processCatalog)), false, "-m");
+            _arguments.AddParameter(new InputArgumentWithInput("-m", "Metamodels file path.", (string path) => _metamodelsFileName = Path.GetFullPath(path, processCatalog)), false, "-a");
             _arguments.AddParameter(new InputArgumentWithInput("-fd", $"From DBMS product: {string.Join(',', Enum.GetNames<E_DBMS>().Select(n => n.ToLower()))}.", (string dbms) =>
             {
                 _fromdbms = _dbmsKeys[dbms];
@@ -105,6 +119,14 @@ namespace DataTools_DataMigration
                     _arguments.ShowHelp(1);
                 }
             }), true, "-tc");
+            _arguments.AddParameter(new InputArgumentWithInput("-mm", $"Migration mode: {string.Join(',', Enum.GetNames<DataMigrationMode>().Select(n => n.ToLower()))}. Default: -mm {_mode.ToString().ToLower()}", (string mode) =>
+            {
+                _mode = _modes[mode];
+            }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. -s 'dbo')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. -t 'Student')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. -sx 'dbo')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. -tx 'Student')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
             _arguments.AddParameter(new InputArgument("-ic", "Don't consider constraints on inserting. Generated columns and so on...", () => _ignoreCostraints = true), false);
             _arguments.AddParameter(new InputArgumentWithInput("-rc", $"Rows count per INSERT. Default: {_rowsPerBatch}", (string count) => _rowsPerBatch = int.Parse(count)), false);
             _arguments.AddParameter(new InputArgument("-v", "Verbose.", () => _verbose = true), false);
@@ -119,16 +141,6 @@ namespace DataTools_DataMigration
                 ConsoleWriteLine("Wait for debugging...Press any key to continue.");
                 Console.Read();
             }
-
-            var opts = new DataMigrationOptions()
-            {
-                FromConnectionString = _fromConnectionString,
-                ToConnectionString = _toConnectionString,
-                FromDBMS = _fromdbms,
-                ToDBMS = _todbms,
-                IgnoreConstraints = _ignoreCostraints,
-                RowsPerBatch = _rowsPerBatch
-            };
 
             IEnumerable<IModelMetadata> metas = null;
 
@@ -145,7 +157,21 @@ namespace DataTools_DataMigration
                     ConsoleWriteLine($"Metamodels file analyzing finished.");
             }
 
-            opts.Metadatas = metas;
+            var opts = new DataMigrationOptions()
+            {
+                FromConnectionString = _fromConnectionString,
+                ToConnectionString = _toConnectionString,
+                FromDBMS = _fromdbms,
+                ToDBMS = _todbms,
+                IgnoreConstraints = _ignoreCostraints,
+                RowsPerBatch = _rowsPerBatch,
+                Mode = _mode,
+                SchemaExcludeNameFilter = _schemaNameExcludeFilter,
+                SchemaIncludeNameFilter = _schemaNameIncludeFilter,
+                TableExcludeNameFilter = _tableNameExcludeFilter,
+                TableIncludeNameFilter = _tableNameIncludeFilter,
+                Metadatas = metas
+            };
 
             _worker = new DataMigrationWorker(opts);
             if (_verbose)

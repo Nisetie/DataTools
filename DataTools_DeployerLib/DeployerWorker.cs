@@ -24,7 +24,6 @@ namespace DataTools.Deploy
         public E_DEPLOY_MODE Mode { get; set; }
         public E_DBMS DBMS { get; set; }
         public bool IgnoreAllCostraints { get; set; } = false;
-        public bool IgnoreIdentities { get; set; }
         public IEnumerable<IModelMetadata> Metadatas { get; set; }
     }
 
@@ -40,7 +39,6 @@ namespace DataTools.Deploy
             this.Mode = options.Mode;
             this.DBMS = options.DBMS;
             this.IgnoreAllCostraints = options.IgnoreAllCostraints;
-            this.IgnoreIdentities = options.IgnoreIdentities;
             this.Metadatas = options.Metadatas;
 
             switch (DBMS)
@@ -104,12 +102,6 @@ namespace DataTools.Deploy
                         else meta.AddField(field);
                     }
                 }
-            }
-            else if (IgnoreIdentities)
-            {
-                foreach (var meta in Metadatas)
-                    foreach (var field in meta.Fields)
-                        field.IsAutoincrement = false;
             }
 
             var alreadyCreated = new List<string>();

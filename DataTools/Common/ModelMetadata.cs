@@ -179,8 +179,6 @@ namespace DataTools.Meta
             if (instance.NoUniqueKey == false)
                 if (!instance.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
                     throw new Exception($"Анализ {instance.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Укажите как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}.");
-
-            var pks = instance.Fields.Where(f => f.IsAutoincrement || f.IsPrimaryKey).ToArray();
         }
     }
 

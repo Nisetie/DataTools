@@ -33,7 +33,11 @@ namespace DataTools.Extensions
             => context.CallProcedure(new SqlProcedure()
                 .Call(pName)
                 .Parameter((from par in pars select new SqlConstant(par)).ToArray()));
-
+        public static IEnumerable<ModelT> CallTableFunction<ModelT>(this IDataContext context, params object[] pars)
+            where ModelT : class, new()
+            => context.CallTableFunction<ModelT>(new SqlFunction()
+                .Call(ModelMetadata<ModelT>.Instance.FullObjectName)
+                .Parameter((from par in pars select new SqlConstant(par)).ToArray()));
         public static IEnumerable<ModelT> CallTableFunction<ModelT>(this IDataContext context, string fName, params object[] pars)
             where ModelT : class, new()
             => context.CallTableFunction<ModelT>(new SqlFunction()
@@ -42,6 +46,11 @@ namespace DataTools.Extensions
         public static IEnumerable<dynamic> CallTableFunction(this IDataContext context, IModelMetadata modelMetadata, string fName, params object[] pars)
             => context.CallTableFunction(modelMetadata, new SqlFunction()
                 .Call(fName)
+                .Parameter((from par in pars select new SqlConstant(par)).ToArray()));
+
+        public static IEnumerable<dynamic> CallTableFunction(this IDataContext context, IModelMetadata modelMetadata, params object[] pars)
+            => context.CallTableFunction(modelMetadata, new SqlFunction()
+                .Call(modelMetadata.FullObjectName)
                 .Parameter((from par in pars select new SqlConstant(par)).ToArray()));
 
         public static object CallScalarFunction(this IDataContext context, string fName, params object[] pars)

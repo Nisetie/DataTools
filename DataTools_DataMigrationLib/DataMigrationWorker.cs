@@ -12,15 +12,30 @@ using System.Linq;
 namespace DataTools.Deploy
 {
 
+    public enum DataMigrationMode
+    {
+        all, create_schema, only_data
+    }
+
     public class DataMigrationOptions
     {
+        public DataMigrationMode Mode { get; set; }
         public E_DBMS FromDBMS { get; set; }
         public E_DBMS ToDBMS { get; set; }
         public string FromConnectionString { get; set; }
         public string ToConnectionString { get; set; }
         public IEnumerable<IModelMetadata> Metadatas { get; set; }
+
+        /// <summary>
+        /// При переносе данных в операции INSERT игнорировать такие ограничения, как автоинкремент или вычисляемый столбец.
+        /// Иначе такие колонки будут пропущены.
+        /// </summary>
         public bool IgnoreConstraints { get; set; }
         public int RowsPerBatch { get; set; } = 1000;
+        public string SchemaIncludeNameFilter { get; set; } = "";
+        public string TableIncludeNameFilter { get; set; } = "";
+        public string SchemaExcludeNameFilter { get; set; } = "";
+        public string TableExcludeNameFilter { get; set; } = "";
     }
 
     public class DataMigrationWorker : DataMigrationOptions
@@ -38,6 +53,11 @@ namespace DataTools.Deploy
             this.Metadatas = options.Metadatas;
             this.IgnoreConstraints = options.IgnoreConstraints;
             this.RowsPerBatch = options.RowsPerBatch;
+            this.Mode = options.Mode;
+            this.SchemaIncludeNameFilter = options.SchemaIncludeNameFilter;
+            this.SchemaExcludeNameFilter = options.SchemaExcludeNameFilter;
+            this.TableIncludeNameFilter = options.TableIncludeNameFilter;
+            this.TableExcludeNameFilter = options.TableExcludeNameFilter;
 
             switch (FromDBMS)
             {
@@ -80,11 +100,39 @@ namespace DataTools.Deploy
 
         public IEnumerable<MigrationInfo> RunProgress()
         {
+            if (Metadatas == null)
+            {
+                var generator = new GeneratorWorker(new GeneratorOptions()
+                {
+                    ConnectionString = this.FromConnectionString,
+                    DBMS = this.FromDBMS,
+                    SchemaExcludeNameFilter = this.SchemaExcludeNameFilter,
+                    SchemaIncludeNameFilter = this.SchemaIncludeNameFilter,
+                    TableExcludeNameFilter = this.TableExcludeNameFilter,
+                    TableIncludeNameFilter = this.TableIncludeNameFilter
+                });
+                Metadatas = generator.GetModelDefinitions().Select(md => md.ModelMetadata).ToArray();
+            }
+
+            if (Mode == DataMigrationMode.all || Mode == DataMigrationMode.create_schema)
+            {
+                var deployer = new DeployerWorker(new DeployerOptions()
+                {
+                    ConnectionString = this.ToConnectionString,
+                    DBMS = this.ToDBMS,
+                    Metadatas = Metadatas,
+                    Mode = E_DEPLOY_MODE.REDEPLOY
+                });
+                deployer.Run();
+            }
+
+            if (!(Mode == DataMigrationMode.all || Mode == DataMigrationMode.only_data))
+                yield break;
+
             var metas = MetadataHelper.SortForUndeploy(Metadatas).ToArray();
             foreach (var meta in metas)
             {
                 if (meta.IsView) continue;
-                //yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.BEFORE, Metadata = meta };
                 _toContext.Execute(_toMigrator.GetClearTableQuery(meta));
             }
 
@@ -143,7 +191,7 @@ namespace DataTools.Deploy
                 while (results.Length > 0)
                 {
                     insertBatch.Value(results);
-                    _toContext.Execute(new SqlComposition(queryBefore,insertBatch));
+                    _toContext.Execute(new SqlComposition(queryBefore, insertBatch));
 
                     startBound += rowsPerPage;
                     yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.MIGRATING, Metadata = meta, TotalRows = count, InsertedRows = startBound < count ? startBound : count };

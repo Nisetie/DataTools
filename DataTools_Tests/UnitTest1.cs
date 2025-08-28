@@ -2785,7 +2785,6 @@ as
                     {
                         DBMS = tt,
                         ConnectionString = _toConnectionStrings[j],
-                        IgnoreIdentities = true,
                         Metadatas = metadatas.Select(mt => mt.ModelMetadata),
                         Mode = E_DEPLOY_MODE.REDEPLOY
                     };
