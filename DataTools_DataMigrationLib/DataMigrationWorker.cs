@@ -202,9 +202,6 @@ namespace DataTools.Deploy
                     GC.Collect(2, GCCollectionMode.Forced, true, true);
                 }
 
-
-                //yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.AFTER, Metadata = meta };
-
                 var queryAfter = _toMigrator.AfterMigration(meta);
                 if (!string.IsNullOrEmpty(queryAfter.ToString()))
                     _toContext.Execute(queryAfter);

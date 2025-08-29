@@ -11,391 +11,16 @@ using DataTools.MSSQL;
 using DataTools.PostgreSQL;
 using DataTools.SQLite;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using NUnit.Framework;
 using NUnit.Framework.Internal;
-using System.Data.SQLite;
-using System.Net.Sockets;
-using System.Security;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+
 
 namespace DataTools_Tests
 {
-    public class TestData
-    {
-        public TestModel[] testModels;
-        public TestModelExtra[] testModelExtras;
-        public TestModelChild[] testModelChilds;
-        public TestModelGuidParent[] testModelGuidParents;
-        public TestModelGuidChild[] testModelGuidChilds;
-        public TestModelSimple[] testModelSimples;
-        public TestModelParentCompositePrimaryKey[] testModelParentCompositePrimaryKeys;
-        public TestModelChildCompositePrimaryKey[] testModelChildCompositePrimaryKeys;
-        public TestModelPrimaryKeyAsForeignKey[] testModelPrimaryKeyAsForeignKeys;
-        public TestModelCompositePrimaryKey[] testModelCompositePrimaryKeys;
-
-        public IEnumerable<IModelMetadata> Metadatas = [
-            ModelMetadata<TestModel>.Instance,
-            ModelMetadata<TestModelExtra>.Instance,
-            ModelMetadata<TestModelChild>.Instance,
-            ModelMetadata<TestModelGuidParent>.Instance,
-            ModelMetadata<TestModelGuidChild>.Instance,
-            ModelMetadata<TestModelSimple>.Instance,
-            ModelMetadata<TestModelParentCompositePrimaryKey>.Instance,
-            ModelMetadata<TestModelChildCompositePrimaryKey>.Instance,
-            ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance,
-            ModelMetadata<TestModelCompositePrimaryKey>.Instance
-            ];
-
-        public TestData()
-        {
-            testModels = new TestModel[] {
-                new TestModel() {
-                    Id =1,
-                    LongId =1L,
-                    ShortId = 1,
-                    Name = "TestModel1",
-                    CharCode ="a",
-                    Checked = false,
-                    Value = 1,
-                    FValue =1.1F,
-                    GValue = 1.2,
-                    Money = (decimal)1.3,
-                    Timestamp = DateTime.Parse("2024-01-01"),
-                    Duration = TimeSpan.Parse("23:59:59"),
-                    Guid = Guid.NewGuid(),
-                    bindata = Convert.FromHexString("01020304")
-                },
-                new TestModel() {
-                    Id =2,
-                    LongId =2L,
-                    ShortId = 2,
-                    Name = "TestModel2",
-                    CharCode ="b",
-                    Checked = true,
-                    Value = 1,
-                    FValue =1.1F,
-                    GValue = 1.2,
-                    Money = (decimal)1.3,
-                    Timestamp = DateTime.Parse("2024-03-01"),
-                    Duration = TimeSpan.Parse("01:01:01"),
-                    Guid = Guid.NewGuid(),
-                    bindata = Convert.FromHexString("FFFFFFFF")
-                },
-                new TestModel() {
-                    Id =3,
-                    LongId =null,
-                    ShortId = null,
-                    Name = "TestModel3",
-                    CharCode ="b",
-                    Checked = true,
-                    Value = 1,
-                    FValue =1.1F,
-                    GValue = 1.3,
-                    Money = (decimal)1.4,
-                    Timestamp = DateTime.Parse("2024-04-01"),
-                    Duration = TimeSpan.Parse("01:01:01"),
-                    Guid = Guid.NewGuid(),
-                    bindata = Convert.FromHexString("0000FF00")
-                }
-            };
-
-            testModelExtras = new TestModelExtra[] {
-                new TestModelExtra() {
-                    Id = 1,
-                    Name = "TestModelExtra1",
-                    Value = 1,
-                    FValue = 1.1F,
-                    GValue = 1.2,
-                    Timestamp = DateTime.Parse("2024-01-01"),
-                    Extra = null
-                },
-                new TestModelExtra() {
-                    Id = 2,
-                    Name = "TestModelExtra2",
-                    Value = 1,
-                    FValue = 1.1F,
-                    GValue = 1.2,
-                    Timestamp = DateTime.Parse("2023-01-01"),
-                    Extra = null
-                }
-            };
-            testModelExtras[0].Extra = testModelExtras[0];
-            testModelExtras[1].Extra = testModelExtras[1];
-
-            testModelChilds = new TestModelChild[]
-            {
-                new TestModelChild()
-                {
-                    Id = 1,
-                    Name = "TestModelChild1",
-                    Value = 1,
-                    FValue = 1.1f,
-                    GValue = 1.2,
-                    Timestamp= DateTime.Parse("2024-01-01"),
-                    Parent = testModels[0],
-                    Extra = testModelExtras[0]
-                },
-                new TestModelChild()
-                {
-                    Id = 2,
-                    Name = "TestModelChild2",
-                    Value = 1,
-                    FValue = 1.15f,
-                    GValue = 1.25,
-                    Timestamp= DateTime.Parse("2023-01-01"),
-                    Parent = testModels[2],
-                    Extra = testModelExtras[1]
-                },
-            };
-
-            testModelGuidParents = new TestModelGuidParent[]
-            {
-                new TestModelGuidParent()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "parent1"
-                },
-                new TestModelGuidParent()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "parent2"
-                }
-           };
-
-            testModelGuidChilds = new TestModelGuidChild[]
-            {
-                new TestModelGuidChild()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "child1",
-                    Parent = testModelGuidParents[0]
-                },
-                new TestModelGuidChild()
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "child2",
-                    Parent = testModelGuidParents[1]
-                }
-            };
-
-            testModelSimples = new TestModelSimple[]
-          {
-                new TestModelSimple()
-                {
-                    Id = 1,
-                    Name = "a"
-                },
-                new TestModelSimple()
-                {
-                    Id = 2,
-                    Name = "b"
-                },
-                new TestModelSimple()
-                {
-                    Id = 1,
-                    Name = "c"
-                },
-                new TestModelSimple()
-                {
-                    Id = 3,
-                    Name = "b"
-                },
-                new TestModelSimple()
-                {
-                    Id = null,
-                    Name = "d"
-                }
-          };
-
-            testModelParentCompositePrimaryKeys = new TestModelParentCompositePrimaryKey[]
-        {
-                new TestModelParentCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 1,
-                    k = "abc"
-                },
-                new TestModelParentCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 2,
-                    k = "def"
-                },
-                new TestModelParentCompositePrimaryKey()
-                {
-                    i = 2,
-                    j = 2,
-                    k = "ghi"
-                },
-                new TestModelParentCompositePrimaryKey()
-                {
-                    i = 3,
-                    j = 3,
-                    k = "jkl"
-                },
-        };
-
-            testModelChildCompositePrimaryKeys = new TestModelChildCompositePrimaryKey[] {
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 1,
-                    Parent = testModelParentCompositePrimaryKeys[0],
-                    k = "abc"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 2,
-                    j = 2,
-                    Parent = testModelParentCompositePrimaryKeys[0],
-                    k = "def"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 2,
-                    Parent = testModelParentCompositePrimaryKeys[1],
-                    k = "ghi"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 2,
-                    j = 3,
-                    Parent = testModelParentCompositePrimaryKeys[2],
-                    k = "jkl"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 3,
-                    j = 3,
-                    Parent = testModelParentCompositePrimaryKeys[3],
-                    k = "mno"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 4,
-                    j = 1,
-                    Parent = null,
-                    k = "pqr"
-                },
-                new TestModelChildCompositePrimaryKey()
-                {
-                    i = 5,
-                    j = 5,
-                    Parent = testModelParentCompositePrimaryKeys[1],
-                    k = "stu"
-                }
-            };
-
-            testModelPrimaryKeyAsForeignKeys = new TestModelPrimaryKeyAsForeignKey[]
-            {
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[0],
-                    k = "abc"
-                },
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[1],
-                    k = "def"
-                },
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[2],
-                    k = "ghi"
-                },
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[3],
-                    k = "jkl"
-                },
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[4],
-                    k = "mno"
-                },
-                new TestModelPrimaryKeyAsForeignKey()
-                {
-                    Child = testModelChildCompositePrimaryKeys[5],
-                    k = "pqr"
-                }
-            };
-
-            testModelCompositePrimaryKeys = new TestModelCompositePrimaryKey[]
-{
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 1,
-                    k = "abc"
-                },
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 2,
-                    j = 2,
-                    k = "def"
-                },
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 1,
-                    j = 2,
-                    k = "ghi"
-                },
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 2,
-                    j = 3,
-                    k = "jkl"
-                },
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 3,
-                    j = 3,
-                    k = "mno"
-                },
-                new TestModelCompositePrimaryKey()
-                {
-                    i = 4,
-                    j = 1,
-                    k = "pqr"
-                }
-};
-        }
-
-        public void InsertTestData(IDataContext DataContext)
-        {
-            var testdata = new TestData();
-
-            void ProcessInsertion<ModelT>(ModelT[] models) where ModelT : class, new()
-            {
-                foreach (var m in models)
-                {
-                    DataContext.Insert(m);
-                }
-            }
-         ;
-
-            ProcessInsertion(testdata.testModels);
-
-            ProcessInsertion(testdata.testModelExtras);
-
-            ProcessInsertion(testdata.testModelChilds);
-
-            ProcessInsertion(testdata.testModelGuidParents);
-
-            ProcessInsertion(testdata.testModelGuidChilds);
-
-            ProcessInsertion(testdata.testModelSimples);
-
-            ProcessInsertion(testdata.testModelParentCompositePrimaryKeys);
-
-            ProcessInsertion(testdata.testModelChildCompositePrimaryKeys);
-
-            ProcessInsertion(testdata.testModelPrimaryKeyAsForeignKeys);
-
-            ProcessInsertion(testdata.testModelCompositePrimaryKeys);
-        }
-    }
-
     public abstract class CommonTests<ContextT> where ContextT : DataContext, new()
     {
         public ContextT DataContext;
@@ -621,7 +246,7 @@ namespace DataTools_Tests
         {
             var meta = ModelMetadata<TestModel>.Instance;
 
-            var mapper = (IDataContext context, object[] values) =>
+            var mapper = new Func<IDataContext, object[], object>((IDataContext context, object[] values) =>
             {
                 var m = new TestModel();
                 var l = values[meta.GetField(nameof(TestModel.Id)).FieldOrder];
@@ -641,7 +266,7 @@ namespace DataTools_Tests
                 m.bindata = values[meta.GetField(nameof(TestModel.bindata)).FieldOrder].Cast<byte[]>();
 
                 return m;
-            };
+            });
 
             DataContext.AddCustomModelMapper<TestModel>(mapper);
 
@@ -690,14 +315,7 @@ namespace DataTools_Tests
 
             TestContext.Out.WriteLine(cmd.ToString());
 
-            switch (DataContext)
-            {
-                case MSSQL_DataContext _: TestContext.Out.WriteLine(new MSSQL_QueryParser().ToString(cmd)); break;
-                case PostgreSQL_DataContext _: TestContext.Out.WriteLine(new PostgreSQL_QueryParser().ToString(cmd)); break;
-                case SQLite_DataContext _: TestContext.Out.WriteLine(new SQLite_QueryParser().ToString(cmd)); break;
-                case InMemory_SQLite_DataContext _: TestContext.Out.WriteLine(new SQLite_QueryParser().ToString(cmd)); break;
-                default: throw new Exception($"{nameof(TestCreateTable)}. Unknown data context type: {DataContext.GetType()}");
-            }
+            TestContext.Out.WriteLine(GetQueryParser().ToString(cmd));
 
             TestContext.Out.WriteLine(GetQueryParser().ToString(new SqlCreateTable().Table<TestModelParentCompositePrimaryKey>()));
             TestContext.Out.WriteLine(GetQueryParser().ToString(new SqlCreateTable().Table<TestModelChildCompositePrimaryKey>()));
@@ -714,13 +332,7 @@ namespace DataTools_Tests
 
             TestContext.Out.WriteLine(cmd.ToString());
 
-            switch (DataContext)
-            {
-                case MSSQL_DataContext _: TestContext.Out.WriteLine(new MSSQL_QueryParser().ToString(cmd)); break;
-                case PostgreSQL_DataContext _: TestContext.Out.WriteLine(new PostgreSQL_QueryParser().ToString(cmd)); break;
-                case SQLite_DataContext _: TestContext.Out.WriteLine(new SQLite_QueryParser().ToString(cmd)); break;
-                case InMemory_SQLite_DataContext _: TestContext.Out.WriteLine(new SQLite_QueryParser().ToString(cmd)); break;
-            }
+            TestContext.Out.WriteLine(GetQueryParser().ToString(cmd));
 
             Assert.DoesNotThrow(() => DataContext.Execute(cmd));
         }
@@ -892,9 +504,9 @@ namespace DataTools_Tests
             var result = DataContext.SelectFrom<TestModel>().OrderBy("Name").Select().ToArray();
 
             var check1 = result.Length == 3;
-            var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && Convert.ToHexString(result[0].bindata) == "01020304";
-            var check3 = result[1].Id == 2 && result[1].LongId == 2L && result[1].ShortId == 2 && result[1].Name == "TestModel2" && result[1].CharCode == "b" && result[1].Checked == true && result[1].Value == 1 && result[1].FValue == 1.1F && result[1].GValue == 1.2 && result[1].Money == (decimal)1.3 && result[1].Timestamp == DateTime.Parse("2024-03-01") && result[1].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[1].bindata) == "FFFFFFFF";
-            var check4 = result[2].Id == 3 && result[2].LongId == null && result[2].ShortId == null && result[2].Name == "TestModel3" && result[2].CharCode == "b" && result[2].Checked == true && result[2].Value == 1 && result[2].FValue == 1.1F && result[2].GValue == 1.3 && result[2].Money == (decimal)1.4 && result[2].Timestamp == DateTime.Parse("2024-04-01") && result[2].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[2].bindata) == "0000FF00";
+            var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && BitConverter.ToString(result[0].bindata) == "01-02-03-04";
+            var check3 = result[1].Id == 2 && result[1].LongId == 2L && result[1].ShortId == 2 && result[1].Name == "TestModel2" && result[1].CharCode == "b" && result[1].Checked == true && result[1].Value == 1 && result[1].FValue == 1.1F && result[1].GValue == 1.2 && result[1].Money == (decimal)1.3 && result[1].Timestamp == DateTime.Parse("2024-03-01") && result[1].Duration == TimeSpan.Parse("01:01:01") && BitConverter.ToString(result[1].bindata) == "FF-FF-FF-FF";
+            var check4 = result[2].Id == 3 && result[2].LongId == null && result[2].ShortId == null && result[2].Name == "TestModel3" && result[2].CharCode == "b" && result[2].Checked == true && result[2].Value == 1 && result[2].FValue == 1.1F && result[2].GValue == 1.3 && result[2].Money == (decimal)1.4 && result[2].Timestamp == DateTime.Parse("2024-04-01") && result[2].Duration == TimeSpan.Parse("01:01:01") && BitConverter.ToString(result[2].bindata) == "00-00-FF-00";
 
             TestContext.Out.WriteLine($"{check1} {check2} {check3} {check4}");
 
@@ -916,9 +528,9 @@ namespace DataTools_Tests
             var result = DataContext.SelectFrom(ModelMetadata<TestModel>.Instance).OrderBy("Name").Select().ToArray();
 
             var check1 = result.Length == 3;
-            var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && Convert.ToHexString(result[0].bindata) == "01020304";
-            var check3 = result[1].Id == 2 && result[1].LongId == 2L && result[1].ShortId == 2 && result[1].Name == "TestModel2" && result[1].CharCode == "b" && result[1].Checked == true && result[1].Value == 1 && result[1].FValue == 1.1F && result[1].GValue == 1.2 && result[1].Money == (decimal)1.3 && result[1].Timestamp == DateTime.Parse("2024-03-01") && result[1].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[1].bindata) == "FFFFFFFF";
-            var check4 = result[2].Id == 3 && result[2].LongId == null && result[2].ShortId == null && result[2].Name == "TestModel3" && result[2].CharCode == "b" && result[2].Checked == true && result[2].Value == 1 && result[2].FValue == 1.1F && result[2].GValue == 1.3 && result[2].Money == (decimal)1.4 && result[2].Timestamp == DateTime.Parse("2024-04-01") && result[2].Duration == TimeSpan.Parse("01:01:01") && Convert.ToHexString(result[2].bindata) == "0000FF00";
+            var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && BitConverter.ToString(result[0].bindata) == "01-02-03-04";
+            var check3 = result[1].Id == 2 && result[1].LongId == 2L && result[1].ShortId == 2 && result[1].Name == "TestModel2" && result[1].CharCode == "b" && result[1].Checked == true && result[1].Value == 1 && result[1].FValue == 1.1F && result[1].GValue == 1.2 && result[1].Money == (decimal)1.3 && result[1].Timestamp == DateTime.Parse("2024-03-01") && result[1].Duration == TimeSpan.Parse("01:01:01") && BitConverter.ToString(result[1].bindata) == "FF-FF-FF-FF";
+            var check4 = result[2].Id == 3 && result[2].LongId == null && result[2].ShortId == null && result[2].Name == "TestModel3" && result[2].CharCode == "b" && result[2].Checked == true && result[2].Value == 1 && result[2].FValue == 1.1F && result[2].GValue == 1.3 && result[2].Money == (decimal)1.4 && result[2].Timestamp == DateTime.Parse("2024-04-01") && result[2].Duration == TimeSpan.Parse("01:01:01") && BitConverter.ToString(result[2].bindata) == "00-00-FF-00";
 
             TestContext.Out.WriteLine($"{check1} {check2} {check3} {check4}");
 
@@ -946,7 +558,7 @@ namespace DataTools_Tests
                 result[0].Name == "TestModelChild1" &&
                 result[0].FValue == 1.1F &&
                 result[0].GValue == 1.2 &&
-                result[0].Timestamp == DateTime.Parse("2024-01-01") &&
+                result[0].Timestamp.Value == DateTime.Parse("2024-01-01") &&
                 result[0].Parent.Id == 1 &&
                 result[0].Extra.Id == 1
                 )
@@ -956,7 +568,7 @@ namespace DataTools_Tests
                 result[1].Name == "TestModelChild2" &&
                 result[1].FValue == 1.15F &&
                 result[1].GValue == 1.25 &&
-                result[1].Timestamp == DateTime.Parse("2023-01-01") &&
+                result[1].Timestamp.Value == DateTime.Parse("2023-01-01") &&
                 result[1].Parent.Id == 3 &&
                 result[1].Extra.Id == 2
                )
@@ -1113,11 +725,11 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKey()
         {
-            var m = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(m => m.i == 1 && m.j == 1).Select().ToArray()[0];
-            var m1 = new TestModelCompositePrimaryKey();
-            ModelMapper<TestModelCompositePrimaryKey>.CopyValues(m, m1);
-            m1.i = 500;
-            var sql = new SqlUpdate().From<TestModelCompositePrimaryKey>().Where(m).Value(m1);
+            var model = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(m => m.i == 1 && m.j == 1).Select().ToArray()[0];
+            var model1 = new TestModelCompositePrimaryKey();
+            ModelMapper<TestModelCompositePrimaryKey>.CopyValues(model, model1);
+            model1.i = 500;
+            var sql = new SqlUpdate().From<TestModelCompositePrimaryKey>().Where(model).Value(model1);
             DataContext.Execute(sql);
 
             var result = DataContext.SelectFrom<TestModelCompositePrimaryKey>().OrderBy("i", "j").Select().ToArray();
@@ -1136,7 +748,7 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKeyDynamic()
         {
-            dynamic m = DataContext.SelectFrom(ModelMetadata< TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("j").EqValue(1)).Select().ToArray()[0];
+            dynamic m = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("j").EqValue(1)).Select().ToArray()[0];
             dynamic m1 = new DynamicModel();
             DynamicMapper.CopyValues(ModelMetadata<TestModelCompositePrimaryKey>.Instance, m, m1);
             m1.i = 500;
@@ -1494,7 +1106,7 @@ namespace DataTools_Tests
         [Test]
         public void TestWhereExpression6()
         {
-            var f = () => 1;
+            var f = new Func<int>( () => 1);
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == f());
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
             var result = cmd.Select().ToArray();
@@ -1506,7 +1118,7 @@ namespace DataTools_Tests
         public void TestWhereIsNull()
         {
             var ar = DataContext.SelectFrom<TestModelSimple>().Where("Id", null).Select().ToArray();
-            TestContext.Out.WriteLine($"{ar.Length} {string.Join<TestModelSimple>(',', ar)}"); ;
+            TestContext.Out.WriteLine($"{ar.Length} {string.Join<TestModelSimple>(",", ar)}"); ;
             Assert.That(ar.Length == 1);
         }
 
@@ -1621,7 +1233,7 @@ namespace DataTools_Tests
                 inserted.Timestamp == m.Timestamp &&
                 inserted.Duration == m.Duration &&
                 inserted.Guid == m.Guid &&
-                Convert.ToHexString(inserted.bindata) == Convert.ToHexString(m.bindata)
+                BitConverter.ToString(inserted.bindata) == BitConverter.ToString(m.bindata)
                 )
 
                 );
@@ -1670,7 +1282,7 @@ namespace DataTools_Tests
                 inserted.Timestamp.ToLocalTime() == m.Timestamp.ToLocalTime() &&
                 inserted.Duration == m.Duration &&
                 inserted.Guid == m.Guid &&
-                Convert.ToHexString(inserted.bindata) == Convert.ToHexString(m.bindata)
+                BitConverter.ToString(inserted.bindata) == BitConverter.ToString(m.bindata)
                 )
 
                 );
@@ -1688,10 +1300,10 @@ namespace DataTools_Tests
             else
                 Assert.Pass("no model found");
 
-            var m = r.ToArray()[0];
-            m.Name = "NewName";
+            var model = r.ToArray()[0];
+            model.Name = "NewName";
 
-            DataContext.Update(m);
+            DataContext.Update(model);
 
             var n = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Select().ToArray()[0];
             var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhere().Name("Id").NeValue(id)).Select().ToArray();
@@ -1711,10 +1323,10 @@ namespace DataTools_Tests
             else
                 Assert.Pass("no model found");
 
-            var m = r.ToArray()[0];
-            m.Name = "NewName";
+            var model = r.ToArray()[0];
+            model.Name = "NewName";
 
-            DataContext.Update(ModelMetadata<TestModelChild>.Instance, m);
+            DataContext.Update(ModelMetadata<TestModelChild>.Instance, model);
 
             var n = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where("Id", id).Select().ToArray()[0];
             var nn = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("Id").NeValue(id)).Select().ToArray();
@@ -1754,7 +1366,7 @@ namespace DataTools_Tests
         {
             var result = DataContext.SelectFrom<TestModel>().Where("Id", 1).Select().ToArray();
             TestContext.Out.WriteLine(JsonConvert.SerializeObject(result));
-            var s = Convert.ToHexString(new byte[] { 255, 255, 0, 255 });
+            var s = BitConverter.ToString(new byte[] { 255, 255, 0, 255 });
 
             result[0].bindata = new byte[] { 255, 255, 0, 255 };
 
@@ -1762,7 +1374,7 @@ namespace DataTools_Tests
 
             result = DataContext.Select<TestModel>(new SqlSelect().From<TestModel>().Where("Id", 1)).ToArray();
 
-            Assert.That(s == Convert.ToHexString(result[0].bindata));
+            Assert.That(s == BitConverter.ToString(result[0].bindata));
         }
 
         [Category("Update")]
@@ -1771,7 +1383,7 @@ namespace DataTools_Tests
         {
             var result = DataContext.SelectFrom(ModelMetadata<TestModel>.Instance).Where("Id", 1).Select().ToArray();
             TestContext.Out.WriteLine(JsonConvert.SerializeObject(result));
-            var s = Convert.ToHexString(new byte[] { 255, 255, 0, 255 });
+            var s = BitConverter.ToString(new byte[] { 255, 255, 0, 255 });
 
             result[0].bindata = new byte[] { 255, 255, 0, 255 };
 
@@ -1779,7 +1391,7 @@ namespace DataTools_Tests
 
             result = DataContext.Select(ModelMetadata<TestModel>.Instance, new SqlSelect().From(ModelMetadata<TestModel>.Instance).Where("Id", 1)).ToArray();
 
-            Assert.That(s == Convert.ToHexString(result[0].bindata));
+            Assert.That(s == BitConverter.ToString(result[0].bindata));
         }
 
         [Category("Procedure")]
@@ -1832,20 +1444,8 @@ namespace DataTools_Tests
 
             if (context is InMemory_SQLite_DataContext) Assert.Inconclusive("Unsupported");
 
-            switch (context)
-            {
-                case MSSQL_DataContext:
-                    break;
-                case PostgreSQL_DataContext:
-                    break;
-                case SQLite_DataContext:
-                    Assert.Pass($"{nameof(SQLite_DataContext)} does not support procedures");
-                    break;
-                default:
-                    Assert.Fail();
-                    break;
-            }
-            ;
+            if (context is SQLite_DataContext)
+                Assert.Pass($"{nameof(SQLite_DataContext)} does not support procedures");
 
             context.CallProcedure("dbo.testProc");
         }
@@ -2010,15 +1610,10 @@ namespace DataTools_Tests
         [Test]
         public void TestCallTableFunctionWithoutParam()
         {
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
-                    break;
-                case InMemory_SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+            else if (DataContext is InMemory_SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
 
             var result = DataContext.CallTableFunction<TestModel>("dbo.testFunc");
 
@@ -2029,15 +1624,10 @@ namespace DataTools_Tests
         [Test]
         public void TestCallTableFunctionWithoutParamDynamic()
         {
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
-                    break;
-                case InMemory_SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+            else if (DataContext is InMemory_SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
 
             var result = DataContext.CallTableFunction(ModelMetadata<TestModel>.Instance, "dbo.testFunc");
 
@@ -2049,15 +1639,10 @@ namespace DataTools_Tests
         [TestCase(arguments: 1)]
         public void TestCallTableFunctionWithParam(int i)
         {
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
-                    break;
-                case InMemory_SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+            else if (DataContext is InMemory_SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
 
             var result = DataContext.CallTableFunction<TestModel>("dbo.testFuncParam", i);
 
@@ -2069,15 +1654,10 @@ namespace DataTools_Tests
         [TestCase(arguments: 1)]
         public void TestCallTableFunctionWithParamDynamic(int i)
         {
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
-                    break;
-                case InMemory_SQLite_DataContext:
-                    Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(SQLite_DataContext)} does not support stored table functions");
+            else if (DataContext is InMemory_SQLite_DataContext)
+                Assert.Inconclusive($"{nameof(InMemory_SQLite_DataContext)} does not support stored table functions");
 
             var result = DataContext.CallTableFunction(ModelMetadata<TestModel>.Instance, "dbo.testFuncParam", i);
 
@@ -2092,21 +1672,14 @@ namespace DataTools_Tests
 
             string fName = null;
 
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    fName = "datetime";
-                    break;
-                case MSSQL_DataContext:
-                    fName = "getdate";
-                    break;
-                case PostgreSQL_DataContext:
-                    fName = "now";
-                    break;
-                default:
-                    Assert.Fail();
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                fName = "datetime";
+            if (DataContext is MSSQL_DataContext)
+                fName = "getdate";
+            if (DataContext is PostgreSQL_DataContext)
+                fName = "now";
+
+            if (fName == null) Assert.Fail();
 
             var result = DataContext.CallScalarFunction(fName);
             if (result is string resultStr)
@@ -2123,21 +1696,15 @@ namespace DataTools_Tests
 
             string fName = null;
 
-            switch (DataContext)
-            {
-                case SQLite_DataContext:
-                    fName = "length";
-                    break;
-                case MSSQL_DataContext:
-                    fName = "len";
-                    break;
-                case PostgreSQL_DataContext:
-                    fName = "length";
-                    break;
-                default:
-                    Assert.Inconclusive("Unsupported");
-                    break;
-            }
+            if (DataContext is SQLite_DataContext)
+                fName = "length";
+            if (DataContext is MSSQL_DataContext)
+                fName = "len";
+            if (DataContext is PostgreSQL_DataContext)
+                fName = "length";
+
+            if (fName == null)
+                Assert.Fail();
 
             var result = DataContext.CallScalarFunction(fName, "abc");
             if (result is string resultStr)
@@ -2229,859 +1796,6 @@ namespace DataTools_Tests
 
             Assert.That(r.Length == 1 && r[0].Id == g);
         }
-    }
-
-    [TestFixture("sqlite", "Data Source=dbo;journal mode=off;synchronous=full;pooling=true")]
-    public class SQLiteTests : CommonTests<SQLite_DataContext>
-    {
-        public override GeneratorBase GetGenerator()
-        {
-            return new SQLite_Generator(DataContext.ConnectionString);
-        }
-
-        public override IDBMS_QueryParser GetQueryParser()
-        {
-            return new SQLite_QueryParser();
-        }
-
-        private SQLiteConnection _conn;
-
-        public SQLiteTests(string alias, string connectionString) : base(alias)
-        {
-            this.alias = alias;
-            DataContext.ConnectionString = connectionString;
-            _conn = new SQLiteConnection(connectionString);
-            _conn.Open();
-
-        }
-
-        [OneTimeTearDown]
-        public void TearDown()
-        {
-            _conn.Close();
-        }
-
-        public override void Setup()
-        {
-            var dc = DataManager.GetContext(alias) as SQLite_DataContext;
-            //dc.AddCustomMapper(delegate (IDataContext dataContext, object[] values)
-            //{
-            //    var model = new TestModel();
-            //    model.Id = (int)values[0].Cast<long>();
-            //    model.Value = values[6].Cast<int>();
-            //    model.FValue = (float)values[7].Cast<double>();
-            //    model.GValue = values[8].Cast<double>();
-            //    model.Money = (decimal)values[9].Cast<double>();
-            //    model.CharCode = values[4].Cast<string>();
-            //    model.Checked = values[5].Cast<int>() > 0;
-            //    if (TimeSpan.TryParse(values[11].Cast<string>(), out var result))
-            //        model.Duration = result;
-            //    if (Guid.TryParse(values[12].Cast<string>(), out var result2))
-            //        model.Guid = result2;
-            //    model.LongId = values[1].Cast<int>();
-            //    model.Name = values[3].Cast<string>();
-            //    model.ShortId = (short)values[2].Cast<int>();
-            //    if (DateTime.TryParse(values[10].Cast<string>(), out var result1))
-            //        model.Timestamp = result1;
-            //    model.bindata = values[13] as byte[];
-            //    return model;
-            //});
-
-            base.Setup();
-
-            var ds = dc.GetDataSource() as SQLite_DataSource;
-
-            //            var sql = @"
-            //insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 1,1,'TestModel1','a',0,1,1.1,1.2,1.3,'2024-01-01','23:59:59','31ada97d-719a-4340-89ad-fd29d0d0a017',x'01020304';
-            //insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 2,2,'TestModel2','b',1,1,1.1,1.2,1.3,'2024-03-01','01:01:01','b6237194-406f-41db-8328-4f8ed82c2a5c',x'FFFFFFFF';
-            //insert into dbo_TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select NULL,NULL,'TestModel3','b',1,1,1.1,1.3,1.4,'2024-04-01','01:01:01','b6237194-406f-41db-8328-4f8ed82c2a5d',x'0000FF00';
-
-            //insert into dbo_TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra1',1,1.1,1.2,'2024-01-01',1;
-            //insert into dbo_TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra2',1,1.1,1.2,'2023-01-01',2;
-
-            //insert into dbo_TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild1',1,1.1,1.2,'2024-01-01',1,1;
-            //insert into dbo_TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild2',1,1.15,1.25,'2023-01-01',3,2;
-
-            //insert into dbo_TestModelGuidParent(id,name) select '31ada97d-719a-4340-89ad-fd29d0d0a017', 'parent1';
-            //insert into dbo_TestModelGuidParent(id,name) select '31ada97d-719a-4340-89ad-fd29d0d0a018', 'parent2';
-
-            //insert into dbo_TestModelGuidChild(id,name,parent_id) select '31ada97d-719a-4340-89ad-fd29d0d0a020', 'child1', '31ada97d-719a-4340-89ad-fd29d0d0a017';
-            //insert into dbo_TestModelGuidChild(id,name,parent_id) select '31ada97d-719a-4340-89ad-fd29d0d0a021', 'child2', '31ada97d-719a-4340-89ad-fd29d0d0a018';
-
-            //insert into dbo_TestModelNoUnique (id,name) select 1,'a';
-            //insert into dbo_TestModelNoUnique (id,name) select 2,'b';
-            //insert into dbo_TestModelNoUnique (id,name) select 1,'c';
-            //insert into dbo_TestModelNoUnique (id,name) select 3,'b';
-            //insert into dbo_TestModelNoUnique (id,name) select null,'d';
-
-            //";
-
-            //            sql += @"
-            //insert into dbo_TestModelParentCompositePrimaryKey(i,j,k) select 1,1,'abc';
-            //insert into dbo_TestModelParentCompositePrimaryKey(i,j,k) select 1,2,'def';
-            //insert into dbo_TestModelParentCompositePrimaryKey(i,j,k) select 2,2, 'ghi';
-            //insert into dbo_TestModelParentCompositePrimaryKey(i,j,k) select 3,3, 'jkl';
-            //";
-
-            //            sql += @"
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 1,1,1,1,'abc';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 2,2,1,1,'def';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 1,2,1,2,'ghi';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 2,3,2,2,'jkl';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 3,3,3,3,'mno';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 4,1,null,null,'pqr';
-            //insert into dbo_TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 5,5,1,2,'stu';
-            //";
-
-            //            sql += @"
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 1,1,'abc';
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 2,2,'def';
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 1,2,'ghi';
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 2,3,'jkl';
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 3,3,'mno';
-            //insert into dbo_TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 4,1,'pqr';
-            //";
-
-            //            sql += @"
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 1,1,'abc';
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 2,2,'def';
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 1,2,'ghi';
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 2,3,'jkl';
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 3,3,'mno';
-            //insert into dbo_TestModelCompositePrimaryKey(i,j,k) select 4,1,'pqr';
-            //";
-            //            ds.Execute(sql);
-        }
-    }
-
-    [TestFixture("postgresql", "Username=postgres;Password=1qaz@WSX;Host=localhost;")]
-    public class PostgreSQLTests : CommonTests<PostgreSQL_DataContext>
-    {
-
-        public override GeneratorBase GetGenerator()
-        {
-            return new PostgreSQL_Generator(DataContext.ConnectionString);
-        }
-
-        public override IDBMS_QueryParser GetQueryParser()
-        {
-            return new PostgreSQL_QueryParser();
-        }
-
-        public PostgreSQLTests(string alias, string connectionString) : base(alias)
-        {
-            this.alias = alias;
-            DataContext.ConnectionString = connectionString;
-            //DataContext.AddCustomTypeConverter<DateTime>(
-            //    ToLocalTime
-            //    );
-
-        }
-
-        private object ToLocalTime(object dt)
-        {
-            return ((DateTime)dt).ToLocalTime();
-        }
-
-        [SetUp]
-        public override void Setup()
-        {
-            var dc = DataManager.GetContext(alias) as PostgreSQL_DataContext;
-            var ds = dc.GetDataSource() as PostgreSQL_DataSource;
-
-            DataContext.Execute(new SqlCustom(@"
-do $$
-begin
-if (to_regnamespace('dbo') is null) then
-    create schema dbo;
-end if;
-end;
-$$;
-"));
-            base.Setup();
-
-            //            var sql = @"
-
-            //insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 1,1,'TestModel1','a',false,1,1.1,1.2,1.3,'2024-01-01','23:59:59',gen_random_uuid(),'\x01020304';
-            //insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select 2,2,'TestModel2','b',true,1,1.1,1.2,1.3,'2024-03-01','01:01:01',gen_random_uuid(),'\xFFFFFFFF';
-            //insert into dbo.TestModel(LongId,ShortId,Name,CharCode,Checked,Value,FValue,GValue,Money,Timestamp,Duration,Guid,bindata) select NULL,NULL,'TestModel3','b',true,1,1.1,1.3,1.4,'2024-04-01','01:01:01',gen_random_uuid(),'\x0000FF00';
-
-            //insert into dbo.TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra1',1,1.1,1.2,'2024-01-01',1;
-            //insert into dbo.TestModelExtra(Name,Value,FValue,GValue,Timestamp,Extra_id) select 'TestModelExtra2',1,1.1,1.2,'2023-01-01',2;
-
-            //insert into dbo.TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild1',1,1.1,1.2,'2024-01-01',1,1;
-            //insert into dbo.TestModelChild(Name,Value,FValue,GValue,Timestamp,Parent_id,Extra_id) select 'TestModelChild2',1,1.15,1.25,'2023-01-01',3,2;
-
-            //insert into dbo.TestModelGuidParent(id,name) select gen_random_uuid(), 'parent1';
-            //insert into dbo.TestModelGuidParent(id,name) select gen_random_uuid(), 'parent2';
-
-            //insert into dbo.TestModelGuidChild(id,name,parent_id) select gen_random_uuid(), 'child1', (select id from dbo.TestModelGuidParent where name = 'parent1');
-            //insert into dbo.TestModelGuidChild(id,name,parent_id) select gen_random_uuid(), 'child2', (select id from dbo.TestModelGuidParent where name = 'parent2');
-
-            //insert into dbo.TestModelNoUnique (id,name) select 1,'a';
-            //insert into dbo.TestModelNoUnique (id,name) select 2,'b';
-            //insert into dbo.TestModelNoUnique (id,name) select 1,'c';
-            //insert into dbo.TestModelNoUnique (id,name) select 3,'b';
-            //insert into dbo.TestModelNoUnique (id,name) select null,'d';
-
-
-            //";
-            //            sql += @"
-            //insert into dbo.TestModelParentCompositePrimaryKey(i,j,k) select 1,1,'abc';
-            //insert into dbo.TestModelParentCompositePrimaryKey(i,j,k) select 1,2,'def';
-            //insert into dbo.TestModelParentCompositePrimaryKey(i,j,k) select 2,2, 'ghi';
-            //insert into dbo.TestModelParentCompositePrimaryKey(i,j,k) select 3,3, 'jkl';
-            //";
-
-            //            sql += @"
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 1,1,1,1,'abc';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 2,2,1,1,'def';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 1,2,1,2,'ghi';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 2,3,2,2,'jkl';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 3,3,3,3,'mno';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 4,1,null,null,'pqr';
-            //insert into dbo.TestModelChildCompositePrimaryKey(i,j,Parent_i,Parent_j,k) select 5,5,1,2,'stu';
-            //";
-
-            //            sql += @"
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 1,1,'abc';
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 2,2,'def';
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 1,2,'ghi';
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 2,3,'jkl';
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 3,3,'mno';
-            //insert into dbo.TestModelCompositePrimaryKey(i,j,k) select 4,1,'pqr';
-            //";
-
-            //            sql += @"
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 1,1,'abc';
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 2,2,'def';
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 1,2,'ghi';
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 2,3,'jkl';
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 3,3,'mno';
-            //insert into dbo.TestModelPrimaryKeyAsForeignKey(Child_i,Child_j,k) select 4,1,'pqr';
-            //";
-
-            //            ds.Execute(sql);
-
-
-            ds.Execute(@"
-create or replace procedure dbo.testProc()
-language plpgsql
-as $$
-declare i int;
-begin
-    i = 5;
-end;
-$$;
-");
-
-            ds.Execute(@"
-create or replace procedure dbo.testProcReturn(i int, out recs json)
-language plpgsql
-as $$
-declare
-begin
-	select to_json(t) from dbo.testmodel t where id = i into recs;
-end
-$$;
-
-");
-
-
-            ds.Execute(@"
-create or replace function dbo.testFunc()
-returns setof dbo.TestModel
-language plpgsql
-as $$
-begin
-    return query (select * from dbo.TestModel);
-end
-$$
-");
-
-
-            ds.Execute(@"
-create or replace function dbo.testFuncParam(i int)
-returns setof dbo.TestModel
-language plpgsql
-as $$
-begin
-    return query (select * from dbo.TestModel where id = i);
-end
-$$
-");
-        }
-
-        [TearDown]
-        public override void Teardown()
-        {
-            base.Teardown();
-
-        }
-
-        public override void TeardownScripts()
-        {
-            base.TeardownScripts();
-
-            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFunc;"));
-            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFuncParam;"));
-            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProc;"));
-            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProcReturn;"));
-        }
-    }
-
-    [TestFixture("mssql", $"Data Source=localhost\\sqlexpress;Database=AdventureWorksLT2012;Integrated Security=True;Trust server certificate=true")]
-    public class MSSQLTests : CommonTests<MSSQL_DataContext>
-    {
-
-        public override DataTools.Deploy.GeneratorBase GetGenerator()
-        {
-            return new MSSQL_Generator(this.DataContext.ConnectionString);
-        }
-
-        public override IDBMS_QueryParser GetQueryParser()
-        {
-            return new MSSQL_QueryParser();
-        }
-
-        public MSSQLTests(string alias, string connectionString) : base(alias)
-        {
-            this.alias = alias;
-            DataContext.ConnectionString = connectionString;
-        }
-
-        public override void Teardown()
-        {
-            base.Teardown();
-
-            var dc = DataManager.GetContext(alias) as MSSQL_DataContext;
-            var ds = dc.GetDataSource() as MSSQL_DataSource;
-        }
-        public override void TeardownScripts()
-        {
-
-            base.TeardownScripts();
-
-            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFunc;"));
-            DataContext.Execute(new SqlCustom("drop function if exists dbo.testFuncParam;"));
-            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProc;"));
-            DataContext.Execute(new SqlCustom("drop procedure if exists dbo.testProcReturn;"));
-        }
-
-        public override void Setup()
-        {
-            base.Setup();
-
-            var dc = DataManager.GetContext(alias) as MSSQL_DataContext;
-            var ds = dc.GetDataSource() as MSSQL_DataSource;
-
-
-            ds.Execute(@"
-create procedure dbo.testProc
-as begin
-    declare @i int;
-end;
-");
-
-            ds.Execute(@"
-create procedure dbo.testProcReturn
-@id int
-as begin
-    select * from dbo.TestModel where id = @id;
-end;
-");
-
-
-            ds.Execute(@"
-create function dbo.testFunc()
-returns table
-as
-    return (select * from dbo.TestModel);
-");
-
-            ds.Execute(@"
-create function dbo.testFuncParam(@i int)
-returns table
-as
-    return (select * from dbo.TestModel where id = @i);
-");
-        }
-
-        [Test]
-        public void TestTypes()
-        {
-            TestType(true);
-            TestType(1);
-            TestType((byte)1);
-            TestType((short)1);
-            TestType((long)1);
-            TestType((decimal)125.32m);
-            TestType((float)125.32f);
-            TestType((double)125.32);
-            TestType((string)"abc");
-            TestType((char)'a');
-            TestType(new byte[] { 1, 2, 3, 4 });
-            TestType(DateTime.Parse("2025-08-07 15:27:36"));
-            TestType(DateTimeOffset.Parse("2025-08-07 15:27:36"));
-            TestType(TimeSpan.Parse("15:27:36"));
-            TestType(Guid.Parse("8d5cbb93-28b3-46c0-8c37-e973b3d772a4"));
-
-            var boolean = new GenericWrapper<bool>(true);
-            var result = DataContext.Select(ModelMetadata.CreateFromType(boolean.GetType()), new SqlCustom("SELECT CAST(1 AS bit) AS Value;")).First();
-            Assert.That(result.Value is bool && result.Value == boolean.Value);
-
-            var tinyIntValue = new GenericWrapper<byte>(250);
-            result = DataContext.Select(ModelMetadata.CreateFromType(tinyIntValue.GetType()), new SqlCustom("SELECT CAST(250 AS tinyint) AS Value;")).First();
-            Assert.That(result.Value is byte && result.Value == tinyIntValue.Value);
-
-            var smallIntValue = new GenericWrapper<short>(32000);
-            result = DataContext.Select(ModelMetadata.CreateFromType(smallIntValue.GetType()), new SqlCustom("SELECT CAST(32000 AS smallint) AS Value;")).First();
-            Assert.That(result.Value is short && result.Value == smallIntValue.Value);
-
-            var intValue = new GenericWrapper<int>(1000);
-            result = DataContext.Select(ModelMetadata.CreateFromType(intValue.GetType()), new SqlCustom("SELECT CAST(1000 AS int) AS Value;")).First();
-            Assert.That(result.Value is int && result.Value == intValue.Value);
-
-            var bigIntValue = new GenericWrapper<long>(1000000000);
-            result = DataContext.Select(ModelMetadata.CreateFromType(bigIntValue.GetType()), new SqlCustom("SELECT CAST(1000000000 AS bigint) AS Value;")).First();
-            Assert.That(result.Value is long && result.Value == bigIntValue.Value);
-
-            var decimalValue = new GenericWrapper<decimal>(123.45m);
-            result = DataContext.Select(ModelMetadata.CreateFromType(decimalValue.GetType()), new SqlCustom("SELECT CAST(123.45 AS decimal(10,2)) AS Value;")).First();
-            Assert.That(result.Value is decimal && result.Value == decimalValue.Value);
-
-            var floatValue = new GenericWrapper<float>(123.45f);
-            result = DataContext.Select(ModelMetadata.CreateFromType(floatValue.GetType()), new SqlCustom("SELECT CAST(123.45 AS real) AS Value;")).First();
-            Assert.That(result.Value is float && result.Value == floatValue.Value);
-
-            var doubleValue = new GenericWrapper<double>(123.45);
-            result = DataContext.Select(ModelMetadata.CreateFromType(doubleValue.GetType()), new SqlCustom("SELECT CAST(123.45 AS float) AS Value;")).First();
-            Assert.That(result.Value is double && result.Value == doubleValue.Value);
-
-            var varcharValue = new GenericWrapper<string>("Hello, World!");
-            result = DataContext.Select(ModelMetadata.CreateFromType(varcharValue.GetType()), new SqlCustom("SELECT CAST('Hello, World!' AS varchar(50)) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == varcharValue.Value);
-
-            var nvarcharValue = new GenericWrapper<string>("Hello, World!");
-            result = DataContext.Select(ModelMetadata.CreateFromType(nvarcharValue.GetType()), new SqlCustom("SELECT CAST('Hello, World!' AS nvarchar(50)) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == nvarcharValue.Value);
-
-            var charValue = new GenericWrapper<string>("a");
-            result = DataContext.Select(ModelMetadata.CreateFromType(charValue.GetType()), new SqlCustom("SELECT CAST('a' AS char(1)) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == charValue.Value);
-
-            var textValue = new GenericWrapper<string>("Hello, World!");
-            result = DataContext.Select(ModelMetadata.CreateFromType(textValue.GetType()), new SqlCustom("SELECT CAST('Hello, World!' AS text) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == textValue.Value);
-
-            var ntextValue = new GenericWrapper<string>("Hello, World!");
-            result = DataContext.Select(ModelMetadata.CreateFromType(ntextValue.GetType()), new SqlCustom("SELECT CAST('Hello, World!' AS ntext) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == ntextValue.Value);
-
-            var dateValue = new GenericWrapper<DateTime>(DateTime.Parse("2025-08-07"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(dateValue.GetType()), new SqlCustom("SELECT CAST('2025-08-07' AS date) AS Value;")).First();
-            Assert.That(result.Value is DateTime && result.Value == dateValue.Value);
-
-            var datetimeValue = new GenericWrapper<DateTime>(DateTime.Parse("2025-08-07 15:27:36"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(datetimeValue.GetType()), new SqlCustom("SELECT CAST({ts '2025-08-07 15:27:36'} AS datetime) AS Value;")).First();
-            Assert.That(result.Value is DateTime && result.Value == datetimeValue.Value);
-
-            var datetimeoffsetValue = new GenericWrapper<DateTimeOffset>(DateTimeOffset.Parse("2025-08-07 15:27:36"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(datetimeoffsetValue.GetType()), new SqlCustom("SELECT CAST({ts '2025-08-07 08:27:36'} AS datetimeoffset) AS Value;")).First();
-            Assert.That(result.Value is DateTimeOffset && result.Value.ToUniversalTime() == datetimeoffsetValue.Value.ToUniversalTime());
-
-            var datetime2Value = new GenericWrapper<DateTime>(DateTime.Parse("2025-08-07 15:27:36"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(datetime2Value.GetType()), new SqlCustom("SELECT CAST({ts '2025-08-07 15:27:36'} AS datetime2) AS Value;")).First();
-            Assert.That(result.Value is DateTime && result.Value == datetime2Value.Value);
-
-            var timeValue = new GenericWrapper<TimeSpan>(TimeSpan.Parse("15:27:36"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(timeValue.GetType()), new SqlCustom("SELECT CAST({t '15:27:36'} AS time) AS Value;")).First();
-            Assert.That(result.Value is TimeSpan && result.Value == timeValue.Value);
-
-            var binary = new GenericWrapper<byte[]>(new byte[] { 1, 2, 3, 4 });
-            result = DataContext.Select(ModelMetadata.CreateFromType(binary.GetType()), new SqlCustom("SELECT CAST(0x01020304 AS binary(4)) AS Value;")).First();
-            Assert.That(result.Value is byte[] && BitConverter.ToString(result.Value) == BitConverter.ToString(binary.Value));
-
-            var varbinary = new GenericWrapper<byte[]>(new byte[] { 1, 2, 3, 4 });
-            result = DataContext.Select(ModelMetadata.CreateFromType(varbinary.GetType()), new SqlCustom("SELECT CAST(0x01020304 AS varbinary(4)) AS Value;")).First();
-            Assert.That(result.Value is byte[] && BitConverter.ToString(result.Value) == BitConverter.ToString(varbinary.Value));
-
-            var image = new GenericWrapper<byte[]>(new byte[] { 1, 2, 3, 4 });
-            result = DataContext.Select(ModelMetadata.CreateFromType(image.GetType()), new SqlCustom("SELECT CAST(0x01020304 AS image) AS Value;")).First();
-            Assert.That(result.Value is byte[] && BitConverter.ToString(result.Value) == BitConverter.ToString(image.Value));
-
-            var guid = new GenericWrapper<Guid>(Guid.Parse("8d5cbb93-28b3-46c0-8c37-e973b3d772a4"));
-            result = DataContext.Select(ModelMetadata.CreateFromType(guid.GetType()), new SqlCustom("SELECT CAST('8d5cbb93-28b3-46c0-8c37-e973b3d772a4' AS uniqueidentifier) AS Value;")).First();
-            Assert.That(result.Value is Guid && result.Value == guid.Value);
-
-            var xml = new GenericWrapper<string>("<root><child>Значение</child></root>");
-            result = DataContext.Select(ModelMetadata.CreateFromType(xml.GetType()), new SqlCustom("SELECT CAST(N'<root><child>Значение</child></root>' AS xml) AS Value;")).First();
-            Assert.That(result.Value is string && result.Value == xml.Value);
-        }
-
-    }
-
-    [TestFixture(
-        new E_DBMS[] { E_DBMS.MSSQL, E_DBMS.PostgreSQL, E_DBMS.SQLite },
-        new string[] {
-        $"Data Source=localhost\\sqlexpress;Database=test;Integrated Security=True;Trust server certificate=true",
-        "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test",
-        "Data Source=dbo;journal mode=off;synchronous=full;pooling=true"},
-        new string[] {
-        $"Data Source=localhost\\sqlexpress;Database=test1;Integrated Security=True;Trust server certificate=true",
-        "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test1",
-        "Data Source=dbo1;journal mode=off;synchronous=full;pooling=true"}
-        )]
-    public class MultiTest
-    {
-        private E_DBMS[] _types;
-        private string[] _fromConnectionStrings;
-        private string[] _toConnectionStrings;
-
-        private TestData testdata = new TestData();
-
-        public MultiTest(E_DBMS[] types, string[] fromConnectionStrings, string[] toConnectionStrings)
-        {
-            _types = types;
-            _fromConnectionStrings = fromConnectionStrings;
-            _toConnectionStrings = toConnectionStrings;
-        }
-
-        [Test]
-        public void TestMigrations()
-        {
-            int i = 0;
-            foreach (var t in _types)
-            {
-                var deployerOptions = new DeployerOptions()
-                {
-                    DBMS = t,
-                    ConnectionString = _fromConnectionStrings[i],
-                    Metadatas = testdata.Metadatas,
-                    Mode = E_DEPLOY_MODE.REDEPLOY
-                };
-                var deployer = new DataTools.Deploy.DeployerWorker(deployerOptions);
-                deployer.Run();
-                TestContext.Out.WriteLine($"{deployerOptions.DBMS} deployed");
-
-                testdata.InsertTestData(deployer.DataContext);
-
-                var generatorOptions = new GeneratorOptions()
-                {
-                    DBMS = t,
-                    ConnectionString = _fromConnectionStrings[i],
-                    NamespaceName = "Test",
-                    SchemaIncludeNameFilter = "dbo",
-                    TableIncludeNameFilter = ""
-                };
-                var generator = new DataTools.Deploy.GeneratorWorker(generatorOptions);
-                var metadatas = generator.GetModelDefinitions().ToArray();
-                TestContext.Out.WriteLine($"{deployerOptions.DBMS} generated");
-
-                int j = 0;
-                foreach (var tt in _types)
-                {
-                    var deployerOptions1 = new DeployerOptions()
-                    {
-                        DBMS = tt,
-                        ConnectionString = _toConnectionStrings[j],
-                        Metadatas = metadatas.Select(mt => mt.ModelMetadata),
-                        Mode = E_DEPLOY_MODE.REDEPLOY
-                    };
-                    var deployer1 = new DataTools.Deploy.DeployerWorker(deployerOptions1);
-                    deployer1.Run();
-                    TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} deployed");
-
-                    var migratorOptions = new DataMigrationOptions()
-                    {
-                        FromDBMS = t,
-                        ToDBMS = tt,
-                        FromConnectionString = _fromConnectionStrings[i],
-                        ToConnectionString = _toConnectionStrings[j],
-                        IgnoreConstraints = true,
-                        Metadatas = metadatas.Select(mt => mt.ModelMetadata)
-                    };
-                    var migrator = new DataMigrationWorker(migratorOptions);
-                    migrator.Run();
-                    TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} migrated");
-
-                    //deployer1.Mode = E_DEPLOY_MODE.RESTORE_IDENTITIES;
-                    //deployer1.Run();
-                    //TestContext.Out.WriteLine($"{deployerOptions1.DBMS} identites restored");
-
-                    foreach (var meta in testdata.Metadatas)
-                    {
-                        TestContext.Out.WriteLine($"{meta.FullObjectName} compare start.");
-
-                        var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty("MapModel");
-
-                        var orderArray = meta.GetColumnsForFilterOrder().ToArray();
-                        if (orderArray.Length == 0)
-                            orderArray = meta.GetColumnsForSelect().ToArray();
-
-                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).OrderBy(orderArray)).ToArray();
-                        var leftModels = new object[leftData.Length];
-                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).OrderBy(orderArray)).ToArray();
-                        var rightModels = new object[rightData.Length];
-
-                        leftData = leftData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
-                        rightData = rightData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
-
-
-                        Assert.That(leftData.Length == rightData.Length);
-
-                        var sc = new SelectCache();
-
-                        Dictionary<Type, Func<object, object>> _customTypeConverters = new Dictionary<Type, Func<object, object>>();
-
-                        for (int i1 = 0; i1 < leftData.Length; i1++)
-                        {
-                            object[]? r = leftData[i1];
-                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { deployer.DataContext, _customTypeConverters, r, sc });
-                            leftModels[i1] = o;
-                            object[]? rr = rightData[i1];
-                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { deployer.DataContext, _customTypeConverters, r, sc });
-                            rightModels[i1] = o;
-                        }
-
-                        for (int i1 = 0; i1 < leftData.Length; i1++)
-                        {
-                            var props = leftModels[i1].GetType().GetProperties();
-                            foreach (var pr in props)
-                            {
-                                var leftv = pr.GetValue(leftModels[i1]);
-                                var rightv = pr.GetValue(rightModels[i1]);
-
-                                if (leftv == null && rightv == null)
-                                    Assert.That(true);
-                                else if (meta.GetField(pr.Name).IsForeignKey)
-                                {
-                                    for (int i2 = 0; i2 < meta.GetField(pr.Name).ForeignColumnNames.Length; i2++)
-                                    {
-                                        string? fc = meta.GetField(pr.Name).ForeignColumnNames[i2];
-                                        var leftfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(leftv);
-                                        var rightfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(rightv);
-                                        if (leftfv is byte[] bytea)
-                                            Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightfv as byte[]));
-                                        else if (leftfv is DateTime dateTime)
-                                            Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightfv).ToUniversalTime());
-                                        else if (leftfv is DateTimeOffset dateTimeOffset)
-                                            Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightfv).ToUniversalTime());
-                                        else
-                                            Assert.That(leftfv.Equals(rightfv));
-                                    }
-                                }
-                                else if (leftv is byte[] bytea)
-                                    Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightv as byte[]));
-                                else if (leftv is DateTime dateTime)
-                                    Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightv).ToUniversalTime());
-                                else if (leftv is DateTimeOffset dateTimeOffset)
-                                    Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightv).ToUniversalTime());
-                                else
-                                    Assert.That(leftv.Equals(rightv));
-
-                            }
-                        }
-                        TestContext.Out.WriteLine($"{meta.FullObjectName} compare finish!");
-                    }
-
-                    j++;
-                }
-
-                i++;
-            }
-        }
-
-        [TearDown]
-        public void Teardown()
-        {
-
-        }
-    }
-
-
-    [TestFixture("inmemory")]
-    public class InMemorySQLiteTests : CommonTests<InMemory_SQLite_DataContext>
-    {
-        public override GeneratorBase GetGenerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        public override IDBMS_QueryParser GetQueryParser()
-        {
-            return new SQLite_QueryParser();
-        }
-
-
-        public InMemorySQLiteTests(string alias) : base(alias)
-        {
-            this.alias = alias;
-        }
-
-        private void Insert<ModelT>(object[] values) where ModelT : class, new()
-        {
-            var model = ModelMapper<ModelT>.MapModel(DataContext, null, values, new SelectCache());
-            DataContext.Insert<ModelT>(model);
-        }
-        public override void Setup()
-        {
-            base.Setup();
-
-            var dc = DataManager.GetContext(alias) as InMemory_SQLite_DataContext;
-
-
-
-        }
-
-        //[Test]
-        //public void TestSelectPlan()
-        //{
-        //    var query = new SqlSelect().From<TestModelChild>();
-        //    var plans = typeof(InMemory_DataContext).GetField("_plans", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(DataContext) as LinkedList<(string query, Func<InMemory_DataContext, SqlParameter[], IEnumerable<object[]>> plan)>;
-        //    DataContext.Select<TestModelChild>(query);
-        //    int plansCount = plans.Count;
-        //    DataContext.Select<TestModelChild>(query);
-        //    Assert.That(plans.Count == plansCount);
-        //}
-    }
-
-    [ObjectName("TestModel", "dbo"), DisplayModelName("Тестовая модель")]
-    public class TestModel
-    {
-        [IgnoreChanges, Unique, Autoincrement]
-        public int Id { get; set; }
-        public long? LongId { get; set; }
-        public short? ShortId { get; set; }
-        public string Name { get; set; }
-        public string CharCode { get; set; }
-        public bool Checked { get; set; }
-        public int Value { get; set; }
-        public float FValue { get; set; }
-        public double GValue { get; set; }
-        public decimal Money { get; set; }
-        public DateTime Timestamp { get; set; }
-        public TimeSpan Duration { get; set; }
-        public Guid Guid { get; set; }
-
-        public byte[] bindata { get; set; }
-
-        public override string ToString()
-        {
-            return Name;
-        }
-    }
-
-    [ObjectName("TestModelChild", "dbo"), DisplayModelName("Дочерняя тестовая модель")]
-    public class TestModelChild
-    {
-        [IgnoreChanges, Unique, Autoincrement]
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public int? Value { get; set; }
-        public float? FValue { get; set; }
-        public double? GValue { get; set; }
-        public DateTime? Timestamp { get; set; }
-        [Reference(foreignFieldNames: [nameof(TestModel.Id)], columnNames: ["Parent_Id"])]
-        public TestModel Parent { get; set; }
-        [Reference(foreignFieldNames: [nameof(TestModelExtra.Id)], columnNames: ["Extra_id"])]
-        public TestModelExtra Extra { get; set; }
-
-        public override string? ToString()
-        {
-            return Name;
-        }
-    }
-
-    [ObjectName("TestModelExtra", "dbo"), DisplayModelName("Дополнительная тестовая модель")]
-    public class TestModelExtra
-    {
-        [IgnoreChanges, Unique, Autoincrement]
-        public int Id { get; set; }
-        public string? Name { get; set; }
-        public int? Value { get; set; }
-        public float? FValue { get; set; }
-        public double? GValue { get; set; }
-        public DateTime? Timestamp { get; set; }
-        [Reference(foreignFieldNames: [nameof(TestModelExtra.Id)], columnNames: ["Extra_id"])]
-        public TestModelExtra Extra { get; set; }
-        public override string? ToString()
-        {
-            return Name;
-        }
-    }
-
-    [ObjectName("TestModelGuidParent", "dbo")]
-    public class TestModelGuidParent
-    {
-        [Unique]
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-    }
-
-    [ObjectName("TestModelGuidChild", "dbo")]
-    public class TestModelGuidChild
-    {
-        [Unique]
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        [Reference(foreignFieldNames: [nameof(TestModelGuidParent.Id)], columnNames: ["parent_id"])]
-        public TestModelGuidParent Parent { get; set; }
-    }
-
-    [ObjectName("TestModelNoUnique", "dbo")]
-    [NoUniqueAttribute]
-    public class TestModelSimple
-    {
-        //[Unique]
-        public int? Id { get; set; }
-        public string Name { get; set; }
-    }
-
-    [ObjectName(nameof(TestModelParentCompositePrimaryKey), "dbo")]
-    public class TestModelParentCompositePrimaryKey
-    {
-        [PrimaryKey]
-        public int i { get; set; }
-        [PrimaryKey]
-        public int j { get; set; }
-
-        public string k { get; set; }
-    }
-
-    [ObjectName(nameof(TestModelChildCompositePrimaryKey), "dbo")]
-    public class TestModelChildCompositePrimaryKey
-    {
-        [PrimaryKey]
-        public int i { get; set; }
-        [PrimaryKey]
-        public int j { get; set; }
-
-        [Reference(foreignFieldNames: new string[] { nameof(TestModelParentCompositePrimaryKey.i), nameof(TestModelParentCompositePrimaryKey.j) }, columnNames: new string[] { "Parent_i", "Parent_j" })]
-        public TestModelParentCompositePrimaryKey Parent { get; set; }
-
-        public string k { get; set; }
-    }
-
-    [ObjectName(nameof(TestModelCompositePrimaryKey), "dbo")]
-    public class TestModelCompositePrimaryKey
-    {
-        [PrimaryKey]
-        public int i { get; set; }
-        [PrimaryKey]
-        public int j { get; set; }
-        public string k { get; set; }
-    }
-
-
-    [ObjectName(nameof(TestModelPrimaryKeyAsForeignKey), "dbo")]
-    public class TestModelPrimaryKeyAsForeignKey
-    {
-        [PrimaryKey]
-        [Reference(foreignFieldNames: new string[] { nameof(TestModelChildCompositePrimaryKey.i), nameof(TestModelChildCompositePrimaryKey.j) }, columnNames: new string[] { "Child_i", "Child_j" })]
-        public TestModelChildCompositePrimaryKey Child { get; set; }
-
-        public string k { get; set; }
     }
 }
 
