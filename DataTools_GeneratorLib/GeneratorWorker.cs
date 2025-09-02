@@ -12,6 +12,11 @@ namespace DataTools.Deploy
         public string SchemaExcludeNameFilter { get; set; } = "";
         public string TableExcludeNameFilter { get; set; } = "";
 
+        public string TableIncludeNameRegexFilter { get; set; } = "";
+        public string TableExcludeNameRegexFilter { get; set; } = "";
+        public string SchemaIncludeNameRegexFilter { get; set; } = "";
+        public string SchemaExcludeNameRegexFilter { get; set; } = "";
+
         public E_DBMS DBMS { get; set; }
     }
 
@@ -27,6 +32,10 @@ namespace DataTools.Deploy
             this.TableIncludeNameFilter = options.TableIncludeNameFilter;
             this.TableExcludeNameFilter = options.TableExcludeNameFilter;
             this.SchemaExcludeNameFilter = options.SchemaExcludeNameFilter;
+            this.TableExcludeNameRegexFilter = options.TableExcludeNameRegexFilter;
+            this.TableIncludeNameRegexFilter = options.TableIncludeNameRegexFilter;
+            this.SchemaExcludeNameRegexFilter = options.SchemaExcludeNameRegexFilter;
+            this.SchemaIncludeNameRegexFilter = options.SchemaIncludeNameRegexFilter;
             this.DBMS = options.DBMS;
         }
 
@@ -39,7 +48,15 @@ namespace DataTools.Deploy
                 case E_DBMS.SQLite: _generator = new SQLite_Generator(ConnectionString); break;
             }
 
-            return _generator.GetModelDefinitions(TableIncludeNameFilter, SchemaIncludeNameFilter, TableExcludeNameFilter, SchemaExcludeNameFilter);
+            return _generator.GetModelDefinitions(
+                TableIncludeNameFilter, 
+                SchemaIncludeNameFilter, 
+                TableExcludeNameFilter, 
+                SchemaExcludeNameFilter,
+                TableIncludeNameRegexFilter,
+                TableExcludeNameRegexFilter,
+                SchemaIncludeNameRegexFilter,
+                SchemaExcludeNameRegexFilter);
         }
     }
 }

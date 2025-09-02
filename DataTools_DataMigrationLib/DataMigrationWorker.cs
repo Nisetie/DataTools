@@ -36,6 +36,10 @@ namespace DataTools.Deploy
         public string TableIncludeNameFilter { get; set; } = "";
         public string SchemaExcludeNameFilter { get; set; } = "";
         public string TableExcludeNameFilter { get; set; } = "";
+        public string TableIncludeNameRegexFilter { get; set; } = "";
+        public string TableExcludeNameRegexFilter { get; set; } = "";
+        public string SchemaIncludeNameRegexFilter { get; set; } = "";
+        public string SchemaExcludeNameRegexFilter { get; set; } = "";
     }
 
     public class DataMigrationWorker : DataMigrationOptions
@@ -58,6 +62,10 @@ namespace DataTools.Deploy
             this.SchemaExcludeNameFilter = options.SchemaExcludeNameFilter;
             this.TableIncludeNameFilter = options.TableIncludeNameFilter;
             this.TableExcludeNameFilter = options.TableExcludeNameFilter;
+            this.TableExcludeNameRegexFilter = options.TableExcludeNameRegexFilter;
+            this.TableIncludeNameRegexFilter = options.TableIncludeNameRegexFilter;
+            this.SchemaExcludeNameRegexFilter = options.SchemaExcludeNameRegexFilter;
+            this.SchemaIncludeNameRegexFilter = options.SchemaIncludeNameRegexFilter;
 
             switch (FromDBMS)
             {
@@ -109,7 +117,11 @@ namespace DataTools.Deploy
                     SchemaExcludeNameFilter = this.SchemaExcludeNameFilter,
                     SchemaIncludeNameFilter = this.SchemaIncludeNameFilter,
                     TableExcludeNameFilter = this.TableExcludeNameFilter,
-                    TableIncludeNameFilter = this.TableIncludeNameFilter
+                    TableIncludeNameFilter = this.TableIncludeNameFilter,
+                    TableIncludeNameRegexFilter = this.TableIncludeNameRegexFilter,
+                    TableExcludeNameRegexFilter = this.TableExcludeNameRegexFilter,
+                    SchemaExcludeNameRegexFilter = this.SchemaExcludeNameRegexFilter,
+                    SchemaIncludeNameRegexFilter = this.SchemaIncludeNameRegexFilter
                 });
                 Metadatas = generator.GetModelDefinitions().Select(md => md.ModelMetadata).ToArray();
             }
