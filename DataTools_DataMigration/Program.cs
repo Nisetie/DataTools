@@ -39,6 +39,10 @@ namespace DataTools_DataMigration
         private static string _tableNameIncludeFilter = "";
         private static string _schemaNameExcludeFilter = "";
         private static string _tableNameExcludeFilter = "";
+        private static string _schemaNameIncludeRegexFilter = "";
+        private static string _tableNameIncludeRegexFilter = "";
+        private static string _schemaNameExcludeRegexFilter = "";
+        private static string _tableNameExcludeRegexFilter = "";
 
         private static DataMigrationWorker _worker;
 
@@ -123,10 +127,15 @@ namespace DataTools_DataMigration
             {
                 _mode = _modes[mode];
             }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. -s 'dbo')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. -t 'Student')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. -sx 'dbo')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. -tx 'Student')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sr", "Schema name include regex filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameIncludeRegexFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. 'Student')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tr", "Table name include regex filter (ex. 'Student')", (string tableFilter) => { _tableNameIncludeRegexFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-srx", "Schema name exclude regex filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameExcludeRegexFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. 'Student')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-trx", "Table name exclude regex filter (ex. 'Student')", (string tableFilter) => { _tableNameExcludeRegexFilter = tableFilter; }), false);
+
             _arguments.AddParameter(new InputArgument("-ic", "Don't consider constraints on inserting. Generated columns and so on...", () => _ignoreCostraints = true), false);
             _arguments.AddParameter(new InputArgumentWithInput("-rc", $"Rows count per INSERT. Default: {_rowsPerBatch}", (string count) => _rowsPerBatch = int.Parse(count)), false);
             _arguments.AddParameter(new InputArgument("-v", "Verbose.", () => _verbose = true), false);
@@ -170,6 +179,10 @@ namespace DataTools_DataMigration
                 SchemaIncludeNameFilter = _schemaNameIncludeFilter,
                 TableExcludeNameFilter = _tableNameExcludeFilter,
                 TableIncludeNameFilter = _tableNameIncludeFilter,
+                TableIncludeNameRegexFilter = _tableNameIncludeRegexFilter,
+                TableExcludeNameRegexFilter = _tableNameExcludeRegexFilter,
+                SchemaExcludeNameRegexFilter = _schemaNameExcludeRegexFilter,
+                SchemaIncludeNameRegexFilter = _schemaNameIncludeRegexFilter,
                 Metadatas = metas
             };
 

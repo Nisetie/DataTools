@@ -17,6 +17,10 @@ namespace DataTools.Deploy
         private static string _tableNameIncludeFilter = "";
         private static string _schemaNameExcludeFilter = "";
         private static string _tableNameExcludeFilter = "";
+        private static string _schemaNameIncludeRegexFilter = "";
+        private static string _tableNameIncludeRegexFilter = "";
+        private static string _schemaNameExcludeRegexFilter = "";
+        private static string _tableNameExcludeRegexFilter = "";
         private static E_DBMS _dbms;
 
         private static string _savePath;
@@ -48,10 +52,14 @@ namespace DataTools.Deploy
             {
                 _dbms = _dbmsKeys[dbms];
             }), true);
-            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. 'dbo', 'test')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. 'Student', 'Test')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. 'dbo', 'test')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
-            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. 'Student', 'Test')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-s", "Schema name include filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameIncludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sr", "Schema name include regex filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameIncludeRegexFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-t", "Table name include filter (ex. 'Student')", (string tableFilter) => { _tableNameIncludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tr", "Table name include regex filter (ex. 'Student')", (string tableFilter) => { _tableNameIncludeRegexFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-sx", "Schema name exclude filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameExcludeFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-srx", "Schema name exclude regex filter (ex. 'dbo')", (string schemaFilter) => { _schemaNameExcludeRegexFilter = schemaFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-tx", "Table name exclude filter (ex. 'Student')", (string tableFilter) => { _tableNameExcludeFilter = tableFilter; }), false);
+            _arguments.AddParameter(new InputArgumentWithInput("-trx", "Table name exclude regex filter (ex. 'Student')", (string tableFilter) => { _tableNameExcludeRegexFilter = tableFilter; }), false);
             _arguments.AddParameter(new InputArgumentWithInput("-p", "Save path", (string path) => { _folderPath = Path.GetFullPath(path, processCatalog); }), false);
             _arguments.AddParameter(new InputArgument("-r", "Recreate project folder", () => { _forceRecreate = true; }), false);
             _arguments.AddParameter(new InputArgumentWithInput("-c", "Connection string", (string cs) => { _connectionString = cs; }), true, "-f");
@@ -88,7 +96,11 @@ namespace DataTools.Deploy
                 SchemaIncludeNameFilter = _schemaNameIncludeFilter,
                 TableIncludeNameFilter = _tableNameIncludeFilter,
                 SchemaExcludeNameFilter = _schemaNameExcludeFilter,
-                TableExcludeNameFilter = _tableNameExcludeFilter
+                TableExcludeNameFilter = _tableNameExcludeFilter,
+                TableIncludeNameRegexFilter = _tableNameIncludeRegexFilter,
+                TableExcludeNameRegexFilter = _tableNameExcludeRegexFilter,
+                SchemaExcludeNameRegexFilter =_schemaNameExcludeRegexFilter,
+                SchemaIncludeNameRegexFilter = _schemaNameIncludeRegexFilter
             };
 
             _worker = new GeneratorWorker(opts);

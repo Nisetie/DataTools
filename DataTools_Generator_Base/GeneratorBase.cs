@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace DataTools.Deploy
 {
@@ -35,7 +36,15 @@ namespace DataTools.Deploy
 
         private Dictionary<string, TableCachedInfo> tableCaches;
 
-        public IEnumerable<ModelDefinition> GetModelDefinitions(string objectIncludeNameFilter = "", string schemaIncludeNameFilter = "", string objectExcludeNameFilter = "", string schemaExcludeNameFilter = "")
+        public IEnumerable<ModelDefinition> GetModelDefinitions(
+            string objectIncludeNameFilter = "",
+            string schemaIncludeNameFilter = "",
+            string objectExcludeNameFilter = "",
+            string schemaExcludeNameFilter = "",
+            string objectIncludeNameRegexFilter = "",
+            string objectExcludeNameRegexFilter = "",
+            string schemaIncludeNameRegexFilter = "",
+            string schemaExcludeNameRegexFilter = "")
         {
             string query = GetMetadataQuery();
 
@@ -68,16 +77,28 @@ namespace DataTools.Deploy
                     if (!string.IsNullOrEmpty(schemaIncludeNameFilter))
                         if (!row.TABLE_SCHEMA.Contains(schemaIncludeNameFilter))
                             continue;
+                    if (!string.IsNullOrEmpty(schemaIncludeNameRegexFilter))
+                        if (!Regex.Match(row.TABLE_SCHEMA, schemaIncludeNameRegexFilter).Success)
+                            continue;
                     if (!string.IsNullOrEmpty(schemaExcludeNameFilter))
                         if (row.TABLE_SCHEMA.Contains(schemaExcludeNameFilter))
+                            continue;
+                    if (!string.IsNullOrEmpty(schemaIncludeNameRegexFilter))
+                        if (Regex.Match(row.TABLE_SCHEMA, schemaExcludeNameRegexFilter).Success)
                             continue;
                 }
 
                 if (!string.IsNullOrEmpty(objectIncludeNameFilter))
                     if (!row.TABLE_NAME.Contains(objectIncludeNameFilter))
                         continue;
+                if (!string.IsNullOrEmpty(objectIncludeNameRegexFilter))
+                    if (!Regex.Match(row.TABLE_NAME, objectIncludeNameRegexFilter).Success)
+                        continue;
                 if (!string.IsNullOrEmpty(objectExcludeNameFilter))
                     if (row.TABLE_NAME.Contains(objectExcludeNameFilter))
+                        continue;
+                if (!string.IsNullOrEmpty(objectExcludeNameRegexFilter))
+                    if (Regex.Match(row.TABLE_NAME, objectExcludeNameRegexFilter).Success)
                         continue;
 
                 if (!tableCaches.TryGetValue($"{row.TABLE_SCHEMA}.{row.TABLE_NAME}", out var tableCache))
