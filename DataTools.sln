@@ -83,6 +83,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory_SQLiteTe
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_DeployTest", "DataTools_DeployTest\DataTools_DeployTest.csproj", "{3F3AFB46-5710-4B1C-B784-C67078A895EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_RandomTests", "DataTools_RandomTests\DataTools_RandomTests.csproj", "{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -213,6 +215,10 @@ Global
 		{3F3AFB46-5710-4B1C-B784-C67078A895EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F3AFB46-5710-4B1C-B784-C67078A895EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F3AFB46-5710-4B1C-B784-C67078A895EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

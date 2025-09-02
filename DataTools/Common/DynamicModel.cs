@@ -49,7 +49,7 @@ namespace DataTools.Common
 
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            this[binder.Name] = value;
+            _members[binder.Name] = value;
             return true;
         }
 

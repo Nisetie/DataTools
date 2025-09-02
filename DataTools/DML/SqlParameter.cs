@@ -10,7 +10,6 @@
             get { return _value; }
             set { _value = value; }
         }
-
         public SqlParameter(string name) => _name = name;
         public SqlParameter(string name, object value) => (_name, _value) = (name, value);
 

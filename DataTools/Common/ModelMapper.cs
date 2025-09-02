@@ -31,8 +31,6 @@ namespace DataTools.Common
         public static Action<SqlUpdate, ModelT> BindUpdateWhere { get; private set; }
         public static Action<SqlDelete, ModelT> BindDeleteWhere { get; private set; }
 
-        public static SqlSelect CachedSelect { get; private set; }
-        public static Dictionary<string, SqlParameter> CachedParameters { get; private set; } = new Dictionary<string, SqlParameter>();
         public static Func<ModelT, string> GetModelKeyValue { get; private set; }
 
         public static ParameterExpression GetModelInputParameterExpression()
@@ -158,9 +156,6 @@ namespace DataTools.Common
             PrepareMapModel();
             PrepareUpdateCommand();
             PrepareDeleteCommand();
-            var preparedQuery = MappingHelper.PrepareSqlQuery(ModelMetadata<ModelT>.Instance);
-            CachedSelect = preparedQuery.query;
-            CachedParameters = preparedQuery.parameters;
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<ModelT, string>>(ModelMetadata<ModelT>.Instance, GetModelInputParameterExpression, GetModelPropertyExpression);
             PrepareModelCopier();
         }
