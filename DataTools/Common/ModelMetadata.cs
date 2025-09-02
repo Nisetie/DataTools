@@ -150,7 +150,7 @@ namespace DataTools.Meta
         {
             if (modelType.IsGenericType)
             {
-                string modelName = $"{modelType.Name}_{string.Join("_",modelType.GenericTypeArguments as IEnumerable<Type>) }";
+                string modelName = $"{modelType.Name}_{string.Join("_", modelType.GenericTypeArguments as IEnumerable<Type>)}";
                 instance.ModelName = modelName;
             }
             else
@@ -174,11 +174,6 @@ namespace DataTools.Meta
                 else i++;
                 instance.AddField(f);
             }
-
-            // проверка метамодели на отсутствие идентификационного поля
-            if (instance.NoUniqueKey == false)
-                if (!instance.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
-                    throw new Exception($"Анализ {instance.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Укажите как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}.");
         }
     }
 
@@ -193,8 +188,9 @@ namespace DataTools.Meta
         {
             var modelType = typeof(ModelT);
             _instance = new ModelMetadata();
-            ModelMetadata.FillFromType(_instance, modelType);             
+            ModelMetadata.FillFromType(_instance, modelType);
         }
     }
 }
+
 

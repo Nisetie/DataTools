@@ -3,7 +3,6 @@ using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace DataTools.Common
 {
@@ -24,9 +23,6 @@ namespace DataTools.Common
         public Action<SqlUpdate, dynamic> BindUpdateWhere { get; private set; }
         public Action<SqlDelete, dynamic> BindDeleteWhere { get; private set; }
         public Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic> MapModel { get; private set; }
-
-        public SqlSelect CachedSelect { get; private set; }
-        public Dictionary<string, SqlParameter> CachedParameters { get; private set; } = new Dictionary<string, SqlParameter>();
         public Func<dynamic, string> GetModelKeyValue { get; private set; }
 
         public static ParameterExpression GetModelInputParameterExpression()
@@ -126,9 +122,6 @@ namespace DataTools.Common
                 GetInvokeMapModelExpression,
                 GetLocalModelAssignNewExpression
                 );
-            var preparedQuery = MappingHelper.PrepareSqlQuery(metadata);
-            CachedSelect = preparedQuery.query;
-            CachedParameters = preparedQuery.parameters;
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<dynamic, string>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
         }
 

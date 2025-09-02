@@ -1,7 +1,7 @@
-﻿using DataTools.DML;
+﻿using DataTools.Attributes;
+using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
-using DataTools.Meta;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +12,44 @@ namespace DataTools.Common
 {
     public static class MappingHelper
     {
+        public static Dictionary<string, SqlSelect> _foreignSelects = new Dictionary<string, SqlSelect>();
+        public static Dictionary<string, Dictionary<string, SqlParameter>> _foreignSelectParameters = new Dictionary<string, Dictionary<string, SqlParameter>>();
+
+        public static SqlSelect GetForeignSelect(IModelMetadata from, IModelMetadata to)
+        {
+            var key = $"{from.ModelName}-{to.ModelName}";
+            if (!_foreignSelects.TryGetValue(key, out var sqlSelect))
+            {
+                var cachedParameters = new Dictionary<string, SqlParameter>();
+                var cachedWhereClause = new SqlWhere();
+                _foreignSelects[key] = sqlSelect = new SqlSelect().From(to);
+                _foreignSelectParameters[key] = cachedParameters;
+
+                var fields = from.Fields;
+
+                int pkCount = 0;
+                foreach (var field in fields)
+                {
+                    if (field.IsForeignKey == false || field.ForeignModel.ModelName != to.ModelName) continue;
+
+                    var fieldType = Type.GetType(field.FieldTypeName);
+
+                    foreach (var foreignColumnName in field.ForeignColumnNames)
+                    {
+                        var ffn = to.GetColumn(foreignColumnName);
+                        cachedParameters[ffn.ColumnName] = new SqlParameter(ffn.ColumnName);
+                        if (pkCount == 0)
+                            cachedWhereClause.Name(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
+                        else
+                            cachedWhereClause.AndName(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
+                        pkCount++;
+                    }
+                    sqlSelect.Where(cachedWhereClause);
+                }
+            }
+            return sqlSelect;
+        }
+
         private static bool ForeignKeysAreEmpty(params object[] keys)
         {
             for (int i = 0; i < keys.Length; i++)
@@ -27,13 +65,13 @@ namespace DataTools.Common
             return false;
         }
 
-        public static string GetModelKey(params object[] keys)
+        public static string GetModelUniqueString(params object[] keys)
         {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < keys.Length; i++)
             {
                 var key = keys[i];
-                sb.Append(key == null ? null : key is byte[] bytea ? $"\"{BitConverter.ToString(bytea)}\"" : $"\"{key}\"").Append(";");
+                sb.Append(key == null ? null : key is byte[] bytea ? BitConverter.ToString(bytea) : key.ToString()).Append(";");
             }
             return sb.ToString();
         }
@@ -46,49 +84,6 @@ namespace DataTools.Common
                 foreach (var f in modelMetadata.Fields)
                     primaryKeys.Add(f);
             return primaryKeys;
-        }
-
-        public static (SqlSelect query, Dictionary<string, SqlParameter> parameters) PrepareSqlQuery(IModelMetadata metadata)
-        {
-            var cachedParameters = new Dictionary<string, SqlParameter>();
-            var cachedWhereClause = new SqlWhere();
-            var cachedSelect = new SqlSelect().From(metadata);
-
-            var primaryKeys = GetPrimaryKeys(metadata);
-
-            int pkCount = 0;
-            foreach (var primaryKeyField in primaryKeys)
-            {
-                var fieldType = Type.GetType(primaryKeyField.FieldTypeName);
-
-                if (primaryKeyField.IsForeignKey)
-                {
-                    int i = 0;
-                    foreach (var foreignColumnName in primaryKeyField.ForeignColumnNames)
-                    {
-                        cachedParameters[primaryKeyField.ColumnNames[i]] = new SqlParameter(primaryKeyField.ColumnNames[i]);
-                        if (pkCount == 0)
-                            cachedWhereClause.Name(primaryKeyField.ColumnNames[i]).EqPar(cachedParameters[primaryKeyField.ColumnNames[i]]);
-                        else
-                            cachedWhereClause.AndName(primaryKeyField.ColumnNames[i]).EqPar(cachedParameters[primaryKeyField.ColumnNames[i]]);
-                        i++;
-                        pkCount++;
-                    }
-                }
-                else
-                {
-                    cachedParameters[primaryKeyField.ColumnName] = new SqlParameter(primaryKeyField.ColumnName);
-                    if (pkCount == 0)
-                        cachedWhereClause.Name(primaryKeyField.ColumnName).EqPar(cachedParameters[primaryKeyField.ColumnName]);
-                    else
-                        cachedWhereClause.AndName(primaryKeyField.ColumnName).EqPar(cachedParameters[primaryKeyField.ColumnName]);
-                    pkCount++;
-                }
-            }
-            cachedSelect.Where(cachedWhereClause);
-
-            return (cachedSelect, cachedParameters);
-
         }
 
         public static T PrepareGetModelKeyValue<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
@@ -115,7 +110,7 @@ namespace DataTools.Common
                 else
                     values.Add(Expression.Convert(GetModelPropertyExpressionFunction(param_model, primaryKeyField.FieldName), typeof(object)));
             }
-            return Expression.Lambda<T>(Expression.Call(null, typeof(MappingHelper).GetMethod(nameof(MappingHelper.GetModelKey)), Expression.NewArrayInit(typeof(object), values)), param_model).Compile();
+            return Expression.Lambda<T>(Expression.Call(null, typeof(MappingHelper).GetMethod(nameof(MappingHelper.GetModelUniqueString)), Expression.NewArrayInit(typeof(object), values)), param_model).Compile();
         }
 
         public static T PrepareInsertCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
@@ -220,6 +215,10 @@ namespace DataTools.Common
 
             var all_scripts = Expression.Block(
                 variables: new ParameterExpression[] { var_where }
+                // проверка метамодели на отсутствие идентификационного поля
+                , metadata.NoUniqueKey == false && (!metadata.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
+                ? Expression.Throw(Expression.Constant($"Анализ {metadata.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Вы хотите изменить ВСЕ строки?! Укажите в метамодели как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}. Или используйте атрибут {nameof(NoUniqueAttribute)}, чтобы игнорировать проверку на уникальность."))
+                : Expression.Empty() as Expression
                 , Expression.Assign(var_where, Expression.New(typeof(SqlWhere)))
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.Value), null, var_where, Expression.Constant(1, typeof(object)))
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Constant(1, typeof(object)))
@@ -271,6 +270,10 @@ namespace DataTools.Common
 
             var all_scripts = Expression.Block(
                variables: new ParameterExpression[] { var_where }
+               // проверка метамодели на отсутствие идентификационного поля
+                , metadata.NoUniqueKey == false && (!metadata.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
+                ? Expression.Throw(Expression.Constant($"Анализ {metadata.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Вы хотите изменить ВСЕ строки?! Укажите в метамодели как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}. Или используйте атрибут {nameof(NoUniqueAttribute)}, чтобы игнорировать проверку на уникальность."))
+                : Expression.Empty() as Expression
                , Expression.Assign(var_where, Expression.New(typeof(SqlWhere)))
                , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.Value), null, var_where, Expression.Constant(1, typeof(object)))
                , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Constant(1, typeof(object)))
@@ -317,6 +320,7 @@ namespace DataTools.Common
             var foreignModelKeys = new Dictionary<string, Dictionary<string, Expression>>();
             var foreignModelKeysArray = new Dictionary<string, ParameterExpression>();
             var foreignModelSelects = new Dictionary<string, ParameterExpression>();
+            var foreignModelSelectAssigns = new Dictionary<string, Expression>();
             foreach (var f in fields)
             {
                 if (f.IsForeignKey == false) continue;
@@ -364,13 +368,13 @@ namespace DataTools.Common
                     // для поля с простым типом данных
                     let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement
                     let fieldType = Type.GetType(f.FieldTypeName)
-                    let UnboxedType = Nullable.GetUnderlyingType(fieldType) // TODO GetFieldType (ModelT or DynamicModel)
+                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
                     let IsNullable = UnboxedType != null
                     let RealType = IsNullable ? UnboxedType : fieldType
                     let IsConvertible = RealType.GetInterface(nameof(IConvertible)) != null
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
                     let IsParsable = ParseMethod != null
-                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })                    
+                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                     orderby f.FieldOrder
                     select Expression.Block(
                         Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
@@ -429,13 +433,20 @@ namespace DataTools.Common
                     let IsParsable = ParseMethod != null
                     let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                     // для поля - внешней модели
-                    let var_foreignModelCache = foreignModelCaches[fieldName]
+                    //let var_foreignModelCache = foreignModelCaches[fieldName]
                     let var_foreignKeyValue = foreignModelKeys[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
                     let var_foreignKeySqlParameter = foreignModelSqlParameters[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
                     select Expression.Block(
-                        Expression.Assign(Expression.Property(Expression.Property(Expression.Field(var_foreignModelCache, nameof(SelectDynamicCache.Parameters)), "Item", Expression.Constant(f.foreignColumn)), nameof(SqlParameter.Value)), Expression.Assign(var_foreignKeyValue, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.columnOrder))))
-                    )
-                    )
+                        Expression.Assign(
+                            var_foreignKeySqlParameter,
+                            Expression.New(
+                                typeof(SqlParameter).GetConstructor(new Type[] { typeof(string), typeof(object) }),
+                                Expression.Constant(f.foreignModel.GetColumn(f.foreignColumn).FieldName),
+                                Expression.Assign(var_foreignKeyValue, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.columnOrder)
+                                )
+                                )
+                            )
+                        )
                 // поиск внешних моделей в кеше или их запрос из БД
                 , Expression.Block(
                     from f in fields
@@ -462,7 +473,7 @@ namespace DataTools.Common
                                 , GetModelPropertySetterExpressionFunction(var_m, f.FieldName, var_foreignModel)
                                 , Expression.Block(
                                     variables: null
-                                    , Expression.Assign(var_foreignModelSelect, Expression.Field(GetCallGetModelCacheExpressionFunction(param_queryCache, f.ForeignModel), nameof(SelectDynamicCache.CachedSelect)))
+                                    , Expression.Assign(var_foreignModelSelect, Expression.Constant(GetForeignSelect(metadata, f.ForeignModel)))
                                     , Expression.Assign(
                                         var_foreignModelQueryResult
                                         , Expression.Convert(
@@ -474,7 +485,11 @@ namespace DataTools.Common
                                                     , nameof(IDataContext.ExecuteWithResult)
                                                     , null
                                                     , var_foreignModelSelect
-                                                    , Expression.Field(var_foreignModelCache, nameof(SelectDynamicCache.ParametersArray)))), typeof(object[]))
+                                                    , Expression.NewArrayInit(typeof(SqlParameter), foreignModelSqlParameters[fieldName].Values.Select(v => v as Expression).ToArray())
+                                                    )
+                                                )
+                                            , typeof(object[])
+                                            )
                                         )
                                     , Expression.IfThen(
                                         Expression.NotEqual(var_foreignModelQueryResult, Expression.Constant(null))
@@ -487,6 +502,8 @@ namespace DataTools.Common
                                 )
                             )
                         )
+                    )
+                )
                     )
                 );
 

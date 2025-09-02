@@ -17,22 +17,10 @@ namespace DataTools.Common
         /// Составной первичный ключ преобразуется в строку для универсальности.
         /// </summary>
         public Dictionary<string, ModelT> CachedModels = new Dictionary<string, ModelT>();
-        public Dictionary<string, SqlParameter> Parameters = new Dictionary<string, SqlParameter>();
-        public SqlParameter[] ParametersArray;
-        public SqlSelect CachedSelect;
 
         private static Func<ModelT, string> _getModelKeyValue;
 
         public static readonly string ModelName;
-
-        public SelectModelCache() : base()
-        {
-            int i = 0;
-            ParametersArray = new SqlParameter[ModelMapper<ModelT>.CachedParameters.Count];
-            foreach (var kv in ModelMapper<ModelT>.CachedParameters)
-                Parameters[kv.Key] = ParametersArray[i++] = new SqlParameter(kv.Value.Name);
-            CachedSelect = ModelMapper<ModelT>.CachedSelect;
-        }
 
         static SelectModelCache()
         {
@@ -42,7 +30,7 @@ namespace DataTools.Common
 
         public bool TryGetModelByKeys(out ModelT model, params object[] keys)
         {
-            return CachedModels.TryGetValue(MappingHelper.GetModelKey(keys), out model);
+            return CachedModels.TryGetValue(MappingHelper.GetModelUniqueString(keys), out model);
         }
 
         public void AddModel(ModelT model)
