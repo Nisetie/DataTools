@@ -73,7 +73,7 @@ namespace DataTools.Common
             return Expression.Call(param_queryCache, nameof(SelectCache.GetModelCache), typeArguments: new Type[] { Type.GetType(metadata.ModelTypeName) }, null);
         }
 
-        public static Expression GetLocalModelAssignNewExpression(ParameterExpression var_m)
+        public static Expression GetLocalModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_m)
         {
             return Expression.Assign(var_m, Expression.New(typeof(ModelT)));
         }
@@ -102,7 +102,6 @@ namespace DataTools.Common
             MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT>>(
                 Metadata,
                 GetModelInputParameterExpression,
-                GetModelPropertyExpression,
                 GetModelPropertySetterExpression,
                 GetForeignModelCacheVariableExpression,
                 GetForeignModelVariableExpression,

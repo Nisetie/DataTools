@@ -2,6 +2,7 @@
 using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq.Expressions;
 
 namespace DataTools.Common
@@ -37,27 +38,12 @@ namespace DataTools.Common
 
         public static Expression GetModelPropertyExpression(Expression parameterExpression, string PropertyName)
         {
-            var getMemberBinder = Microsoft.CSharp.RuntimeBinder.Binder.GetMember(
-                Microsoft.CSharp.RuntimeBinder.CSharpBinderFlags.None,
-                PropertyName,
-                typeof(DynamicMapper),
-                new[] { Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfoFlags.None, null) }
-            );
-            return Expression.Dynamic(getMemberBinder, typeof(object), parameterExpression);
+            return Expression.Property(Expression.Convert(parameterExpression, typeof(DynamicModel)), "Item", Expression.Constant(PropertyName));
         }
 
         public static Expression GetModelPropertySetterExpression(ParameterExpression modelObject, string PropertyName, Expression value)
         {
-            var setMemberBinder = Microsoft.CSharp.RuntimeBinder.Binder.SetMember(
-               Microsoft.CSharp.RuntimeBinder.CSharpBinderFlags.None,
-               PropertyName,
-               typeof(DynamicMapper),
-               new[] {
-                   Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfoFlags.None, null),
-                   Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfo.Create(Microsoft.CSharp.RuntimeBinder.CSharpArgumentInfoFlags.None, null)
-               }
-               );
-            return Expression.Dynamic(setMemberBinder, typeof(object), modelObject, value);
+            return Expression.Assign(Expression.Property(Expression.Convert(modelObject, typeof(DynamicModel)), "Item", Expression.Constant(PropertyName)), Expression.Convert( value,typeof(object)));
         }
 
         public static ParameterExpression GetForeignModelCacheVariableExpression(IModelMetadata modelMetadata)
@@ -81,9 +67,9 @@ namespace DataTools.Common
             return Expression.Call(param_queryCache, nameof(SelectCache.GetModelCache), null, Expression.Constant(metadata));
         }
 
-        public static Expression GetLocalModelAssignNewExpression(ParameterExpression var_m)
+        public static Expression GetLocalModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_m)
         {
-            return Expression.Assign(var_m, Expression.New(typeof(DynamicModel)));
+            return Expression.Assign(var_m, Expression.New(typeof(DynamicModel).GetConstructor(new Type[] { typeof(IModelMetadata) }), Expression.Constant(modelMetadata)));
         }
 
         public static Expression GetInvokeMapModelExpression(
@@ -113,7 +99,6 @@ namespace DataTools.Common
             MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic>>(
                 metadata,
                 GetModelInputParameterExpression,
-                GetModelPropertyExpression,
                 GetModelPropertySetterExpression,
                 GetForeignModelCacheVariableExpression,
                 GetForeignModelVariableExpression,

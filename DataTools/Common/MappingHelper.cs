@@ -275,14 +275,13 @@ namespace DataTools.Common
         public static T PrepareMapModel<T>(
             IModelMetadata metadata,
             Func<ParameterExpression> GetModelVariableExpressionFunction,
-            Func<ParameterExpression, string, Expression> GetModelPropertyExpressionFunction,
             Func<ParameterExpression, string, Expression, Expression> GetModelPropertySetterExpressionFunction,
             Func<IModelMetadata, ParameterExpression> GetForeignModelCacheVariableExpressionFunction,
             Func<IModelFieldMetadata, ParameterExpression> GetForeignModelVariableExpressionFunction,
             Func<ParameterExpression> GetTargetModelCacheVariableExpressionFunction,
             Func<ParameterExpression, IModelMetadata, Expression> GetCallGetModelCacheExpressionFunction,
             Func<IModelMetadata, ParameterExpression, ParameterExpression, ParameterExpression, ParameterExpression, Expression> GetInvokeMapModelExpressionFunction,
-            Func<ParameterExpression, Expression> GetLocalModelAssignNewExpressionFunction
+            Func<IModelMetadata, ParameterExpression, Expression> GetLocalModelAssignNewExpressionFunction
             )
         {
             ParameterExpression param_dataContext = Expression.Parameter(typeof(IDataContext), "dataContext");
@@ -344,7 +343,7 @@ namespace DataTools.Common
             all_variables = all_variables.Concat(new[] { var_m, var_value, var_customConverter, var_foreignModelQueryResult, var_modelCache });
 
 
-            var blockSimpleProperties = Expression.Block(
+            var blockSimplePropertiesWithCustomConvertersCheck = Expression.Block(
                 variables: null,
                 Expression.Block(
                     from f
@@ -386,6 +385,54 @@ namespace DataTools.Common
                 , Expression.Assign(var_modelCache, GetCallGetModelCacheExpressionFunction(param_queryCache, metadata))
                 , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, var_m)
                 );
+            var blockSimplePropertiesWithoutCustomConvertersCheck = Expression.Block(
+                variables: null,
+                Expression.Block(
+                    from f
+                    in fields
+                    where !f.IsForeignKey
+                    // для поля с простым типом данных
+                    let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement
+                    let fieldType = Type.GetType(f.FieldTypeName)
+                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
+                    let IsNullable = UnboxedType != null
+                    let RealType = IsNullable ? UnboxedType : fieldType
+                    let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
+                    let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
+                    let IsParsable = ParseMethod != null
+                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
+                    orderby f.FieldOrder
+                    select Expression.Block(
+                        Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
+                        // свойства, имеющие примитивные типы
+                        , Expression.IfThenElse(
+                            Expression.Equal(var_value, Expression.Constant(null))
+                            , GetModelPropertySetterExpressionFunction(var_m, f.FieldName, Expression.Default(fieldType))
+                            , Expression.Block(
+                                    GetModelPropertySetterExpressionFunction(var_m, f.FieldName,
+                                    IsConvertible
+                                    ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                                    : IsParsable
+                                    ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                                    : Expression.Convert(var_value, fieldType)
+                                    )
+                                )
+                            )
+                        )
+                    )
+                , Expression.Assign(var_modelCache, GetCallGetModelCacheExpressionFunction(param_queryCache, metadata))
+                , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, var_m)
+                );
+
+            var blockSimpleProperties = Expression.IfThenElse(
+                Expression.IsTrue(
+                    Expression.OrElse(
+                        Expression.Equal(param_customTypeConverters, Expression.Constant(null)),
+                        Expression.Equal(Expression.Property(param_customTypeConverters,nameof(Dictionary<Type, Func<object, object>>.Count) ), Expression.Constant(0)))
+                    ),
+                blockSimplePropertiesWithoutCustomConvertersCheck,
+                blockSimplePropertiesWithCustomConvertersCheck
+                );
 
             var foreignKeysDenormalized = new List<(IModelFieldMetadata field, IModelMetadata foreignModel, string foreignColumn, int columnOrder)>();
 
@@ -418,7 +465,6 @@ namespace DataTools.Common
                     let IsParsable = ParseMethod != null
                     let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                     // для поля - внешней модели
-                    //let var_foreignModelCache = foreignModelCaches[fieldName]
                     let var_foreignKeyValue = foreignModelKeys[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
                     let var_foreignKeySqlParameter = foreignModelSqlParameters[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
                     select Expression.Block(
@@ -494,7 +540,7 @@ namespace DataTools.Common
 
             var all_script = Expression.Block(
                 all_variables
-                , GetLocalModelAssignNewExpressionFunction(var_m)
+                , GetLocalModelAssignNewExpressionFunction(metadata, var_m)
                 , blockSimpleProperties
                 , block_prep
                 , blockForeignModels

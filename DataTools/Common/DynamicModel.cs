@@ -26,7 +26,7 @@ namespace DataTools.Common
 
         public object this[string key]
         {
-            get => _members[key];
+            get => _members.TryGetValue(key, out object value) ? value : null;
             set
             {
                 _members[key] = value;
@@ -43,8 +43,15 @@ namespace DataTools.Common
         public DynamicModel(IModelMetadata modelMetadata) : this()
         {
             _modelMetadata = modelMetadata;
+            foreach (var f in _modelMetadata.Fields)
+                _members[f.FieldName] = null;
         }
 
+        public override IEnumerable<string> GetDynamicMemberNames()
+        {
+            return _members.Keys;
+        }
+        
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
             if (_members.TryGetValue(binder.Name, out result))
