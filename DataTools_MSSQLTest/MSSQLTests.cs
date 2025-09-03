@@ -86,7 +86,7 @@ as
         }
 
         [Test]
-        public void TestTypes()
+        public void TestTypesMSSQL()
         {
             TestType(true);
             TestType(1);
