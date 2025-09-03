@@ -16,7 +16,7 @@ namespace DataTools.MSSQL
 
         protected override string StringifyValue(object value)
         {
-            return MSSQL_TypesMap.ToStringSQL(value);
+            return MSSQL_TypesMapper.ToStringSQL(value);
         }
 
         protected override string Parse_SqlSelect(SqlSelect sqlSelect)
@@ -250,7 +250,7 @@ namespace DataTools.MSSQL
                 sb.Append($"{Parse_SqlName(column.ColumnName)} ");
 
                 var colType = column.ColumnType;
-                var sqlType = MSSQL_TypesMap.GetSqlTypeFromType(column.ColumnType.Type);
+                var sqlType = MSSQL_TypesMapper.GetSqlTypeFromType(column.ColumnType.Type);
                 if (sqlType == null) throw new NullReferenceException($"{nameof(MSSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {sqlCreateTable.TableName}.{column.ColumnName} {colType}");
 
                 if (colType.HasLength)

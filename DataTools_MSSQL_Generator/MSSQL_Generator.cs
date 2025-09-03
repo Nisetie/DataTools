@@ -132,12 +132,12 @@ order by referenceCount, tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAM
 
         protected override SqlTypeParser GetSqlTypeParser()
         {
-            return MSSQL_TypesMap.GetNetTypeFromSqlType;
+            return MSSQL_TypesMapper.GetNetTypeFromSqlType;
         }
 
         protected override SqlDBTypeParser GetDBTypeParser()
         {
-            return MSSQL_TypesMap.GetDBTypeFromSqlType;
+            return MSSQL_TypesMapper.GetDBTypeFromSqlType;
         }
 
         public MSSQL_Generator(string connectionString) { ConnectionString = connectionString; }

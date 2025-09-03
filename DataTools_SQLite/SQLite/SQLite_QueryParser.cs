@@ -18,7 +18,7 @@ namespace DataTools.SQLite
 
         protected override string StringifyValue(object value)
         {
-            return SQLite_TypesMap.ToStringSQL(value);
+            return SQLite_TypesMapper.ToStringSQL(value);
         }
 
         protected override string Parse_SqlSelect(SqlSelect sqlSelect)
@@ -268,7 +268,7 @@ namespace DataTools.SQLite
                 colDefSb.Append($"{Parse_SqlName(column.ColumnName)} ");
 
                 var colType = column.ColumnType;
-                var sqlType = SQLite_TypesMap.GetSqlType(colType);
+                var sqlType = SQLite_TypesMapper.GetSqlType(colType);
                 if (sqlType == null) throw new NullReferenceException($"{nameof(SQLite_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
 
                 if (colType.HasLength)

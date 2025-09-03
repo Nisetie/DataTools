@@ -12,40 +12,32 @@ namespace DataTools.Common
 {
     public static class MappingHelper
     {
-        public static Dictionary<string, SqlSelect> _foreignSelects = new Dictionary<string, SqlSelect>();
-        public static Dictionary<string, Dictionary<string, SqlParameter>> _foreignSelectParameters = new Dictionary<string, Dictionary<string, SqlParameter>>();
-
         public static SqlSelect GetForeignSelect(IModelMetadata from, IModelMetadata to)
         {
-            var key = $"{from.ModelName}-{to.ModelName}";
-            if (!_foreignSelects.TryGetValue(key, out var sqlSelect))
+            var cachedParameters = new Dictionary<string, SqlParameter>();
+            var cachedWhereClause = new SqlWhere();
+            var sqlSelect = new SqlSelect().From(to);
+
+            var fields = from.Fields;
+
+            int pkCount = 0;
+            foreach (var field in fields)
             {
-                var cachedParameters = new Dictionary<string, SqlParameter>();
-                var cachedWhereClause = new SqlWhere();
-                _foreignSelects[key] = sqlSelect = new SqlSelect().From(to);
-                _foreignSelectParameters[key] = cachedParameters;
+                if (field.IsForeignKey == false || field.ForeignModel.ModelName != to.ModelName) continue;
 
-                var fields = from.Fields;
+                var fieldType = Type.GetType(field.FieldTypeName);
 
-                int pkCount = 0;
-                foreach (var field in fields)
+                foreach (var foreignColumnName in field.ForeignColumnNames)
                 {
-                    if (field.IsForeignKey == false || field.ForeignModel.ModelName != to.ModelName) continue;
-
-                    var fieldType = Type.GetType(field.FieldTypeName);
-
-                    foreach (var foreignColumnName in field.ForeignColumnNames)
-                    {
-                        var ffn = to.GetColumn(foreignColumnName);
-                        cachedParameters[ffn.ColumnName] = new SqlParameter(ffn.ColumnName);
-                        if (pkCount == 0)
-                            cachedWhereClause.Name(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
-                        else
-                            cachedWhereClause.AndName(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
-                        pkCount++;
-                    }
-                    sqlSelect.Where(cachedWhereClause);
+                    var ffn = to.GetColumn(foreignColumnName);
+                    cachedParameters[ffn.ColumnName] = new SqlParameter(ffn.ColumnName);
+                    if (pkCount == 0)
+                        cachedWhereClause.Name(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
+                    else
+                        cachedWhereClause.AndName(ffn.ColumnName).EqPar(cachedParameters[ffn.ColumnName]);
+                    pkCount++;
                 }
+                sqlSelect.Where(cachedWhereClause);
             }
             return sqlSelect;
         }
@@ -54,13 +46,6 @@ namespace DataTools.Common
         {
             for (int i = 0; i < keys.Length; i++)
                 if (keys[i] == null)
-                    return true;
-            return false;
-        }
-        private static bool SqlParametersAreEmpty(SqlParameter[] parameters)
-        {
-            for (int i = 0; i < parameters.Length; i++)
-                if (parameters[i].Value == null)
                     return true;
             return false;
         }
@@ -371,7 +356,7 @@ namespace DataTools.Common
                     let UnboxedType = Nullable.GetUnderlyingType(fieldType)
                     let IsNullable = UnboxedType != null
                     let RealType = IsNullable ? UnboxedType : fieldType
-                    let IsConvertible = RealType.GetInterface(nameof(IConvertible)) != null
+                    let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
                     let IsParsable = ParseMethod != null
                     let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })

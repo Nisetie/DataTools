@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataTools.Interfaces;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,6 +10,8 @@ namespace DataTools.Common
 {
     public class DynamicModel : DynamicObject, IDictionary<string, object>, INotifyPropertyChanged
     {
+        private IModelMetadata _modelMetadata;
+
         private Dictionary<string, object> _members;
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -31,9 +34,15 @@ namespace DataTools.Common
             }
         }
 
+        public IModelMetadata ModelMetadata => _modelMetadata;
+
         public DynamicModel()
         {
             _members = new Dictionary<string, object>();
+        }
+        public DynamicModel(IModelMetadata modelMetadata) : this()
+        {
+            _modelMetadata = modelMetadata;
         }
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)

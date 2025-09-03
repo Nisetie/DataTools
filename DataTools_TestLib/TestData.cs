@@ -1,7 +1,11 @@
+using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
 using System.Collections.Generic;
+using System.Data.SQLite;
+using System.Runtime.InteropServices.ComTypes;
+using DataTools.Extensions;
 
 namespace DataTools_Tests
 {
@@ -353,10 +357,10 @@ namespace DataTools_Tests
 
             void ProcessInsertion<ModelT>(ModelT[] models) where ModelT : class, new()
             {
+                var q = new SqlComposition();
                 foreach (var m in models)
-                {
-                    DataContext.Insert(m);
-                }
+                    q.Elements.Add(new SqlInsert().Into<ModelT>(m));
+                DataContext.Execute(q);
             }
          ;
 

@@ -138,12 +138,12 @@ order by referenceCount, tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAM
 
         protected override SqlTypeParser GetSqlTypeParser()
         {
-            return PostgreSQL_TypesMap.GetNetType;
+            return PostgreSQL_TypesMapper.GetNetType;
         }
 
         protected override SqlDBTypeParser GetDBTypeParser()
         {
-            return PostgreSQL_TypesMap.GetDBType;
+            return PostgreSQL_TypesMapper.GetDBType;
         }
     }
 }

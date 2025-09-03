@@ -126,12 +126,12 @@ order by referenceCount, tablesAndColums.TABLE_SCHEMA, tablesAndColums.TABLE_NAM
 
         protected override SqlTypeParser GetSqlTypeParser()
         {
-            return SQLite_TypesMap.GetNetType;
+            return SQLite_TypesMapper.GetNetType;
         }
 
         protected override SqlDBTypeParser GetDBTypeParser()
         {
-            return SQLite_TypesMap.GetDBType;
+            return SQLite_TypesMapper.GetDBType;
         }
     }
 }

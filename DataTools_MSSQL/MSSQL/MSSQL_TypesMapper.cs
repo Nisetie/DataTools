@@ -1,47 +1,45 @@
 ﻿using DataTools.Common;
+using DataTools.Interfaces;
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace DataTools.MSSQL
 {
-    public unsafe static class MSSQL_TypesMap
+    public unsafe class MSSQL_TypesMapper : TypesMapper
     {
-        static MSSQL_TypesMap()
+        private static MSSQL_TypesMapper _instance;
+        private MSSQL_TypesMapper() :base() { }
+
+        protected override void AddLinkBoolean() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Boolean, "bit");
+        protected override void AddLinkBinary() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Binary, "varbinary", "binary", "image", "rowversion");
+        protected override void AddLinkGuid() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Guid, "uniqueidentifier");
+        protected override void AddLinkByte() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Byte, "tinyint");
+        protected override void AddLinkSByte() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.SByte, "smallint");
+        protected override void AddLinkInt16() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int16, "smallint");
+        protected override void AddLinkInt32() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int32, "int");
+        protected override void AddLinkInt64() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int64, "bigint");
+        protected override void AddLinkUInt16() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt16, "int");
+        protected override void AddLinkUInt32() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt32, "int");
+        protected override void AddLinkUInt64() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt64, "bigint");
+        protected override void AddLinkSingle() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Single, "real");
+        protected override void AddLinkDouble() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Double, "float");
+        protected override void AddLinkMoney() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Money, "money", "smallmoney");
+        protected override void AddLinkDecimal() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Decimal, "decimal", "numeric");
+        protected override void AddLinkTimestamp() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime", "datetime2", "smalldatetime");
+        protected override void AddLinkTimestampTz() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.TimestampTz, "datetimeoffset");
+        protected override void AddLinkDate() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Date, "date");
+        protected override void AddLinkTime() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Time, "time");
+        protected override void AddLinkString() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.String, "nvarchar", "text");
+        protected override void AddLinkAnsiString() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiString, "varchar", "ntext");
+        protected override void AddLinkStringFixedLength() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.StringFixedLength, "nchar");
+        protected override void AddLinkAnsiStringFixedLength() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiStringFixedLength, "char");
+        protected override void AddLinkChar() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Char, "char");
+        protected override void AddLinkJson() => TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Json, "text");
+        protected override void AddLinkXml() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Xml, "xml");
+        static MSSQL_TypesMapper()
         {
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Boolean, "bit");
-
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Binary, "varbinary", "binary", "image", "rowversion");
-
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Guid, "uniqueidentifier");
-
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Byte, "tinyint");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.SByte, "smallint");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int16, "smallint");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int32, "int");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Int64, "bigint");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt16, "int");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt32, "int");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.UInt64, "bigint");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Single, "real");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Double, "float");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Money, "money", "smallmoney");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Decimal, "decimal", "numeric");
-            //TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Numeric, "decimal");
-            
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime", "datetime2", "smalldatetime");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.TimestampTz, "datetimeoffset");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Date, "date");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Time, "time");
-
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.String, "nvarchar", "text");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiString, "varchar", "ntext");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.StringFixedLength, "nchar");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.AnsiStringFixedLength, "char");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Char, "char");
-            TypesMap.AddForwardLinkOnly(E_DBMS.MSSQL, DBType.Json, "text");
-            TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Xml, "xml");
-
+            _instance = new MSSQL_TypesMapper();            
         }
 
         public static string GetSqlTypeFromType(Type type)

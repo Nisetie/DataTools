@@ -55,21 +55,24 @@ namespace DataTools_Tests
 
         public static void TeardownStatic(IDataContext DataContext)
         {
-            DataContext.DropTable<TestModelChild>();
-            DataContext.DropTable<TestModel>();
-            DataContext.DropTable<TestModelExtra>();
+            var q = new SqlComposition();
+            q.Elements.Add(new SqlDropTable().Table<TestModelChild>());
+            q.Elements.Add(new SqlDropTable().Table<TestModel>());
+            q.Elements.Add(new SqlDropTable().Table<TestModelExtra>());
 
-            DataContext.DropTable<TestModelGuidChild>();
-            DataContext.DropTable<TestModelGuidParent>();
+            q.Elements.Add(new SqlDropTable().Table<TestModelGuidChild>());
+            q.Elements.Add(new SqlDropTable().Table<TestModelGuidParent>());
 
-            DataContext.DropTable<TestModelSimple>();
+            q.Elements.Add(new SqlDropTable().Table<TestModelSimple>());
 
-            DataContext.DropTable<TestModelPrimaryKeyAsForeignKey>();
+            q.Elements.Add(new SqlDropTable().Table<TestModelPrimaryKeyAsForeignKey>());
 
-            DataContext.DropTable<TestModelChildCompositePrimaryKey>();
-            DataContext.DropTable<TestModelParentCompositePrimaryKey>();
+            q.Elements.Add(new SqlDropTable().Table<TestModelChildCompositePrimaryKey>());
+            q.Elements.Add(new SqlDropTable().Table<TestModelParentCompositePrimaryKey>());
 
-            DataContext.DropTable<TestModelCompositePrimaryKey>();
+            q.Elements.Add(new SqlDropTable().Table<TestModelCompositePrimaryKey>());
+
+            DataContext.Execute(q);
         }
 
         [SetUp]

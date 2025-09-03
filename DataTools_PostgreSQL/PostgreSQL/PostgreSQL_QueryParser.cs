@@ -18,7 +18,7 @@ namespace DataTools.PostgreSQL
 
         protected override string StringifyValue(object value)
         {
-            return PostgreSQL_TypesMap.ToStringSQL(value);
+            return PostgreSQL_TypesMapper.ToStringSQL(value);
         }
 
         protected override string Parse_SqlSelect(SqlSelect sqlSelect)
@@ -247,7 +247,7 @@ namespace DataTools.PostgreSQL
                 sb.Append($"{Parse_SqlName(column.ColumnName)} ");
 
                 var colType = column.ColumnType;
-                var sqlType = PostgreSQL_TypesMap.GetSqlType(colType);
+                var sqlType = PostgreSQL_TypesMapper.GetSqlType(colType);
                 if (sqlType == null) throw new NullReferenceException($"{nameof(PostgreSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
 
                 if (colType.HasLength && sqlType != "text" && sqlType != "bytea")
