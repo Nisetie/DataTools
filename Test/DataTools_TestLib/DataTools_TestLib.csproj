@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NUnit" Version="3.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Deployment\Lib\DataTools_DataMigrationLib\DataTools_DataMigrationLib.csproj" />
+    <ProjectReference Include="..\..\Implementation\DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj" />
+  </ItemGroup>
+
+</Project>
