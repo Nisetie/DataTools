@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  <DebugType>embedded</DebugType>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Implementation\DataTools_MSSQL\DataTools_MSSQL.csproj" />
+    <ProjectReference Include="..\DataTools_Migration_Base\DataTools_Migration_Base.csproj" />
+  </ItemGroup>
+
+</Project>
