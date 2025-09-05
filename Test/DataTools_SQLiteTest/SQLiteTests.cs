@@ -7,7 +7,7 @@ using System.Data.SQLite;
 
 namespace DataTools_Tests
 {
-    [TestFixture("sqlite", "Data Source=dbo;journal mode=off;synchronous=full;pooling=true")]
+    [TestFixture("sqlite", "Data Source=dbo;journal mode=WAL;synchronous=off;pooling=true")]
     public class SQLiteTests : CommonTests<SQLite_DataContext>
     {
         public override GeneratorBase GetGenerator()
