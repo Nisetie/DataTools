@@ -98,83 +98,43 @@ namespace DataTools.Common
             return Expression.Lambda<T>(Expression.Call(null, typeof(MappingHelper).GetMethod(nameof(MappingHelper.GetModelUniqueString)), Expression.NewArrayInit(typeof(object), values)), param_model).Compile();
         }
 
-        public static T PrepareInsertCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
-        {
-            ParameterExpression param_insertBuilder = Expression.Parameter(typeof(SqlInsert), "insertBuilder");
-            ParameterExpression param_m = GetModelInputParameterExpressionFunction();
-
-            var changeableFields = metadata.GetChangeableFields();
-
-            var valuesFromFields = new List<Expression>();
-            var valuesFromModelFields = new List<Expression>();
-
-            foreach (var f in changeableFields)
-                if (f.IsForeignKey)
-                    foreach (var fk in f.ForeignColumnNames)
-                        valuesFromFields.Add(Expression.Condition(
-                             Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, f.FieldName), Expression.Constant(null))
-                             , Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, f.FieldName), fk), typeof(object))
-                             , Expression.Convert(Expression.Constant(null), typeof(object))));
-                else
-                    valuesFromFields.Add(Expression.Convert(GetModelPropertyExpressionFunction(param_m, f.ColumnName), typeof(object)));
-
-            var call = Expression.Call(
-                typeof(SqlInsertExtensions),
-                nameof(SqlInsertExtensions.Value),
-                typeArguments: null,
-                param_insertBuilder, Expression.NewArrayInit(typeof(object), valuesFromFields)
-                );
-
-            var lambda = Expression.Lambda<T>(call, param_insertBuilder, param_m);
-            return lambda.Compile();
-        }
-
         /// <summary>
         /// Подготовка команды для обновления сущности на стороне источника данных.
         /// Внимание! Если сущность не имеет уникального ключа, тогда обновление недопустимо.
         /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
         /// </summary>
-        public static T PrepareBindUpdateValuesCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
+        public static T PrepareGetArrayOfValuesCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
         {
-            var param_updateBuilder = Expression.Parameter(typeof(SqlUpdate), "updateBuilder");
             var param_m = GetModelInputParameterExpressionFunction();
 
             var valueExpressions = new List<Expression>();
 
             foreach (var field in metadata.GetChangeableFields())
-            {
                 if (field.IsForeignKey)
-                {
                     foreach (var foreignColumn in field.ForeignColumnNames)
-                        valueExpressions.Add(
-                            Expression.Condition(
-                                Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, field.FieldName), Expression.Constant(null)),
-                                Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, field.FieldName), field.ForeignModel.GetColumn(foreignColumn).FieldName), typeof(object)),
+                        valueExpressions.Add(Expression.Condition(
+                                Expression.NotEqual(GetModelPropertyExpressionFunction(param_m, field.FieldName), Expression.Constant(null))
+                                , Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, field.FieldName), field.ForeignModel.GetColumn(foreignColumn).FieldName), typeof(object)),
                                 Expression.Convert(Expression.Constant(null), typeof(object))
                                 )
                             );
-                }
                 else
                     valueExpressions.Add(Expression.Convert(GetModelPropertyExpressionFunction(param_m, field.FieldName), typeof(object)));
-            }
 
-            var all_scripts = Expression.Block(
-                Expression.Call(typeof(SqlUpdateExtensions), nameof(SqlUpdateExtensions.Value), null, param_updateBuilder, Expression.NewArrayInit(typeof(object), valueExpressions))
-                );
+            var all_scripts = Expression.Block(Expression.NewArrayInit(typeof(object), valueExpressions));
 
-            return Expression.Lambda<T>(all_scripts, param_updateBuilder, param_m).Compile();
+            return Expression.Lambda<T>(all_scripts, param_m).Compile();
         }
 
-        public static T PrepareBindUpdateWhereCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
+        public static T PrepareCreateWhereClause<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
         {
-            var param_updateBuilder = Expression.Parameter(typeof(SqlUpdate), "updateBuilder");
             var param_m = GetModelInputParameterExpressionFunction();
 
             var var_where = Expression.Variable(typeof(SqlWhere));
 
             var whereExpressions = new List<Expression>();
 
-            foreach (var f in metadata.GetFilterableFields())
+            foreach (var f in metadata.NoUniqueKey ? metadata.Fields : metadata.GetFilterableFields())
             {
                 if (f.IsForeignKey)
                 {
@@ -208,65 +168,10 @@ namespace DataTools.Common
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.Value), null, var_where, Expression.Constant(1, typeof(object)))
                 , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Constant(1, typeof(object)))
                 , Expression.Block(whereExpressions)
-                , Expression.Call(param_updateBuilder, nameof(SqlUpdate.Where), null, var_where)
+                , var_where
                 );
 
-            return Expression.Lambda<T>(all_scripts, param_updateBuilder, param_m).Compile();
-        }
-
-        /// <summary>
-        /// Подготовка команды для удаления сущности на стороне источника данных.
-        /// Внимание! Если сущность не имеет уникального ключа, тогда удаление недопустимо.
-        /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
-        /// </summary>
-        public static T PrepareDeleteWhereCommand<T>(IModelMetadata metadata, Func<ParameterExpression> GetModelInputParameterExpressionFunction, Func<Expression, string, Expression> GetModelPropertyExpressionFunction)
-        {
-            var param_deleteBuilder = Expression.Parameter(typeof(SqlDelete), "deleteBuilder");
-            var param_m = GetModelInputParameterExpressionFunction();
-
-            var var_where = Expression.Variable(typeof(SqlWhere));
-
-            var whereExpressions = new List<Expression>();
-
-            foreach (var f in metadata.Fields)
-            {
-                if (!(f.IsUnique || f.IsPrimaryKey || f.IsAutoincrement)) continue;
-
-                if (f.IsForeignKey)
-                {
-                    for (int i = 0; i < f.ForeignColumnNames.Length; i++)
-                    {
-                        string foreignColumn = f.ForeignColumnNames[i];
-                        string column = f.ColumnNames[i];
-                        whereExpressions.Add(
-                            Expression.Block(
-                                Expression.Assign(var_where, Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.AndName), null, var_where, Expression.Constant(column)))
-                                , Expression.Assign(var_where, Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Convert(GetModelPropertyExpressionFunction(GetModelPropertyExpressionFunction(param_m, f.FieldName), f.ForeignModel.GetColumn(foreignColumn).FieldName), typeof(object))))
-                                )
-                            );
-                    }
-                }
-                else whereExpressions.Add(
-                    Expression.Block(
-                       Expression.Assign(var_where, Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.AndName), null, var_where, Expression.Constant(f.ColumnName)))
-                       , Expression.Assign(var_where, Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Convert(GetModelPropertyExpressionFunction(param_m, f.FieldName), typeof(object)))))
-                    );
-            }
-
-            var all_scripts = Expression.Block(
-               variables: new ParameterExpression[] { var_where }
-               // проверка метамодели на отсутствие идентификационного поля
-                , metadata.NoUniqueKey == false && (!metadata.Fields.Any((f) => f.IsUnique || f.IsAutoincrement || f.IsPrimaryKey))
-                ? Expression.Throw(Expression.Constant($"Анализ {metadata.ModelTypeName}... Нет уникальных полей с атрибутами {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}! Вы хотите изменить ВСЕ строки?! Укажите в метамодели как минимум одно поле с атрибутом {nameof(UniqueAttribute)}/{nameof(AutoincrementAttribute)}/{nameof(PrimaryKeyAttribute)}. Или используйте атрибут {nameof(NoUniqueAttribute)}, чтобы игнорировать проверку на уникальность."))
-                : Expression.Empty() as Expression
-               , Expression.Assign(var_where, Expression.New(typeof(SqlWhere)))
-               , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.Value), null, var_where, Expression.Constant(1, typeof(object)))
-               , Expression.Call(typeof(SqlWhereExtensions), nameof(SqlWhereExtensions.EqValue), null, var_where, Expression.Constant(1, typeof(object)))
-               , Expression.Block(whereExpressions)
-               , Expression.Call(param_deleteBuilder, nameof(SqlUpdate.Where), null, var_where)
-               );
-
-            return Expression.Lambda<T>(all_scripts, param_deleteBuilder, param_m).Compile();
+            return Expression.Lambda<T>(all_scripts, param_m).Compile();
         }
 
         /// <summary>
@@ -342,7 +247,6 @@ namespace DataTools.Common
 
             all_variables = all_variables.Concat(new[] { var_m, var_value, var_customConverter, var_foreignModelQueryResult, var_modelCache });
 
-
             var blockSimplePropertiesWithCustomConvertersCheck = Expression.Block(
                 variables: null,
                 Expression.Block(
@@ -371,11 +275,15 @@ namespace DataTools.Common
                                     Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
                                     , GetModelPropertySetterExpressionFunction(var_m, f.FieldName, Expression.Convert(Expression.Invoke(var_customConverter, var_value), fieldType))
                                     , GetModelPropertySetterExpressionFunction(var_m, f.FieldName,
-                                    IsConvertible
-                                    ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                                    : IsParsable
-                                    ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                                    : Expression.Convert(var_value, fieldType)
+                                    Expression.Condition(
+                                        Expression.IsTrue(Expression.TypeIs(var_value, RealType))
+                                        ,Expression.Convert(var_value,fieldType)
+                                        , IsConvertible
+                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                                        : IsParsable
+                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                                        : Expression.Convert(var_value, fieldType)
+                                        )
                                     )
                                 )
                                 )
@@ -410,12 +318,16 @@ namespace DataTools.Common
                             , GetModelPropertySetterExpressionFunction(var_m, f.FieldName, Expression.Default(fieldType))
                             , Expression.Block(
                                     GetModelPropertySetterExpressionFunction(var_m, f.FieldName,
-                                    IsConvertible
-                                    ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                                    : IsParsable
-                                    ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                                    : Expression.Convert(var_value, fieldType)
-                                    )
+                                     Expression.Condition(
+                                        Expression.IsTrue(Expression.TypeIs(var_value, RealType))
+                                        , Expression.Convert(var_value, fieldType)
+                                        , IsConvertible
+                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                                        : IsParsable
+                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                                        : Expression.Convert(var_value, fieldType)
+                                        )
+                                     )
                                 )
                             )
                         )
@@ -428,7 +340,7 @@ namespace DataTools.Common
                 Expression.IsTrue(
                     Expression.OrElse(
                         Expression.Equal(param_customTypeConverters, Expression.Constant(null)),
-                        Expression.Equal(Expression.Property(param_customTypeConverters,nameof(Dictionary<Type, Func<object, object>>.Count) ), Expression.Constant(0)))
+                        Expression.Equal(Expression.Property(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.Count)), Expression.Constant(0)))
                     ),
                 blockSimplePropertiesWithoutCustomConvertersCheck,
                 blockSimplePropertiesWithCustomConvertersCheck

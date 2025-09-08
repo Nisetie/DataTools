@@ -359,7 +359,7 @@ namespace DataTools_Tests
             {
                 var q = new SqlComposition();
                 foreach (var m in models)
-                    q.Elements.Add(new SqlInsert().Into<ModelT>(m));
+                    q.Elements.Add(new SqlInsert().Into<ModelT>().Value(m));
                 DataContext.Execute(q);
             }
          ;

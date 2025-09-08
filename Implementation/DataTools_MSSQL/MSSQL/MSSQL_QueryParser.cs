@@ -190,8 +190,7 @@ namespace DataTools.MSSQL
             }
             sb
                 .Remove(sb.Length - 3, 3)
-                .AppendLine()
-                .AppendLine("output inserted.*");
+                .AppendLine();
             if (sqlUpdate.Wheres != null)
             {
                 sb.Append("WHERE ")

@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Schema;
 
 namespace DataTools.Common
@@ -69,7 +70,7 @@ namespace DataTools.Common
         private void _ReturnDataSourceToPool(IDataSource ds)
         {
             _dataSources.Push(ds);
-        }       
+        }
 
         public IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new()
         {
@@ -84,7 +85,7 @@ namespace DataTools.Common
             {
                 this._ReturnDataSourceToPool(ds);
             }
-        }      
+        }
 
         public IEnumerable<dynamic> Select(IModelMetadata metadata, SqlExpression query = null, params SqlParameter[] parameters)
         {
@@ -106,10 +107,13 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var insertBuilder = new SqlInsert().Into<ModelT>();
-                ModelMapper<ModelT>.BindInsertValues(insertBuilder, model);
-                var result = ds.ExecuteWithResult(insertBuilder).ToArray()[0];
                 var queryCache = new SelectCache();
+                var result =
+                    ds
+                    .ExecuteWithResult(new SqlInsert()
+                    .Into<ModelT>()
+                    .Value((object[])ModelMapper<ModelT>.GetArrayOfValues(model)))
+                    .ToArray()[0];
                 var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
                 if (customMapper != null)
                     model = (ModelT)customMapper(this, result);
@@ -128,11 +132,14 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var insertBuilder = new SqlInsert().Into(modelMetadata);
                 var queryCache = new SelectCache();
                 var mapper = DynamicMapper.GetMapper(modelMetadata);
-                mapper.BindInsertValues(insertBuilder, model);
-                var result = ds.ExecuteWithResult(insertBuilder).ToArray()[0];
+                var result =
+                    ds
+                    .ExecuteWithResult(new SqlInsert()
+                    .Into(modelMetadata)
+                    .Value((object[])mapper.GetArrayOfValues(model)))
+                    .ToArray()[0];
                 var customMapper = GetCustomModelMapper(modelMetadata);
                 if (customMapper != null)
                     model = customMapper(this, result);
@@ -150,11 +157,14 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var updateBuilder = new SqlUpdate().From<ModelT>();
-                ModelMapper<ModelT>.BindUpdateValues(updateBuilder, model);
-                ModelMapper<ModelT>.BindUpdateWhere(updateBuilder, model);
+                var updateBuilder =
+                    new SqlUpdate()
+                    .From<ModelT>()
+                    .Value((object[])ModelMapper<ModelT>.GetArrayOfValues(model))
+                    .Where(ModelMapper<ModelT>.GetWhereClause(model));
 
-                var result = ds.ExecuteWithResult(updateBuilder).ToArray()[0];
+                ds.Execute(updateBuilder);
+                var result = ds.ExecuteWithResult(new SqlSelect().From<ModelT>().Where(model)).ToArray()[0];
                 var queryCache = new SelectCache();
                 var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
                 if (customMapper != null)
@@ -173,14 +183,17 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var updateBuilder = new SqlUpdate().From(modelMetadata);
                 var queryCache = new SelectCache();
                 var mapper = DynamicMapper.GetMapper(modelMetadata);
+                var updateBuilder =
+                    new SqlUpdate()
+                    .From(modelMetadata)
+                    .Value((object[])mapper.GetArrayOfValues(model))
+                    .Where(mapper.GetWhereClause(model));
 
-                mapper.BindUpdateValues(updateBuilder, model);
-                mapper.BindUpdateWhere(updateBuilder, model);
+                ds.Execute(updateBuilder);
 
-                var result = ds.ExecuteWithResult(updateBuilder).ToArray()[0];
+                var result = (ds.ExecuteWithResult(new SqlSelect().From(modelMetadata).Where(mapper.GetWhereClause(model))) as IEnumerable<object[]>).ToArray()[0];
 
                 var customMapper = GetCustomModelMapper(modelMetadata);
                 if (customMapper != null)
@@ -199,9 +212,11 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var deleteBuilder = new SqlDelete().From<ModelT>();
-                ModelMapper<ModelT>.BindDeleteWhere(deleteBuilder, model);
-                ds.Execute(deleteBuilder);
+                ds.Execute(
+                    new SqlDelete()
+                    .From<ModelT>()
+                    .Where(ModelMapper<ModelT>.GetWhereClause(model))
+                    );
             }
             finally
             {
@@ -213,10 +228,9 @@ namespace DataTools.Common
             var ds = this.GetDataSource();
             try
             {
-                var deleteBuilder = new SqlDelete().From(modelMetadata);
-                var mapper = DynamicMapper.GetMapper(modelMetadata);
-                mapper.BindDeleteWhere(deleteBuilder, model);
-                ds.Execute(deleteBuilder);
+                ds.Execute(new SqlDelete()
+                    .From(modelMetadata)
+                    .Where(DynamicMapper.GetMapper(modelMetadata).GetWhereClause(model)));
             }
             finally
             {

@@ -1,6 +1,0 @@
-<Project>
-  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
-  <PropertyGroup>
-	  <TargetFrameworks>netstandard2.0;netcoreapp3.1;net8.0</TargetFrameworks>
-  </PropertyGroup>
-</Project>

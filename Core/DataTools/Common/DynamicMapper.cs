@@ -1,9 +1,11 @@
 ﻿using DataTools.DML;
 using DataTools.Interfaces;
+using DataTools.Meta;
 using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq.Expressions;
+using System.Reflection;
 
 namespace DataTools.Common
 {
@@ -19,10 +21,8 @@ namespace DataTools.Common
         public static void RemoveMapper(IModelMetadata modelMetadata) => _mappers.Remove(modelMetadata.ModelName);
         public static void ClearMappers() => _mappers.Clear();
 
-        public Action<SqlInsert, dynamic> BindInsertValues { get; private set; }
-        public Action<SqlUpdate, dynamic> BindUpdateValues { get; private set; }
-        public Action<SqlUpdate, dynamic> BindUpdateWhere { get; private set; }
-        public Action<SqlDelete, dynamic> BindDeleteWhere { get; private set; }
+        public Func<dynamic, object[]> GetArrayOfValues { get; private set; }
+        public Func<dynamic, SqlWhere> GetWhereClause { get; private set; }
         public Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic> MapModel { get; private set; }
         public Func<dynamic, string> GetModelKeyValue { get; private set; }
 
@@ -43,7 +43,7 @@ namespace DataTools.Common
 
         public static Expression GetModelPropertySetterExpression(ParameterExpression modelObject, string PropertyName, Expression value)
         {
-            return Expression.Assign(Expression.Property(Expression.Convert(modelObject, typeof(DynamicModel)), "Item", Expression.Constant(PropertyName)), Expression.Convert( value,typeof(object)));
+            return Expression.Assign(Expression.Property(Expression.Convert(modelObject, typeof(DynamicModel)), "Item", Expression.Constant(PropertyName)), Expression.Convert(value, typeof(object)));
         }
 
         public static ParameterExpression GetForeignModelCacheVariableExpression(IModelMetadata modelMetadata)
@@ -92,10 +92,8 @@ namespace DataTools.Common
 
         public DynamicMapper(IModelMetadata metadata)
         {
-            BindInsertValues = MappingHelper.PrepareInsertCommand<Action<SqlInsert, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindUpdateValues = MappingHelper.PrepareBindUpdateValuesCommand<Action<SqlUpdate, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindUpdateWhere = MappingHelper.PrepareBindUpdateWhereCommand<Action<SqlUpdate, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindDeleteWhere = MappingHelper.PrepareDeleteWhereCommand<Action<SqlDelete, dynamic>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<dynamic, object[]>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            GetWhereClause = MappingHelper.PrepareCreateWhereClause<Func<dynamic, SqlWhere>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
             MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic>>(
                 metadata,
                 GetModelInputParameterExpression,

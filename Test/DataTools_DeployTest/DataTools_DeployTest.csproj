@@ -7,6 +7,8 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+	<DebugType>embedded</DebugType>
+	<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

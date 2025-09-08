@@ -186,7 +186,7 @@ namespace DataTools.PostgreSQL
                 .Append(ParseExpression(sqlUpdate.Wheres))
                 .AppendLine();
             }
-            return sb.AppendLine("returning *;").ToString();
+            return sb.AppendLine(";").ToString();
         }
 
         protected override string Parse_SqlFunction(SqlFunction sqlFunction)

@@ -206,7 +206,7 @@ namespace DataTools.SQLite
                     .Append(ParseExpression(sqlUpdate.Wheres))
                     .AppendLine();
             }
-            sb.AppendLine("returning *;");
+            sb.AppendLine(";");
             return sb.ToString();
         }
 

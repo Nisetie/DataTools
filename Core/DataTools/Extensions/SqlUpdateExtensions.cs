@@ -29,26 +29,23 @@ namespace DataTools.Extensions
         public static SqlUpdate From(this SqlUpdate sqlUpdate, string objectName) => sqlUpdate.From(new SqlName(objectName));
         public static SqlUpdate Set(this SqlUpdate sqlUpdate, params string[] columns) => sqlUpdate.Set(columns.Select(c => new SqlName(c)).ToArray());
         public static SqlUpdate Value(this SqlUpdate sqlUpdate, params object[] values) => sqlUpdate.Value(values.Select(v => new SqlConstant(v)).ToArray());
+
         public static SqlUpdate Value<ModelT>(this SqlUpdate sqlUpdate, ModelT model) where ModelT : class, new()
         {
-            ModelMapper<ModelT>.BindUpdateValues(sqlUpdate, model);
-            return sqlUpdate;
+         return   sqlUpdate.Value(ModelMapper<ModelT>.GetArrayOfValues(model));
         }
-        public static SqlUpdate ValueDynamic(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)
+        public static SqlUpdate Value(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)
         {
-            DynamicMapper.GetMapper(modelMetadata).BindUpdateValues(sqlUpdate, model);
-            return sqlUpdate;
+            return sqlUpdate.Value((object[])DynamicMapper.GetMapper(modelMetadata).GetArrayOfValues(model));
         }
         public static SqlUpdate Where<ModelT>(this SqlUpdate sqlUpdate, ModelT model) where ModelT : class, new()
         {
             var meta = ModelMetadata<ModelT>.Instance;
-            ModelMapper<ModelT>.BindUpdateWhere(sqlUpdate, model);
-            return sqlUpdate;
+            return sqlUpdate.Where(ModelMapper<ModelT>.GetWhereClause(model));
         }
-        public static SqlUpdate WhereDynamic(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)
+        public static SqlUpdate Where(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)
         {
-            DynamicMapper.GetMapper(modelMetadata).BindUpdateWhere(sqlUpdate, model);
-            return sqlUpdate;
+            return sqlUpdate.Where(DynamicMapper.GetMapper(modelMetadata).GetWhereClause(model));
         }
     }
 }

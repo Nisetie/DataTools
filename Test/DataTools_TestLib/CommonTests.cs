@@ -755,9 +755,12 @@ namespace DataTools_Tests
             dynamic m1 = new DynamicModel();
             DynamicMapper.CopyValues(ModelMetadata<TestModelCompositePrimaryKey>.Instance, m, m1);
             m1.i = 500;
-            var sql = new SqlUpdate().From(ModelMetadata<TestModelCompositePrimaryKey>.Instance);
-            SqlUpdateExtensions.WhereDynamic(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m);
-            SqlUpdateExtensions.ValueDynamic(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m1);
+            var sql =
+                new SqlUpdate()
+                .From(ModelMetadata<TestModelCompositePrimaryKey>.Instance);
+            SqlUpdateExtensions.Where(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m);
+            SqlUpdateExtensions.Value(sql, ModelMetadata<TestModelCompositePrimaryKey>.Instance, m1);
+
             DataContext.Execute(sql);
 
             var result = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j").Select().ToArray();

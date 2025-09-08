@@ -91,10 +91,11 @@ with primaryKeys as (
         ,c.DATA_TYPE as DATA_TYPE
         ,c.ORDINAL_POSITION
         ,iif(c.IS_NULLABLE = 'YES', 1, 0) as IS_NULLABLE
-        ,IIF(c.column_default is not null, 1, 0) as [Generated]
+        ,IIF(c.column_default is not null or cc.definition is not null, 1, 0) as [Generated]
         ,iif(t.TABLE_TYPE = 'VIEW',1,0) as [IsView]
     from INFORMATION_SCHEMA.TABLES t
     join INFORMATION_SCHEMA.COLUMNS c on t.TABLE_SCHEMA = c.TABLE_SCHEMA and t.TABLE_NAME = c.TABLE_NAME
+	left join sys.computed_columns cc on c.COLUMN_NAME = cc.name
 	where t.TABLE_TYPE IN ('BASE TABLE','VIEW') -- ignore views
     order by t.TABLE_CATALOG, t.TABLE_SCHEMA, t.TABLE_NAME, c.ORDINAL_POSITION
 )

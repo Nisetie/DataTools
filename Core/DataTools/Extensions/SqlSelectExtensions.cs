@@ -1,4 +1,5 @@
-﻿using DataTools.DML;
+﻿using DataTools.Common;
+using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System.Linq;
@@ -38,6 +39,14 @@ namespace DataTools.Extensions
         public static SqlSelect From(this SqlSelect sql, string objectName) => sql.From(new SqlName(objectName));
         public static SqlSelect From(this SqlSelect sql, SqlExpression subquery, string alias) => sql.From(new SqlExpressionWithAlias(subquery, alias));
         public static SqlSelect Where(this SqlSelect sql, string columnName, object value) => sql.Where(new SqlWhere(new SqlName(columnName)).Eq(new SqlConstant(value)));
+        public static SqlSelect Where(this SqlSelect sql, IModelMetadata modelMetadata, dynamic model)
+        {
+            return sql.Where(DynamicMapper.GetMapper(modelMetadata).GetWhereClause(model));
+        }
+        public static SqlSelect Where<ModelT>(this SqlSelect sql, ModelT model) where ModelT : class,new()
+        {
+            return sql.Where(ModelMapper<ModelT>.GetWhereClause(model));
+        }
 
         public static SqlSelect OrderBy(this SqlSelect sql, params string[] columnNames)
         {

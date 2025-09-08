@@ -15,7 +15,6 @@ namespace DataTools.Common
     {
         private static IModelMetadata Metadata = ModelMetadata<ModelT>.Instance;
         private static Action<ModelT, ModelT> _modelCopier;
-        public static Action<SqlInsert, ModelT> BindInsertValues { get; private set; }
 
         /// <summary>
         /// Смаппировать модель с массивом значений.
@@ -26,10 +25,9 @@ namespace DataTools.Common
         /// кеш моделей (QueryCache).
         /// </summary>
         public static Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT> MapModel { get; private set; }
-
-        public static Action<SqlUpdate, ModelT> BindUpdateValues { get; private set; }
-        public static Action<SqlUpdate, ModelT> BindUpdateWhere { get; private set; }
-        public static Action<SqlDelete, ModelT> BindDeleteWhere { get; private set; }
+        public static Func<ModelT, object[]> GetArrayOfValues { get; private set; }
+        
+        public static Func<ModelT, SqlWhere> GetWhereClause { get; private set; }
 
         public static Func<ModelT, string> GetModelKeyValue { get; private set; }
 
@@ -89,52 +87,6 @@ namespace DataTools.Common
             return Expression.Invoke(Expression.Property(null, typeof(ModelMapper<>).MakeGenericType(Type.GetType(modelMetadata.ModelTypeName)).GetProperty(nameof(MapModel))), param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache);
         }
 
-        private static void PrepareInsertCommand()
-        {
-            BindInsertValues = MappingHelper.PrepareInsertCommand<Action<SqlInsert, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-        }
-
-        /// <summary>
-        /// Подготовка функции для маппинга только одной модели
-        /// </summary>
-        private static void PrepareMapModel()
-        {
-            MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT>>(
-                Metadata,
-                GetModelInputParameterExpression,
-                GetModelPropertySetterExpression,
-                GetForeignModelCacheVariableExpression,
-                GetForeignModelVariableExpression,
-                GetTargetModelCacheVariableExpression,
-                GetCallGetModelCacheExpression,
-                GetInvokeMapModelExpression,
-                GetLocalModelAssignNewExpression
-                );
-        }
-
-        /// <summary>
-        /// Подготовка команды для обновления сущности на стороне источника данных.
-        /// Внимание! Если сущность не имеет уникального ключа, тогда обновление недопустимо.
-        /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
-        /// Необходимо вручную описать фильтрацию WHERE.
-        /// </summary>
-        private static void PrepareUpdateCommand()
-        {
-            BindUpdateValues = MappingHelper.PrepareBindUpdateValuesCommand<Action<SqlUpdate, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            BindUpdateWhere = MappingHelper.PrepareBindUpdateWhereCommand<Action<SqlUpdate, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-        }
-
-        /// <summary>
-        /// Подготовка команды для удаления сущности на стороне источника данных.
-        /// Внимание! Если сущность не имеет уникального ключа, тогда удаление недопустимо.
-        /// Так как непонятно, по какому признаку фильтровать записи на стороне источника.
-        /// Необходимо вручную описать фильтрацию WHERE.
-        /// </summary>
-        private static void PrepareDeleteCommand()
-        {
-            BindDeleteWhere = MappingHelper.PrepareDeleteWhereCommand<Action<SqlDelete, ModelT>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-        }
-
         private static void PrepareModelCopier()
         {
             var param_from = Expression.Parameter(typeof(ModelT));
@@ -151,12 +103,21 @@ namespace DataTools.Common
 
         static ModelMapper()
         {
-            PrepareInsertCommand();
-            PrepareMapModel();
-            PrepareUpdateCommand();
-            PrepareDeleteCommand();
-            GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<ModelT, string>>(ModelMetadata<ModelT>.Instance, GetModelInputParameterExpression, GetModelPropertyExpression);
-            PrepareModelCopier();
+            GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<ModelT, object[]>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT>>(
+               Metadata,
+               GetModelInputParameterExpression,
+               GetModelPropertySetterExpression,
+               GetForeignModelCacheVariableExpression,
+               GetForeignModelVariableExpression,
+               GetTargetModelCacheVariableExpression,
+               GetCallGetModelCacheExpression,
+               GetInvokeMapModelExpression,
+               GetLocalModelAssignNewExpression
+               );
+            GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<ModelT, string>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            GetWhereClause = MappingHelper.PrepareCreateWhereClause<Func<ModelT, SqlWhere>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
+            PrepareModelCopier();            
         }
 
         public static void CopyValues(ModelT from, ModelT to)
