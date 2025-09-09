@@ -1,5 +1,7 @@
-﻿using DataTools.Deploy;
+﻿using DataTools.Common;
+using DataTools.Deploy;
 using DataTools.Extensions;
+using DataTools.Meta;
 
 namespace DataTools_RandomTests
 {
@@ -25,7 +27,8 @@ namespace DataTools_RandomTests
 
             var result = ctx.SelectFrom(mm).Select().ToArray();
 
-
+            dynamic dm = new DynamicModel(new ModelMetadata());
+            Console.WriteLine(dm.ToString());
             Console.Read();
         }
     }

@@ -328,7 +328,7 @@ namespace DataTools.Common
             if (customMapper != null)
                 foreach (var dataRow in result)
                 {
-                    var model = new DynamicModel();
+                    var model = new DynamicModel(modelMetadata);
                     customMapper(model, this, dataRow);
                     yield return model;
                 }
@@ -337,7 +337,7 @@ namespace DataTools.Common
                 var map = DynamicMapper.GetMapper(modelMetadata).MapModel;
                 foreach (var dataRow in result)
                 {
-                    var model = new DynamicModel();
+                    var model = new DynamicModel(modelMetadata);
                     map(model, this, _customTypeConverters, dataRow, queryCache);
                     yield return model;
                 }

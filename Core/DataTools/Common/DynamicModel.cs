@@ -63,8 +63,15 @@ namespace DataTools.Common
                 foreach (var f in ModelMetadata.Fields)
                     if (f.IsPrimaryKey || f.IsUnique || f.IsAutoincrement)
                         presentation.Append($"{(_members[f.FieldName] == null ? "NULL" : _members[f.FieldName])};");
-            presentation.Length -= 1;
-            return presentation.ToString();
+            if (presentation.Length == 0)
+                foreach (var f in ModelMetadata.Fields)
+                    presentation.Append($"{(_members[f.FieldName] == null ? "NULL" : _members[f.FieldName])};");
+            if (presentation.Length == 0) return string.Empty;
+            else
+            {
+                presentation.Length -= 1;
+                return presentation.ToString();
+            }
         }
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
