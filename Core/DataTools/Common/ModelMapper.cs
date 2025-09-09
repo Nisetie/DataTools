@@ -24,9 +24,9 @@ namespace DataTools.Common
         /// строка данных из источника (object[]);
         /// кеш моделей (QueryCache).
         /// </summary>
-        public static Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT> MapModel { get; private set; }
+        public static Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapModel { get; private set; }
         public static Func<ModelT, object[]> GetArrayOfValues { get; private set; }
-        
+
         public static Func<ModelT, SqlWhere> GetWhereClause { get; private set; }
 
         public static Func<ModelT, string> GetModelKeyValue { get; private set; }
@@ -34,11 +34,6 @@ namespace DataTools.Common
         public static ParameterExpression GetModelInputParameterExpression()
         {
             return Expression.Parameter(typeof(ModelT), "m");
-        }
-
-        public static ParameterExpression GetModelVariableExpression()
-        {
-            return Expression.Variable(typeof(ModelT), "m");
         }
 
         public static Expression GetModelPropertyExpression(Expression parameterExpression, string PropertyName)
@@ -71,20 +66,21 @@ namespace DataTools.Common
             return Expression.Call(param_queryCache, nameof(SelectCache.GetModelCache), typeArguments: new Type[] { Type.GetType(metadata.ModelTypeName) }, null);
         }
 
-        public static Expression GetLocalModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_m)
+        public static Expression GetModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_model)
         {
-            return Expression.Assign(var_m, Expression.New(typeof(ModelT)));
+            return Expression.Assign(var_model, Expression.New(Type.GetType(modelMetadata.ModelTypeName)));
         }
 
         public static Expression GetInvokeMapModelExpression(
-          IModelMetadata modelMetadata,
-          ParameterExpression param_dataContext,
-          ParameterExpression param_customTypeConverters,
-          ParameterExpression var_foreignModelQueryResult,
-          ParameterExpression param_queryCache
-          )
+            ParameterExpression var_model,
+            IModelMetadata modelMetadata,
+            ParameterExpression param_dataContext,
+            ParameterExpression param_customTypeConverters,
+            ParameterExpression var_foreignModelQueryResult,
+            ParameterExpression param_queryCache
+            )
         {
-            return Expression.Invoke(Expression.Property(null, typeof(ModelMapper<>).MakeGenericType(Type.GetType(modelMetadata.ModelTypeName)).GetProperty(nameof(MapModel))), param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache);
+            return Expression.Invoke(Expression.Property(null, typeof(ModelMapper<>).MakeGenericType(Type.GetType(modelMetadata.ModelTypeName)).GetProperty(nameof(MapModel))), var_model, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache);
         }
 
         private static void PrepareModelCopier()
@@ -104,7 +100,7 @@ namespace DataTools.Common
         static ModelMapper()
         {
             GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<ModelT, object[]>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, ModelT>>(
+            MapModel = MappingHelper.PrepareMapModel<Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
                Metadata,
                GetModelInputParameterExpression,
                GetModelPropertySetterExpression,
@@ -113,11 +109,11 @@ namespace DataTools.Common
                GetTargetModelCacheVariableExpression,
                GetCallGetModelCacheExpression,
                GetInvokeMapModelExpression,
-               GetLocalModelAssignNewExpression
+               GetModelAssignNewExpression
                );
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<ModelT, string>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
             GetWhereClause = MappingHelper.PrepareCreateWhereClause<Func<ModelT, SqlWhere>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            PrepareModelCopier();            
+            PrepareModelCopier();
         }
 
         public static void CopyValues(ModelT from, ModelT to)

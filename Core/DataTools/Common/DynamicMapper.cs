@@ -23,17 +23,12 @@ namespace DataTools.Common
 
         public Func<dynamic, object[]> GetArrayOfValues { get; private set; }
         public Func<dynamic, SqlWhere> GetWhereClause { get; private set; }
-        public Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic> MapModel { get; private set; }
+        public Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapModel { get; private set; }
         public Func<dynamic, string> GetModelKeyValue { get; private set; }
 
         public static ParameterExpression GetModelInputParameterExpression()
         {
             return Expression.Parameter(typeof(object), "m");
-        }
-
-        public static ParameterExpression GetModelVariableExpression()
-        {
-            return Expression.Variable(typeof(object), "m");
         }
 
         public static Expression GetModelPropertyExpression(Expression parameterExpression, string PropertyName)
@@ -67,12 +62,13 @@ namespace DataTools.Common
             return Expression.Call(param_queryCache, nameof(SelectCache.GetModelCache), null, Expression.Constant(metadata));
         }
 
-        public static Expression GetLocalModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_m)
+        public static Expression GetModelAssignNewExpression(IModelMetadata modelMetadata, ParameterExpression var_model)
         {
-            return Expression.Assign(var_m, Expression.New(typeof(DynamicModel).GetConstructor(new Type[] { typeof(IModelMetadata) }), Expression.Constant(modelMetadata)));
+            return Expression.Assign(var_model, Expression.New(typeof(DynamicModel).GetConstructor(new Type[] { typeof(IModelMetadata) }), Expression.Constant(modelMetadata)));
         }
 
         public static Expression GetInvokeMapModelExpression(
+            ParameterExpression var_model,
             IModelMetadata modelMetadata,
             ParameterExpression param_dataContext,
             ParameterExpression param_customTypeConverters,
@@ -86,7 +82,7 @@ namespace DataTools.Common
                         Expression.Call(null, typeof(DynamicMapper).GetMethod(nameof(DynamicMapper.GetMapper)), Expression.Constant(modelMetadata))
                         , nameof(DynamicMapper.MapModel)
                         )
-                    , param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache
+                    , var_model, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache
                 );
         }
 
@@ -94,7 +90,7 @@ namespace DataTools.Common
         {
             GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<dynamic, object[]>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
             GetWhereClause = MappingHelper.PrepareCreateWhereClause<Func<dynamic, SqlWhere>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            MapModel = MappingHelper.PrepareMapModel<Func<IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache, dynamic>>(
+            MapModel = MappingHelper.PrepareMapModel<Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
                 metadata,
                 GetModelInputParameterExpression,
                 GetModelPropertySetterExpression,
@@ -103,7 +99,7 @@ namespace DataTools.Common
                 GetTargetModelCacheVariableExpression,
                 GetCallGetModelCacheExpression,
                 GetInvokeMapModelExpression,
-                GetLocalModelAssignNewExpression
+                GetModelAssignNewExpression
                 );
             GetModelKeyValue = MappingHelper.PrepareGetModelKeyValue<Func<dynamic, string>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
         }

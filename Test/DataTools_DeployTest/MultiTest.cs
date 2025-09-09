@@ -122,11 +122,13 @@ namespace DataTools_Tests
                         for (int i1 = 0; i1 < leftData.Length; i1++)
                         {
                             object[]? r = leftData[i1];
-                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { deployer.DataContext, _customTypeConverters, r, sc });
-                            leftModels[i1] = o;
+                            object m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
+                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] {m, deployer.DataContext, _customTypeConverters, r, sc });
+                            leftModels[i1] = m;
                             object[]? rr = rightData[i1];
-                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { deployer.DataContext, _customTypeConverters, r, sc });
-                            rightModels[i1] = o;
+                            m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
+                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] {m, deployer.DataContext, _customTypeConverters, r, sc });
+                            rightModels[i1] = m;
                         }
 
                         for (int i1 = 0; i1 < leftData.Length; i1++)

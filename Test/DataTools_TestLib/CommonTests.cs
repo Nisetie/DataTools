@@ -249,9 +249,9 @@ namespace DataTools_Tests
         {
             var meta = ModelMetadata<TestModel>.Instance;
 
-            var mapper = new Func<IDataContext, object[], object>((IDataContext context, object[] values) =>
+            var mapper = new Action<object, IDataContext, object[]>((object model, IDataContext context, object[] values) =>
             {
-                var m = new TestModel();
+                var m = model as TestModel;
                 var l = values[meta.GetField(nameof(TestModel.Id)).FieldOrder];
                 m.Id = values[meta.GetField(nameof(TestModel.Id)).FieldOrder].Cast<int>();
                 m.LongId = values[meta.GetField(nameof(TestModel.LongId)).FieldOrder].Cast<long?>();
@@ -267,8 +267,6 @@ namespace DataTools_Tests
                 m.Duration = values[meta.GetField(nameof(TestModel.Duration)).FieldOrder].Cast<TimeSpan>();
                 m.Guid = values[meta.GetField(nameof(TestModel.Guid)).FieldOrder].Cast<Guid>();
                 m.bindata = values[meta.GetField(nameof(TestModel.bindata)).FieldOrder].Cast<byte[]>();
-
-                return m;
             });
 
             DataContext.AddCustomModelMapper<TestModel>(mapper);
@@ -1169,9 +1167,9 @@ namespace DataTools_Tests
             var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
 
             if (isLong)
-                Assert.That((long)count + 1 == newCount);
+                Assert.That((long)count + 1 == newCount && m.Id == 3);
             else
-                Assert.That(count + 1 == newCount);
+                Assert.That(count + 1 == newCount && m.Id == 3);
         }
 
         public void TestInsertInMemory()
@@ -1193,7 +1191,7 @@ namespace DataTools_Tests
 
             var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
             TestContext.Out.WriteLine($"old count {count}; new count {newCount}");
-            Assert.That(count + 1 == newCount);
+            Assert.That(count + 1 == newCount && m.Id == 3);
         }
 
         public void TestInsertInMemory1()

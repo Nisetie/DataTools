@@ -58,11 +58,11 @@ namespace DataTools.Common
             var presentation = new StringBuilder();
             foreach (var f in ModelMetadata.Fields)
                 if (f.isPresentation)
-                    presentation.Append($"{_members[f.FieldName]};");
+                    presentation.Append($"{(_members[f.FieldName] == null ? "NULL" : _members[f.FieldName])};");
             if (presentation.Length == 0)
                 foreach (var f in ModelMetadata.Fields)
                     if (f.IsPrimaryKey || f.IsUnique || f.IsAutoincrement)
-                        presentation.Append($"{_members[f.FieldName]};");
+                        presentation.Append($"{(_members[f.FieldName] == null ? "NULL" : _members[f.FieldName])};");
             presentation.Length -= 1;
             return presentation.ToString();
         }

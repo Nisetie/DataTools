@@ -28,7 +28,8 @@ namespace DataTools_Tests
 
         private void Insert<ModelT>(object[] values) where ModelT : class, new()
         {
-            var model = ModelMapper<ModelT>.MapModel(DataContext, null, values, new SelectCache());
+            var model = new ModelT();
+            ModelMapper<ModelT>.MapModel(model,DataContext, null, values, new SelectCache());
             DataContext.Insert<ModelT>(model);
         }
         public override void Setup()
@@ -36,21 +37,7 @@ namespace DataTools_Tests
             base.Setup();
 
             var dc = DataManager.GetContext(alias) as InMemory_SQLite_DataContext;
-
-
-
         }
-
-        //[Test]
-        //public void TestSelectPlan()
-        //{
-        //    var query = new SqlSelect().From<TestModelChild>();
-        //    var plans = typeof(InMemory_DataContext).GetField("_plans", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(DataContext) as LinkedList<(string query, Func<InMemory_DataContext, SqlParameter[], IEnumerable<object[]>> plan)>;
-        //    DataContext.Select<TestModelChild>(query);
-        //    int plansCount = plans.Count;
-        //    DataContext.Select<TestModelChild>(query);
-        //    Assert.That(plans.Count == plansCount);
-        //}
     }
 }
 

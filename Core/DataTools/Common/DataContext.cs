@@ -21,22 +21,22 @@ namespace DataTools.Common
     {
         private ConcurrentStack<IDataSource> _dataSources = new ConcurrentStack<IDataSource>();
 
-        private Dictionary<string, Func<IDataContext, object[], object>> _customModelMappers = new Dictionary<string, Func<IDataContext, object[], object>>();
+        private Dictionary<string, Action<object, IDataContext, object[]>> _customModelMappers = new Dictionary<string, Action<object, IDataContext, object[]>>();
 
         private Dictionary<Type, Func<object, object>> _customTypeConverters = new Dictionary<Type, Func<object, object>>();
-        public void AddCustomModelMapper<ModelT>(Func<IDataContext, object[], object> mapper) where ModelT : class, new()
+        public void AddCustomModelMapper<ModelT>(Action<object, IDataContext, object[]> mapper) where ModelT : class, new()
         {
             AddCustomModelMapper(mapper, ModelMetadata<ModelT>.Instance);
         }
-        public void AddCustomModelMapper(Func<IDataContext, object[], object> mapper, IModelMetadata metadata)
+        public void AddCustomModelMapper(Action<object, IDataContext, object[]> mapper, IModelMetadata metadata)
         {
             _customModelMappers[metadata.ModelName] = mapper;
         }
-        private Func<IDataContext, object[], object> GetCustomModelMapper<ModelT>() where ModelT : class, new()
+        private Action<object, IDataContext, object[]> GetCustomModelMapper<ModelT>() where ModelT : class, new()
         {
             return GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
         }
-        private Func<IDataContext, object[], object> GetCustomModelMapper(IModelMetadata metadata)
+        private Action<object, IDataContext, object[]> GetCustomModelMapper(IModelMetadata metadata)
         {
             return _customModelMappers.TryGetValue(metadata.ModelName, out var value) ? value : null;
         }
@@ -116,11 +116,9 @@ namespace DataTools.Common
                     .ToArray()[0];
                 var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
                 if (customMapper != null)
-                    model = (ModelT)customMapper(this, result);
+                    customMapper(model, this, result);
                 else
-                {
-                    model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result, queryCache);
-                }
+                    ModelMapper<ModelT>.MapModel(model, this, _customTypeConverters, result, queryCache);
             }
             finally
             {
@@ -142,9 +140,9 @@ namespace DataTools.Common
                     .ToArray()[0];
                 var customMapper = GetCustomModelMapper(modelMetadata);
                 if (customMapper != null)
-                    model = customMapper(this, result);
+                    customMapper(model, this, result);
                 else
-                    model = mapper.MapModel(this, _customTypeConverters, result, queryCache);
+                    mapper.MapModel(model, this, _customTypeConverters, result, queryCache);
             }
             finally
             {
@@ -168,9 +166,9 @@ namespace DataTools.Common
                 var queryCache = new SelectCache();
                 var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
                 if (customMapper != null)
-                    model = (ModelT)customMapper(this, result);
+                    customMapper(model, this, result);
                 else
-                    model = ModelMapper<ModelT>.MapModel(this, _customTypeConverters, result, queryCache);
+                    ModelMapper<ModelT>.MapModel(model, this, _customTypeConverters, result, queryCache);
             }
             finally
             {
@@ -197,9 +195,9 @@ namespace DataTools.Common
 
                 var customMapper = GetCustomModelMapper(modelMetadata);
                 if (customMapper != null)
-                    model = customMapper(this, result);
+                    customMapper(model, this, result);
                 else
-                    model = mapper.MapModel(this, _customTypeConverters, result, queryCache);
+                    mapper.MapModel(model, this, _customTypeConverters, result, queryCache);
             }
             finally
             {
@@ -329,12 +327,20 @@ namespace DataTools.Common
             var customMapper = GetCustomModelMapper(modelMetadata);
             if (customMapper != null)
                 foreach (var dataRow in result)
-                    yield return customMapper(this, dataRow);
+                {
+                    var model = new DynamicModel();
+                    customMapper(model, this, dataRow);
+                    yield return model;
+                }
             else
             {
                 var map = DynamicMapper.GetMapper(modelMetadata).MapModel;
                 foreach (var dataRow in result)
-                    yield return map(this, _customTypeConverters, dataRow, queryCache);
+                {
+                    var model = new DynamicModel();
+                    map(model, this, _customTypeConverters, dataRow, queryCache);
+                    yield return model;
+                }
             }
         }
 
@@ -345,12 +351,20 @@ namespace DataTools.Common
             var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
             if (customMapper != null)
                 foreach (var dataRow in result)
-                    yield return (ModelT)customMapper(this, dataRow);
+                {
+                    ModelT model = new ModelT();
+                    customMapper(model, this, dataRow);
+                    yield return model;
+                }
             else
             {
                 var map = ModelMapper<ModelT>.MapModel;
                 foreach (var dataRow in result)
-                    yield return map(this, _customTypeConverters, dataRow, queryCache);
+                {
+                    var model = new ModelT();
+                    map(model, this, _customTypeConverters, dataRow, queryCache);
+                    yield return model;
+                }
             }
         }
 
