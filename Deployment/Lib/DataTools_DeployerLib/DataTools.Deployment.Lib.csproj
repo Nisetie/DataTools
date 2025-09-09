@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  <DebugType>embedded</DebugType>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Deploymeny.Lib</PackageId>
+	  <Description>Библиотека с функциями созданиями объектов (таблиц) на стороне источника данных на основе метаданных.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataTools_MSSQL_DeployerLib\DataTools.Deployment.MSSQL.csproj" />
+    <ProjectReference Include="..\DataTools_PostgreSQL_DeployerLib\DataTools.Deployment.PostgreSQL.csproj" />
+    <ProjectReference Include="..\DataTools_SQLite_DeployerLib\DataTools.Deployment.SQLite.csproj" />
+  </ItemGroup>
+
+</Project>

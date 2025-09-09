@@ -6,10 +6,12 @@
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Generation.Base</PackageId>
+	  <Description>Базовая библиотека с общими компонентами и абстракциями для всех прочих библиотек ветки Generation.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataTools_Deployment_Core\DataTools_Deployment_Core.csproj" />
+    <ProjectReference Include="..\DataTools_Deployment_Core\DataTools.Deployment.Core.csproj" />
   </ItemGroup>
 
 </Project>

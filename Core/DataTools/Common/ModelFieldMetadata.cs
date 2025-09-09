@@ -40,6 +40,7 @@ namespace DataTools.Meta
             Type fieldType = propertyInfo.PropertyType;
             FieldName = propertyInfo.Name;
             ColumnName = propertyInfo.Name;
+            ColumnDisplayName = ColumnName;
             FieldTypeName = fieldType.AssemblyQualifiedName;
             if (Nullable.GetUnderlyingType(fieldType) != null)
                 ColumnType = DBType.GetDBTypeByType(Nullable.GetUnderlyingType(fieldType));

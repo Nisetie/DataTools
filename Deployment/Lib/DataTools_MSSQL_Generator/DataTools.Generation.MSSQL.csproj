@@ -6,12 +6,13 @@
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Generation.MSSQL</PackageId>
+	  <Description>Библиотека, реализующая абстрации Generation.Base для работы с СУБД MSSQL.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataTools_MSSQL_DeployerLib\DataTools_MSSQL_DeployerLib.csproj" />
-    <ProjectReference Include="..\DataTools_PostgreSQL_DeployerLib\DataTools_PostgreSQL_DeployerLib.csproj" />
-    <ProjectReference Include="..\DataTools_SQLite_DeployerLib\DataTools_SQLite_DeployerLib.csproj" />
+    <ProjectReference Include="..\..\..\Implementation\DataTools_MSSQL\DataTools.MSSQL.csproj" />
+    <ProjectReference Include="..\DataTools_Generator_Base\DataTools.Generation.Base.csproj" />
   </ItemGroup>
 
 </Project>

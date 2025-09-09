@@ -2,12 +2,12 @@
 
 	<PropertyGroup>
 		<OutputType>Exe</OutputType>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
+		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
 		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
 		<DebugType>embedded</DebugType>
-		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -15,11 +15,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Properties\PublishProfiles\" />
+		<ProjectReference Include="..\..\Lib\DataTools_DeployerLib\DataTools.Deployment.Lib.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Lib\DataTools_GeneratorLib\DataTools_GeneratorLib.csproj" />
+		<Folder Include="Properties\PublishProfiles\" />
 	</ItemGroup>
 
 </Project>

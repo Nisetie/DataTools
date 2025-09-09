@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<DebugType>embedded</DebugType>
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+		<PackageId>DataTools.Generation.Lib</PackageId>
+		<Description>Библиотека с функциями сбора и анализа метаданных из источника данных.</Description>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\DataTools_Deployment_Core\DataTools.Deployment.Core.csproj" />
+		<ProjectReference Include="..\DataTools_Generator_Base\DataTools.Generation.Base.csproj" />
+		<ProjectReference Include="..\DataTools_MSSQL_Generator\DataTools.Generation.MSSQL.csproj" />
+		<ProjectReference Include="..\DataTools_PostgreSQL_Generator\DataTools.Generation.PostgreSQL.csproj" />
+		<ProjectReference Include="..\DataTools_SQLite_Generator\DataTools.Generation.SQLite.csproj" />
+	</ItemGroup>
+
+</Project>

@@ -1,6 +1,13 @@
 <Project>
   <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
   <PropertyGroup>
-	  <Version>1.0.29</Version>
+	  <VersionPrefix>1.0.32</VersionPrefix>
+	  <VersionSuffix Condition="'$(Configuration)'!='Release'">$(Configuration)</VersionSuffix>
+	  <DebugType>embedded</DebugType>
+	  <IncludeSymbols>true</IncludeSymbols>
+	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	  <Authors>Nisetie (https://github.com/Nisetie)</Authors>
+	  <RepositoryUrl>https://github.com/Nisetie/DataTools</RepositoryUrl>
+	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

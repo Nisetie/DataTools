@@ -6,18 +6,15 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
-	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-		<Optimize>False</Optimize>
+		<PackageId>DataTools.PostgreSQL</PackageId>
+		<Description>Библиотека, реализующая взаимодействие с СУБД PostgreSQL.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+		<PackageReference Include="Npgsql" Version="8.0.7" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Core\DataTools\DataTools.csproj" />
 		<ProjectReference Include="..\..\Core\DataTools\DataTools.csproj" />
 	</ItemGroup>
 

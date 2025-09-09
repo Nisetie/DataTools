@@ -6,11 +6,13 @@
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Deployment.MSSQL</PackageId>
+	  <Description>Библиотека, реализующая абстрации Deployment.Base для работы с СУБД MSSQL.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Implementation\DataTools_MSSQL\DataTools_MSSQL.csproj" />
-    <ProjectReference Include="..\DataTools_Migration_Base\DataTools_Migration_Base.csproj" />
+    <ProjectReference Include="..\..\..\Implementation\DataTools_MSSQL\DataTools.MSSQL.csproj" />
+    <ProjectReference Include="..\DataTools_Deployer_Base\DataTools.Deployment.Base.csproj" />
   </ItemGroup>
 
 </Project>

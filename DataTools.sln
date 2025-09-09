@@ -5,15 +5,15 @@ VisualStudioVersion = 17.12.35514.174
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools", "Core\DataTools\DataTools.csproj", "{77C597F2-C9E9-4E2E-B003-F58095AF4A05}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL", "Implementation\DataTools_MSSQL\DataTools_MSSQL.csproj", "{524962B5-961D-4290-A8AB-9F14F00B6AD9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.MSSQL", "Implementation\DataTools_MSSQL\DataTools.MSSQL.csproj", "{524962B5-961D-4290-A8AB-9F14F00B6AD9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQL", "Implementation\DataTools_PostgreSQL\DataTools_PostgreSQL.csproj", "{4336FFB5-4536-4FBC-B475-5D32A7516400}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.PostgreSQL", "Implementation\DataTools_PostgreSQL\DataTools.PostgreSQL.csproj", "{4336FFB5-4536-4FBC-B475-5D32A7516400}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLite", "Implementation\DataTools_SQLite\DataTools_SQLite.csproj", "{FAA1A502-999B-41B8-A54E-991C48E9F5F9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.SQLite", "Implementation\DataTools_SQLite\DataTools.SQLite.csproj", "{FAA1A502-999B-41B8-A54E-991C48E9F5F9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Benchmarks", "Test\DataTools_Benchmarks\DataTools_Benchmarks.csproj", "{1BA6017C-B197-4988-9514-556AB5A44E01}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.Benchmarks", "Test\DataTools_Benchmarks\DataTools.Test.Benchmarks.csproj", "{1BA6017C-B197-4988-9514-556AB5A44E01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory_SQLite", "Implementation\DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj", "{E5832B29-05FD-02FD-EFB3-4082FB16BD04}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.InMemory.SQLite", "Implementation\DataTools_InMemory_SQLite\DataTools.InMemory.SQLite.csproj", "{E5832B29-05FD-02FD-EFB3-4082FB16BD04}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deployment", "Deployment", "{36D591C7-65C7-A0D1-1CBC-10CDE441BDC8}"
 EndProject
@@ -21,39 +21,39 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{7E7E07AD-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Implementation", "Implementation", "{E5B564F8-D421-4C4C-BA4D-49809E19176E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Generator_Base", "Deployment\Lib\DataTools_Generator_Base\DataTools_Generator_Base.csproj", "{C048F397-0E59-432A-BEF6-D60E52C11436}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.Base", "Deployment\Lib\DataTools_Generator_Base\DataTools.Generation.Base.csproj", "{C048F397-0E59-432A-BEF6-D60E52C11436}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Deployer", "Deployment\Exe\DataTools_Deployer_Exe\DataTools_Deployer.csproj", "{3C3C3C2C-3868-6229-2AE3-1C46C58FCF64}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.Run", "Deployment\Exe\DataTools_Deployer_Exe\DataTools.Deployment.Run.csproj", "{3C3C3C2C-3868-6229-2AE3-1C46C58FCF64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Generator", "Deployment\Exe\DataTools_Generator_Exe\DataTools_Generator.csproj", "{0E25D5EB-7AC5-CFEF-B60D-62AA24157F88}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.Run", "Deployment\Exe\DataTools_Generator_Exe\DataTools.Generation.Run.csproj", "{0E25D5EB-7AC5-CFEF-B60D-62AA24157F88}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL_GeneratorLib", "Deployment\Lib\DataTools_MSSQL_Generator\DataTools_MSSQL_GeneratorLib.csproj", "{721CB819-4036-C00E-D8F1-3FE871D90C41}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.MSSQL", "Deployment\Lib\DataTools_MSSQL_Generator\DataTools.Generation.MSSQL.csproj", "{721CB819-4036-C00E-D8F1-3FE871D90C41}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQL_GeneratorLib", "Deployment\Lib\DataTools_PostgreSQL_Generator\DataTools_PostgreSQL_GeneratorLib.csproj", "{B4626C36-0892-4AD6-BEB5-8736F0FF8EFD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.PostgreSQL", "Deployment\Lib\DataTools_PostgreSQL_Generator\DataTools.Generation.PostgreSQL.csproj", "{B4626C36-0892-4AD6-BEB5-8736F0FF8EFD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLite_GeneratorLib", "Deployment\Lib\DataTools_SQLite_Generator\DataTools_SQLite_GeneratorLib.csproj", "{56816C66-C86D-4D10-A751-17E20501CB71}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.SQLite", "Deployment\Lib\DataTools_SQLite_Generator\DataTools.Generation.SQLite.csproj", "{56816C66-C86D-4D10-A751-17E20501CB71}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Deployment_Core", "Deployment\Lib\DataTools_Deployment_Core\DataTools_Deployment_Core.csproj", "{0A91C8BA-ED36-4584-A604-DA953417602D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.Core", "Deployment\Lib\DataTools_Deployment_Core\DataTools.Deployment.Core.csproj", "{0A91C8BA-ED36-4584-A604-DA953417602D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lib", "Lib", "{24D7C406-12C6-47AA-8184-F854F62C670F}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Exe", "Exe", "{2E3BBE61-946E-4D8A-8629-540DEEE51677}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_DataMigration", "Deployment\Exe\DataTools_DataMigration\DataTools_DataMigration.csproj", "{9E0214B5-3759-40BE-A894-696FE46DDDCD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.Run", "Deployment\Exe\DataTools_DataMigration\DataTools.Migration.Run.csproj", "{9E0214B5-3759-40BE-A894-696FE46DDDCD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_GeneratorLib", "Deployment\Lib\DataTools_GeneratorLib\DataTools_GeneratorLib.csproj", "{C2F339B9-7E28-473C-8BFB-8526800B70AA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Generation.Lib", "Deployment\Lib\DataTools_GeneratorLib\DataTools.Generation.Lib.csproj", "{C2F339B9-7E28-473C-8BFB-8526800B70AA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_DeployerLib", "Deployment\Lib\DataTools_DeployerLib\DataTools_DeployerLib.csproj", "{3D4163F2-959C-4F1A-8139-0825C8A85730}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.Lib", "Deployment\Lib\DataTools_DeployerLib\DataTools.Deployment.Lib.csproj", "{3D4163F2-959C-4F1A-8139-0825C8A85730}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_DataMigrationLib", "Deployment\Lib\DataTools_DataMigrationLib\DataTools_DataMigrationLib.csproj", "{FD072C4D-5801-4B0E-AB3D-5583FB955FCE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.Lib", "Deployment\Lib\DataTools_DataMigrationLib\DataTools.Migration.Lib.csproj", "{FD072C4D-5801-4B0E-AB3D-5583FB955FCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL_DeployerLib", "Deployment\Lib\DataTools_MSSQL_DeployerLib\DataTools_MSSQL_DeployerLib.csproj", "{72A7DDFB-AC01-4E87-AB5F-B4F93C9FD51D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.MSSQL", "Deployment\Lib\DataTools_MSSQL_DeployerLib\DataTools.Deployment.MSSQL.csproj", "{72A7DDFB-AC01-4E87-AB5F-B4F93C9FD51D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Deployer_Base", "Deployment\Lib\DataTools_Deployer_Base\DataTools_Deployer_Base.csproj", "{B59D118C-BC9F-46ED-8AFB-682D70E3F97A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.Base", "Deployment\Lib\DataTools_Deployer_Base\DataTools.Deployment.Base.csproj", "{B59D118C-BC9F-46ED-8AFB-682D70E3F97A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQL_DeployerLib", "Deployment\Lib\DataTools_PostgreSQL_DeployerLib\DataTools_PostgreSQL_DeployerLib.csproj", "{D32FAD98-6621-49C7-B164-1A87C4D89A06}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.PostgreSQL", "Deployment\Lib\DataTools_PostgreSQL_DeployerLib\DataTools.Deployment.PostgreSQL.csproj", "{D32FAD98-6621-49C7-B164-1A87C4D89A06}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLite_DeployerLib", "Deployment\Lib\DataTools_SQLite_DeployerLib\DataTools_SQLite_DeployerLib.csproj", "{6D62FBA8-90C0-4169-936D-6DF717E3FBE6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Deployment.SQLite", "Deployment\Lib\DataTools_SQLite_DeployerLib\DataTools.Deployment.SQLite.csproj", "{6D62FBA8-90C0-4169-936D-6DF717E3FBE6}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Generation", "Generation", "{93BFAE54-6B38-4670-A92D-4624EA8D2467}"
 EndProject
@@ -61,29 +61,29 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Deployment", "Deployment", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Migration", "Migration", "{40EC97DD-26AC-452F-8A98-3325DAD49BAF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_Migration_Base", "Deployment\Lib\DataTools_Migration_Base\DataTools_Migration_Base.csproj", "{5E058CFD-72EE-4418-A07F-AFB0DB131BAE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.Base", "Deployment\Lib\DataTools_Migration_Base\DataTools.Migration.Base.csproj", "{5E058CFD-72EE-4418-A07F-AFB0DB131BAE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQL_MigrationLib", "Deployment\Lib\DataTools_MSSQL_MigrationLib\DataTools_MSSQL_MigrationLib.csproj", "{DF30800E-E6F3-459D-B82B-7ACA7A6D8A08}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.MSSQL", "Deployment\Lib\DataTools_MSSQL_MigrationLib\DataTools.Migration.MSSQL.csproj", "{DF30800E-E6F3-459D-B82B-7ACA7A6D8A08}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQL_MigrationLib", "Deployment\Lib\DataTools_PostgreSQL_MigrationLib\DataTools_PostgreSQL_MigrationLib.csproj", "{D9BDA5E4-A5B1-4143-847A-2C8933E1BC3B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.PostgreSQL", "Deployment\Lib\DataTools_PostgreSQL_MigrationLib\DataTools.Migration.PostgreSQL.csproj", "{D9BDA5E4-A5B1-4143-847A-2C8933E1BC3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLite_MigrationLib", "Deployment\Lib\DataTools_SQLite_MigrationLib\DataTools_SQLite_MigrationLib.csproj", "{90FF2428-93F1-49DB-82D0-8BB44193A15B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Migration.SQLite", "Deployment\Lib\DataTools_SQLite_MigrationLib\DataTools.Migration.SQLite.csproj", "{90FF2428-93F1-49DB-82D0-8BB44193A15B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{F218A364-EE55-4968-B302-FB94CFB907D6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_TestLib", "Test\DataTools_TestLib\DataTools_TestLib.csproj", "{11802544-ED1F-474D-AF4E-C77DE60EAAB4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.Lib", "Test\DataTools_TestLib\DataTools.Test.Lib.csproj", "{11802544-ED1F-474D-AF4E-C77DE60EAAB4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_MSSQLTest", "Test\DataTools_MSSQLTest\DataTools_MSSQLTest.csproj", "{C96E8004-303D-4CD7-9CE7-007A15AF155D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.MSSQLTest", "Test\DataTools_MSSQLTest\DataTools.Test.MSSQLTest.csproj", "{C96E8004-303D-4CD7-9CE7-007A15AF155D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_PostgreSQLTest", "Test\DataTools_PostgreSQLTest\DataTools_PostgreSQLTest.csproj", "{88CF698B-9A40-492F-9BB1-68677ABFDCEE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.PostgreSQLTest", "Test\DataTools_PostgreSQLTest\DataTools.Test.PostgreSQLTest.csproj", "{88CF698B-9A40-492F-9BB1-68677ABFDCEE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_SQLiteTest", "Test\DataTools_SQLiteTest\DataTools_SQLiteTest.csproj", "{8BDD995C-718C-49E7-BD74-94FE7C432DC0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.SQLiteTest", "Test\DataTools_SQLiteTest\DataTools.Test.SQLiteTest.csproj", "{8BDD995C-718C-49E7-BD74-94FE7C432DC0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_InMemory_SQLiteTest", "Test\DataTools_InMemory_SQLiteTest\DataTools_InMemory_SQLiteTest.csproj", "{EC6D9994-CF3C-429D-B194-D64EF92F7B3E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.InMemorySQLiteTest", "Test\DataTools_InMemory_SQLiteTest\DataTools.Test.InMemorySQLiteTest.csproj", "{EC6D9994-CF3C-429D-B194-D64EF92F7B3E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_DeployTest", "Test\DataTools_DeployTest\DataTools_DeployTest.csproj", "{3F3AFB46-5710-4B1C-B784-C67078A895EA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.DeployTest", "Test\DataTools_DeployTest\DataTools.Test.DeployTest.csproj", "{3F3AFB46-5710-4B1C-B784-C67078A895EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools_RandomTests", "Test\DataTools_RandomTests\DataTools_RandomTests.csproj", "{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataTools.Test.RandomTests", "Test\DataTools_RandomTests\DataTools.Test.RandomTests.csproj", "{958C9EB2-5FAC-4B8E-95AC-8884ECF937E5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

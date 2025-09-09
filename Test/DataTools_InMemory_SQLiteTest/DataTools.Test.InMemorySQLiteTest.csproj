@@ -7,8 +7,8 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-	<DebugType>embedded</DebugType>
-	<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <DebugType>embedded</DebugType>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataTools_TestLib\DataTools_TestLib.csproj" />
+    <ProjectReference Include="..\DataTools_TestLib\DataTools.Test.Lib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

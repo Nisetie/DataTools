@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Deployment\Lib\DataTools_DataMigrationLib\DataTools_DataMigrationLib.csproj" />
+    <ProjectReference Include="..\..\Deployment\Lib\DataTools_DataMigrationLib\DataTools.Migration.Lib.csproj" />
   </ItemGroup>
 
 </Project>

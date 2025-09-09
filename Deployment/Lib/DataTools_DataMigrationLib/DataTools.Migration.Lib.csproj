@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  <DebugType>embedded</DebugType>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
+	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Migration.Lib</PackageId>
+	  <Description>Библиотека с функциями миграции данных из одного источника данных в другой.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DataTools_DeployerLib\DataTools.Deployment.Lib.csproj" />
+    <ProjectReference Include="..\DataTools_GeneratorLib\DataTools.Generation.Lib.csproj" />
+    <ProjectReference Include="..\DataTools_MSSQL_MigrationLib\DataTools.Migration.MSSQL.csproj" />
+    <ProjectReference Include="..\DataTools_PostgreSQL_MigrationLib\DataTools.Migration.PostgreSQL.csproj" />
+    <ProjectReference Include="..\DataTools_SQLite_MigrationLib\DataTools.Migration.SQLite.csproj" />
+  </ItemGroup>
+
+</Project>

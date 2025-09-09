@@ -6,10 +6,13 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+		<PackageId>DataTools.Generation.SQLite</PackageId>
+		<Description>Библиотека, реализующая абстрации Generation.Base для работы с БД SQLite.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\DataTools_Deployment_Core\DataTools_Deployment_Core.csproj" />
+		<ProjectReference Include="..\..\..\Implementation\DataTools_SQLite\DataTools.SQLite.csproj" />
+		<ProjectReference Include="..\DataTools_Generator_Base\DataTools.Generation.Base.csproj" />
 	</ItemGroup>
 
 </Project>

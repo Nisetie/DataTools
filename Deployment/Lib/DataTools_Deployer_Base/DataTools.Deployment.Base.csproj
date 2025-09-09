@@ -2,22 +2,16 @@
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<DebugType>embedded</DebugType>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+		<PackageId>DataTools.Deployment.Base</PackageId>
+		<Description>Библиотека с основными абстрациями ветки Deployment.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Npgsql" Version="8.0.7" />
+		<ProjectReference Include="..\DataTools_Deployment_Core\DataTools.Deployment.Core.csproj" />
 	</ItemGroup>
-
-	<ItemGroup>
-		<ProjectReference Include="..\..\Core\DataTools\DataTools.csproj" />
-	</ItemGroup>
-
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-		<DebugType>none</DebugType>
-	</PropertyGroup>
 
 </Project>

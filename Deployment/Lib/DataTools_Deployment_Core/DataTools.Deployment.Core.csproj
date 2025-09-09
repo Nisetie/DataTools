@@ -6,6 +6,8 @@
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+		<PackageId>DataTools.Deployment.Core</PackageId>
+		<Description>Базовая библиотека с основными компонентами и механизмами для всех библиотек веток Deployment, Generation, Migration.</Description>
 	</PropertyGroup>
 
 	<ItemGroup>

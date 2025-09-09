@@ -6,11 +6,13 @@
 	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 	  <PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
 	  <BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
+	  <PackageId>DataTools.Migration.PostgreSQL</PackageId>
+	  <Description>Библиотека, реализующая абстрации Migration.Base для работы с СУБД PostgreSQL.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Implementation\DataTools_SQLite\DataTools_SQLite.csproj" />
-    <ProjectReference Include="..\DataTools_Deployer_Base\DataTools_Deployer_Base.csproj" />
+    <ProjectReference Include="..\..\..\Implementation\DataTools_PostgreSQL\DataTools.PostgreSQL.csproj" />
+    <ProjectReference Include="..\DataTools_Migration_Base\DataTools.Migration.Base.csproj" />
   </ItemGroup>
 
 </Project>

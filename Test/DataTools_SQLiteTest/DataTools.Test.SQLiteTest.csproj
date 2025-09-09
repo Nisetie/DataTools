@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataTools_TestLib\DataTools_TestLib.csproj" />
+    <ProjectReference Include="..\DataTools_TestLib\DataTools.Test.Lib.csproj" />
   </ItemGroup>
 
   <ItemGroup>

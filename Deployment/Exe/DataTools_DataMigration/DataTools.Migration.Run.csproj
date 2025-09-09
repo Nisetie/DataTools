@@ -15,11 +15,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Lib\DataTools_DeployerLib\DataTools_DeployerLib.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Folder Include="Properties\PublishProfiles\" />
+		<ProjectReference Include="..\..\Lib\DataTools_DataMigrationLib\DataTools.Migration.Lib.csproj" />
 	</ItemGroup>
 
 </Project>

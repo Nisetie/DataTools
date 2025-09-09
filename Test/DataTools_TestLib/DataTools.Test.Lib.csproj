@@ -12,8 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Deployment\Lib\DataTools_DataMigrationLib\DataTools_DataMigrationLib.csproj" />
-    <ProjectReference Include="..\..\Implementation\DataTools_InMemory_SQLite\DataTools_InMemory_SQLite.csproj" />
+    <ProjectReference Include="..\..\Deployment\Lib\DataTools_DataMigrationLib\DataTools.Migration.Lib.csproj" />
+    <ProjectReference Include="..\..\Implementation\DataTools_InMemory_SQLite\DataTools.InMemory.SQLite.csproj" />
   </ItemGroup>
 
 </Project>
