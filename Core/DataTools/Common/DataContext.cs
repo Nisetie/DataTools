@@ -6,8 +6,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Xml.Schema;
 
 namespace DataTools.Common
 {
@@ -112,7 +110,7 @@ namespace DataTools.Common
                     ds
                     .ExecuteWithResult(new SqlInsert()
                     .Into<ModelT>()
-                    .Value((object[])ModelMapper<ModelT>.GetArrayOfValues(model)))
+                    .Value(ModelMapper<ModelT>.GetArrayOfValues(model)))
                     .ToArray()[0];
                 var customMapper = GetCustomModelMapper(ModelMetadata<ModelT>.Instance);
                 if (customMapper != null)
@@ -158,7 +156,7 @@ namespace DataTools.Common
                 var updateBuilder =
                     new SqlUpdate()
                     .From<ModelT>()
-                    .Value((object[])ModelMapper<ModelT>.GetArrayOfValues(model))
+                    .Value(ModelMapper<ModelT>.GetArrayOfValues(model))
                     .Where(ModelMapper<ModelT>.GetWhereClause(model));
 
                 ds.Execute(updateBuilder);

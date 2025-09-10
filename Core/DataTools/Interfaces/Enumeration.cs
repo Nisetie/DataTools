@@ -2,13 +2,20 @@
 
 namespace DataTools.Interfaces
 {
+    /// <summary>
+    /// https://learn.microsoft.com/ru-ru/dotnet/architecture/microservices/microservice-ddd-cqrs-patterns/enumeration-classes-over-enum-types
+    /// </summary>
     public abstract class Enumeration : IComparable
     {
         public string Name { get; private set; }
 
         public int Id { get; private set; }
 
-        protected Enumeration(int id, string name) => (Id, Name) = (id, name);
+        protected Enumeration(int id, string name)
+        {
+            Id = id;
+            Name = name;
+        }
 
         public override string ToString() => Name;
 

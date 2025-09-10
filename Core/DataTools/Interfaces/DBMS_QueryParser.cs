@@ -1,7 +1,6 @@
 ﻿using DataTools.DDL;
 using DataTools.DML;
 using System;
-using System.Collections;
 using System.Text;
 
 namespace DataTools.Interfaces

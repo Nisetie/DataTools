@@ -43,7 +43,7 @@ namespace DataTools.Extensions
                 for (int j = 0; j < valuesCount; ++j)
                     sqlValues[i][j] = new SqlConstant(values[i][j]);
             }
-            return sqlInsertBatch.Value(sqlValues);            
+            return sqlInsertBatch.Value(sqlValues);
         }
     }
 }

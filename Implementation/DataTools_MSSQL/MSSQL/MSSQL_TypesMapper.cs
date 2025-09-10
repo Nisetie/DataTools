@@ -41,12 +41,20 @@ namespace DataTools.MSSQL
         {
             _instance = new MSSQL_TypesMapper();            
         }
-
+        /// <summary>
+        /// Получить название sql-типа в СУБД MSSQL для .NET типа данных.
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
         public static string GetSqlTypeFromType(Type type)
         {
             return GetSqlTypeFromDBType(DBType.GetDBTypeByType(type));
         }
-
+        /// <summary>
+        /// Получить название sql-типа в СУБД MSSQL для абстрактного <paramref name="dbtype"/> типа данных.
+        /// </summary>
+        /// <param name="dbtype"></param>
+        /// <returns></returns>
         public static string GetSqlTypeFromDBType(DBType dbtype)
         {
             string sqltype;

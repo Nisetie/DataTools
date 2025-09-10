@@ -13,7 +13,7 @@ namespace DataTools.InMemory_SQLite
 
         public InMemory_SQLite_DataContext()
         {
-            _connectionString = "FullUri=file:memdb?mode=memory&cache=shared";
+            _connectionString = "Data Source=Sharable;mode=memory;cache=shared";
             _sConnection = _GetDataSource() as InMemory_SQLite_DataSource;
         }
 

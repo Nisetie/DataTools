@@ -3,16 +3,16 @@ using DataTools.DML;
 using DataTools.SQLite;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 
 namespace DataTools.InMemory_SQLite
 {
     public sealed class InMemory_SQLite_DataSource : DBMS_DataSource, IDisposable
     {
-        private SQLiteConnection _conn = new SQLiteConnection();
-        private SQLiteCommand _command;
+        private SqliteConnection _conn = new SqliteConnection();
+        private SqliteCommand _command;
 
-        public SQLiteConnection Connection { get { return _conn; } }
+        public SqliteConnection Connection { get { return _conn; } }
 
         public InMemory_SQLite_DataSource(string connectionString) : base(new SQLite_QueryParser())
         {
@@ -48,7 +48,7 @@ namespace DataTools.InMemory_SQLite
 
         public IEnumerable<object[]> ExecuteWithResult(string query)
         {
-            SQLiteDataReader reader = null;
+            SqliteDataReader reader = null;
             object v;
             try
             {

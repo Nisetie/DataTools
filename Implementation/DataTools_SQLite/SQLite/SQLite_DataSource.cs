@@ -2,16 +2,16 @@
 using DataTools.DML;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
+using Microsoft.Data.Sqlite;
 
 namespace DataTools.SQLite
 {
     public sealed class SQLite_DataSource : DBMS_DataSource
     {
-        private SQLiteConnection _conn = new SQLiteConnection();
-        private SQLiteCommand _command;
+        private SqliteConnection _conn = new SqliteConnection();
+        private SqliteCommand _command;
 
-        public SQLiteConnection Connection { get { return _conn; } }
+        public SqliteConnection Connection { get { return _conn; } }
 
         public SQLite_DataSource(string connectionString) : base(new SQLite_QueryParser())
         {
@@ -56,7 +56,7 @@ namespace DataTools.SQLite
 
         public IEnumerable<object[]> ExecuteWithResult(string query)
         {
-            SQLiteDataReader reader = null;
+            SqliteDataReader reader = null;
             object[] array = null;
             object value = null;
             _conn.Open();

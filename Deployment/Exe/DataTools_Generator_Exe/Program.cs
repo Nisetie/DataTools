@@ -157,7 +157,7 @@ namespace DataTools.Deploy
             string projectFileContent = $@"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    
     <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     <DebugType>None</DebugType>
     <DebugSymbols>False</DebugSymbols>

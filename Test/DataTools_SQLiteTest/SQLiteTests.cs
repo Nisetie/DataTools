@@ -1,13 +1,15 @@
 using DataTools.Common;
 using DataTools.Deploy;
+using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.SQLite;
+using Microsoft.Data.Sqlite;
 using NUnit.Framework.Internal;
-using System.Data.SQLite;
+using System;
 
 namespace DataTools_Tests
 {
-    [TestFixture("sqlite", "Data Source=dbo;journal mode=WAL;synchronous=off;pooling=true")]
+    [TestFixture("sqlite", "Data Source=dbo.db;pooling=true")]
     public class SQLiteTests : CommonTests<SQLite_DataContext>
     {
         public override GeneratorBase GetGenerator()
@@ -20,20 +22,27 @@ namespace DataTools_Tests
             return new SQLite_QueryParser();
         }
 
-        private SQLiteConnection _conn;
+        private SqliteConnection _conn;
 
         public SQLiteTests(string alias, string connectionString) : base(alias)
         {
             this.alias = alias;
             DataContext.ConnectionString = connectionString;
-            _conn = new SQLiteConnection(connectionString);
-            _conn.Open();
+            //_conn = new SqliteConnection(connectionString);
+            //_conn.Open();
+        }
+
+        [SetUp]
+        public override void Setup()
+        {
+            DataContext.Execute(new SqlCustom("PRAGMA journal_mode = WAL; PRAGMA synchronous = OFF; pragma temp_store = memory;"));
+            base.Setup();
         }
 
         [OneTimeTearDown]
         public void TearDown()
         {
-            _conn.Close();
+            //_conn.Close();
         }
     }
 }

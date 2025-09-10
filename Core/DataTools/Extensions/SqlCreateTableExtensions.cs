@@ -57,7 +57,7 @@ namespace DataTools.Extensions
                         if (modelField.IsUnique)
                         {
                             if (!uniques.TryGetValue(modelField.UniqueConstraintName ?? "", out var list))
-                                uniques[modelField.UniqueConstraintName?? ""] = list = new List<string>();
+                                uniques[modelField.UniqueConstraintName ?? ""] = list = new List<string>();
                             list.Add(modelField.ColumnNames[i]);
                         }
                     }

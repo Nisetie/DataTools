@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>netstandard2.0</TargetFramework>
+		<TargetFrameworks>$(CommonFrameworks)</TargetFrameworks>
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
 		<PackageOutputPath>$(SolutionDir)Packages\$(Configuration)</PackageOutputPath>
@@ -15,7 +15,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="System.Data.SQLite" Version="1.0.119" />
+	  <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.9" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -11,11 +11,11 @@ namespace DataTools_Tests
         new string[] {
         $"Data Source=localhost\\sqlexpress;Database=test;Integrated Security=True;Trust server certificate=true",
         "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test",
-        "Data Source=dbo;journal mode=off;synchronous=full;pooling=true"},
+        "Data Source=dbo;pooling=true"},
         new string[] {
         $"Data Source=localhost\\sqlexpress;Database=test1;Integrated Security=True;Trust server certificate=true",
         "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test1",
-        "Data Source=dbo1;journal mode=off;synchronous=full;pooling=true"}
+        "Data Source=dbo1;pooling=true"}
         )]
     public class MultiTest
     {
@@ -89,10 +89,6 @@ namespace DataTools_Tests
                     var migrator = new DataMigrationWorker(migratorOptions);
                     migrator.Run();
                     TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} migrated");
-
-                    //deployer1.Mode = E_DEPLOY_MODE.RESTORE_IDENTITIES;
-                    //deployer1.Run();
-                    //TestContext.Out.WriteLine($"{deployerOptions1.DBMS} identites restored");
 
                     foreach (var meta in testdata.Metadatas)
                     {

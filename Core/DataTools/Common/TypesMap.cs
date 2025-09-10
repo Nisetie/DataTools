@@ -4,8 +4,8 @@ namespace DataTools.Common
 {
     public static class TypesMap
     {
-        static Dictionary<E_DBMS, Dictionary<string, DBType>> _linksToDBType = new Dictionary<E_DBMS, Dictionary<string, DBType>>();
-        static Dictionary<E_DBMS, Dictionary<int, string>> _linksToSqlType = new Dictionary<E_DBMS, Dictionary<int, string>>();
+        private static Dictionary<E_DBMS, Dictionary<string, DBType>> _linksToDBType = new Dictionary<E_DBMS, Dictionary<string, DBType>>();
+        private static Dictionary<E_DBMS, Dictionary<int, string>> _linksToSqlType = new Dictionary<E_DBMS, Dictionary<int, string>>();
 
         /// <summary>
         /// Добавить прямую и обратные ассоциации между DBType и sql-типами

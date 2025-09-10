@@ -8,7 +8,7 @@ namespace DataTools.Attributes
     /// </summary>
     public class UniqueAttribute : FieldAttribute
     {
-        string ConstraintName;
+        private string ConstraintName;
 
         public UniqueAttribute() { }
 

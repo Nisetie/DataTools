@@ -32,7 +32,7 @@ namespace DataTools.Extensions
 
         public static SqlUpdate Value<ModelT>(this SqlUpdate sqlUpdate, ModelT model) where ModelT : class, new()
         {
-         return   sqlUpdate.Value(ModelMapper<ModelT>.GetArrayOfValues(model));
+            return sqlUpdate.Value(ModelMapper<ModelT>.GetArrayOfValues(model));
         }
         public static SqlUpdate Value(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)
         {

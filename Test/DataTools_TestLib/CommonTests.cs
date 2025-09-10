@@ -56,6 +56,7 @@ namespace DataTools_Tests
         public static void TeardownStatic(IDataContext DataContext)
         {
             var q = new SqlComposition();
+
             q.Elements.Add(new SqlDropTable().Table<TestModelChild>());
             q.Elements.Add(new SqlDropTable().Table<TestModel>());
             q.Elements.Add(new SqlDropTable().Table<TestModelExtra>());

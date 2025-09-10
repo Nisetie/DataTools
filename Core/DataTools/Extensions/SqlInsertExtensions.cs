@@ -33,7 +33,7 @@ namespace DataTools.Extensions
         }
         public static SqlInsert Value<ModelT>(this SqlInsert sqlInsert, ModelT model) where ModelT : class, new()
         {
-            return sqlInsert.Value((object[])ModelMapper<ModelT>.GetArrayOfValues(model));
+            return sqlInsert.Value(ModelMapper<ModelT>.GetArrayOfValues(model));
         }
         public static SqlInsert Value(this SqlInsert sqlInsert, IModelMetadata meta, dynamic model)
         {

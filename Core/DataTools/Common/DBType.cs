@@ -23,27 +23,27 @@ namespace DataTools.Common
         private static Dictionary<Type, DBType> _typeTypes = new Dictionary<Type, DBType>();
 
         // Boolean Type
-        public static DBType Boolean = new DBType(nameof(Boolean), typeof(bool), hasTypePriority:true);
+        public static DBType Boolean = new DBType(nameof(Boolean), typeof(bool), hasTypePriority: true);
 
         // Numeric Types
-        public static DBType Byte = new DBType(nameof(Byte), typeof(byte), hasTypePriority: true, isNumber:true);
+        public static DBType Byte = new DBType(nameof(Byte), typeof(byte), hasTypePriority: true, isNumber: true);
         public static DBType SByte = new DBType(nameof(SByte), typeof(sbyte), hasTypePriority: true, isNumber: true);
         public static DBType Int16 = new DBType(nameof(Int16), typeof(short), hasTypePriority: true, isNumber: true);
         public static DBType Int32 = new DBType(nameof(Int32), typeof(int), hasTypePriority: true, isNumber: true);
         public static DBType Int64 = new DBType(nameof(Int64), typeof(long), hasTypePriority: true, isNumber: true);
         public static DBType UInt16 = new DBType(nameof(UInt16), typeof(ushort), hasTypePriority: true, isNumber: true);
         public static DBType UInt32 = new DBType(nameof(UInt32), typeof(uint), hasTypePriority: true, isNumber: true);
-        public static DBType UInt64 = new DBType(nameof(UInt64), typeof(ulong), hasTypePriority: true, isNumber: true);        
+        public static DBType UInt64 = new DBType(nameof(UInt64), typeof(ulong), hasTypePriority: true, isNumber: true);
 
         public static DBType Single = new DBType(nameof(Single), typeof(float), hasTypePriority: true, isNumber: true);
         public static DBType Double = new DBType(nameof(Double), typeof(double), hasTypePriority: true, isNumber: true);
-        
-        public static DBType Decimal = new DBType(nameof(Decimal), typeof(decimal), hasTypePriority: true, hasPrecision:true, isNumber: true);
+
+        public static DBType Decimal = new DBType(nameof(Decimal), typeof(decimal), hasTypePriority: true, hasPrecision: true, isNumber: true);
         public static DBType Money = new DBType(nameof(Money), typeof(decimal), hasPrecision: true, isNumber: true);
 
         // Character Types
         public static DBType String = new DBType(nameof(String), typeof(string), hasLength: true, hasTypePriority: true);
-        public static DBType AnsiString = new DBType(nameof(AnsiString), typeof(string), hasLength: true);        
+        public static DBType AnsiString = new DBType(nameof(AnsiString), typeof(string), hasLength: true);
         public static DBType AnsiStringFixedLength = new DBType(nameof(AnsiStringFixedLength), typeof(string), hasLength: true);
         public static DBType StringFixedLength = new DBType(nameof(StringFixedLength), typeof(string), hasLength: true);
         public static DBType Char = new DBType(nameof(Char), typeof(char), hasTypePriority: true);
@@ -56,14 +56,14 @@ namespace DataTools.Common
         public static DBType Guid = new DBType(nameof(Guid), typeof(Guid), hasTypePriority: true);
 
         // Binary Data Types
-        public static DBType Binary = new DBType(nameof(Binary), typeof(byte[]), hasTypePriority: true, hasLength:true);
+        public static DBType Binary = new DBType(nameof(Binary), typeof(byte[]), hasTypePriority: true, hasLength: true);
 
         // Date/Time Types
         public static DBType Timestamp = new DBType(nameof(Timestamp), typeof(DateTime), hasTypePriority: true);
         public static DBType Date = new DBType(nameof(Date), typeof(DateTime));
-        public static DBType Time = new DBType(nameof(Time), typeof(TimeSpan), hasTypePriority:true);
-        public static DBType TimestampTz = new DBType(nameof(TimestampTz), typeof(DateTimeOffset), hasTypePriority: true);        
-        
+        public static DBType Time = new DBType(nameof(Time), typeof(TimeSpan), hasTypePriority: true);
+        public static DBType TimestampTz = new DBType(nameof(TimestampTz), typeof(DateTimeOffset), hasTypePriority: true);
+
 
         /// <summary>
         /// 

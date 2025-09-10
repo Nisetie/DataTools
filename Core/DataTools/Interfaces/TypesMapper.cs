@@ -1,6 +1,4 @@
-﻿using System.Transactions;
-
-namespace DataTools.Interfaces
+﻿namespace DataTools.Interfaces
 {
     /// <summary>
     /// Вспомогательный класс для формализации требований по по преобразованию данных из источника в NET-типы и обратно.

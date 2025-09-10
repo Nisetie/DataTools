@@ -4,10 +4,7 @@ using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.ComponentModel.Design;
 using System.Linq.Expressions;
-using System.Reflection;
 namespace DataTools.Commands
 {
     public interface ISelectCommand<SelectCommandT>
@@ -130,7 +127,6 @@ namespace DataTools.Commands
                     return ProcessMemberExpression(modelMetadata, memberExpression);
                 case InvocationExpression invocationExpression:
                     return ProcessInvocationExpression(modelMetadata, invocationExpression);
-                    break;
                 case ConstantExpression constantExpression:
                     if (constantExpression.Value != null)
                         return new SqlConstant(constantExpression.Value);

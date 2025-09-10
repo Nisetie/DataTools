@@ -44,8 +44,8 @@ namespace DataTools.Meta
             FieldTypeName = fieldType.AssemblyQualifiedName;
             if (Nullable.GetUnderlyingType(fieldType) != null)
                 ColumnType = DBType.GetDBTypeByType(Nullable.GetUnderlyingType(fieldType));
-            else 
-                ColumnType=  DBType.GetDBTypeByType(fieldType);
+            else
+                ColumnType = DBType.GetDBTypeByType(fieldType);
             IEnumerable<FieldAttribute> attrs = propertyInfo.GetCustomAttributes<FieldAttribute>(true);
             foreach (var attr in attrs)
                 attr.ProcessMetadata(propertyInfo, this);

@@ -20,7 +20,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DataTools_TestLib\DataTools.Test.Lib.csproj" />
+    <ProjectReference Include="..\DataTools_TestLib\DataTools.Test.Lib.csproj">
+      <Private>True</Private>
+      <CopyLocalSatelliteAssemblies>True</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
   </ItemGroup>
 
   <ItemGroup>

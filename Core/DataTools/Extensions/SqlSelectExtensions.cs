@@ -43,7 +43,7 @@ namespace DataTools.Extensions
         {
             return sql.Where(DynamicMapper.GetMapper(modelMetadata).GetWhereClause(model));
         }
-        public static SqlSelect Where<ModelT>(this SqlSelect sql, ModelT model) where ModelT : class,new()
+        public static SqlSelect Where<ModelT>(this SqlSelect sql, ModelT model) where ModelT : class, new()
         {
             return sql.Where(ModelMapper<ModelT>.GetWhereClause(model));
         }

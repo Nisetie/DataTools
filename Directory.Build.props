@@ -1,13 +1,18 @@
 <Project>
-  <!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
-  <PropertyGroup>
-	  <VersionPrefix>1.0.32</VersionPrefix>
-	  <VersionSuffix Condition="'$(Configuration)'!='Release'">$(Configuration)</VersionSuffix>
-	  <DebugType>embedded</DebugType>
-	  <IncludeSymbols>true</IncludeSymbols>
-	  <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-	  <Authors>Nisetie (https://github.com/Nisetie)</Authors>
-	  <RepositoryUrl>https://github.com/Nisetie/DataTools</RepositoryUrl>
-	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
-  </PropertyGroup>
+	<!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
+	<PropertyGroup>
+		<CommonFrameworks>netstandard2.0;net8.0;net9.0</CommonFrameworks>
+		<VersionPrefix>1.0.33</VersionPrefix>
+		<VersionSuffix Condition="'$(Configuration)'!='Release'">$(Configuration)</VersionSuffix>
+		<DebugType>embedded</DebugType>
+		<IncludeSymbols>true</IncludeSymbols>
+		<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+		<Authors>Nisetie (https://github.com/Nisetie)</Authors>
+		<RepositoryUrl>https://github.com/Nisetie/DataTools</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageTags>orm,sql</PackageTags>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)'=='Release'">
+		<DebugType>none</DebugType>
+	</PropertyGroup>
 </Project>

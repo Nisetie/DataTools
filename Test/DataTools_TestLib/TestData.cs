@@ -3,8 +3,6 @@ using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
 using System.Collections.Generic;
-using System.Data.SQLite;
-using System.Runtime.InteropServices.ComTypes;
 using DataTools.Extensions;
 
 namespace DataTools_Tests
