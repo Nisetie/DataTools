@@ -53,7 +53,17 @@ namespace DataTools.Interfaces
         /// </summary>
         /// <returns></returns>
         IEnumerable<string> GetColumnsForFilterOrder();
+
+        /// <summary>
+        /// Перечислить только колонки без ограничения на редактирование. Не автоинкремент или вычисляемая колонка.
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<IModelFieldMetadata> GetChangeableFields();
+        /// <summary>
+        /// Перечислить только колонки с признаками уникальности: автоинкремент, уникальный или первичный ключ.
+        /// Если таких колонок нет, тогда перечисление будет пустым.
+        /// </summary>
+        /// <returns></returns>
         IEnumerable<IModelFieldMetadata> GetFilterableFields();
 
         int FieldsCount { get; }

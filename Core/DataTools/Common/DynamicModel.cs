@@ -12,19 +12,12 @@ namespace DataTools.Common
     public class DynamicModel : DynamicObject, IDictionary<string, object>, INotifyPropertyChanged
     {
         private IModelMetadata _modelMetadata;
-
         private Dictionary<string, object> _members;
-
         public event PropertyChangedEventHandler PropertyChanged;
-
         public ICollection<string> Keys => _members.Keys;
-
         public ICollection<object> Values => _members.Values;
-
         public int Count => _members.Count;
-
         public bool IsReadOnly => false;
-
         public object this[string key]
         {
             get => _members.TryGetValue(key, out object value) ? value : null;
@@ -34,10 +27,8 @@ namespace DataTools.Common
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(key));
             }
         }
-
         public IModelMetadata ModelMetadata => _modelMetadata;
-
-        public DynamicModel()
+        private DynamicModel()
         {
             _members = new Dictionary<string, object>();
         }

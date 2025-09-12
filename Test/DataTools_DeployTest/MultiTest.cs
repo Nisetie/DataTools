@@ -94,7 +94,7 @@ namespace DataTools_Tests
                     {
                         TestContext.Out.WriteLine($"{meta.FullObjectName} compare start.");
 
-                        var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty("MapModel");
+                        var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty(nameof(ModelMapper<TestModel>.MapObjectArrayToModel));
 
                         var orderArray = meta.GetColumnsForFilterOrder().ToArray();
                         if (orderArray.Length == 0)

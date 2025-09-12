@@ -12,7 +12,7 @@ namespace DataTools.DML
         public string FunctionName => _functionName;
         public IEnumerable<SqlExpression> Parameters => _parameters;
 
-        public SqlFunction(string functionName, IEnumerable<SqlExpression> parameters)
+        public SqlFunction(string functionName, params SqlExpression[] parameters)
         {
             _functionName = functionName;
             _parameters = parameters;

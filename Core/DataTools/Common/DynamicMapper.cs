@@ -20,7 +20,7 @@ namespace DataTools.Common
 
         public Func<dynamic, object[]> GetArrayOfValues { get; private set; }
         public Func<dynamic, SqlWhere> GetWhereClause { get; private set; }
-        public Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapModel { get; private set; }
+        public Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapObjectArrayToModel { get; private set; }
         public Func<dynamic, string> GetModelKeyValue { get; private set; }
 
         public static ParameterExpression GetModelInputParameterExpression()
@@ -77,7 +77,7 @@ namespace DataTools.Common
                 Expression.Invoke(
                     Expression.Property(
                         Expression.Call(null, typeof(DynamicMapper).GetMethod(nameof(DynamicMapper.GetMapper)), Expression.Constant(modelMetadata))
-                        , nameof(DynamicMapper.MapModel)
+                        , nameof(DynamicMapper.MapObjectArrayToModel)
                         )
                     , var_model, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache
                 );
@@ -87,7 +87,7 @@ namespace DataTools.Common
         {
             GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<dynamic, object[]>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
             GetWhereClause = MappingHelper.PrepareCreateWhereClause<Func<dynamic, SqlWhere>>(metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            MapModel = MappingHelper.PrepareMapModel<Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
+            MapObjectArrayToModel = MappingHelper.PrepareMapModel<Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
                 metadata,
                 GetModelInputParameterExpression,
                 GetModelPropertySetterExpression,

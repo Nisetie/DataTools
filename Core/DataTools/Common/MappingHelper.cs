@@ -4,6 +4,7 @@ using DataTools.Extensions;
 using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -307,6 +308,7 @@ namespace DataTools.Common
                     let RealType = IsNullable ? UnboxedType : fieldType
                     let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
+                    let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider),typeof(DateTimeStyles) })
                     let IsParsable = ParseMethod != null
                     let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                     orderby f.FieldOrder
@@ -321,7 +323,9 @@ namespace DataTools.Common
                                      Expression.Condition(
                                         Expression.IsTrue(Expression.TypeIs(var_value, RealType))
                                         , Expression.Convert(var_value, fieldType)
-                                        , IsConvertible
+                                        , RealType == typeof(DateTimeOffset)
+                                        ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)),Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
+                                        : IsConvertible
                                         ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
                                         : IsParsable
                                         ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)

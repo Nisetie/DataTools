@@ -3,25 +3,8 @@ using System.Collections.Generic;
 
 namespace DataTools.Interfaces
 {
-    public interface IDataContext
+    public interface ICRUD
     {
-        /// <summary>
-        /// Получить объект источника данных для более гибкого обращения к данным.
-        /// </summary>
-        /// <returns></returns>
-        IDataSource GetDataSource();
-
-        /// <summary>
-        /// Выполнить запрос с параметрами без вощвращения результата.
-        /// </summary>
-        /// <param name="query"></param>
-        /// <param name="parameters"></param>
-        void Execute(SqlExpression query, params SqlParameter[] parameters);
-
-        object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
-
-        IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
-
         /// <summary>
         /// Запрос данных из источника с автоматическим маппированием полей модели.
         /// </summary>
@@ -52,6 +35,26 @@ namespace DataTools.Interfaces
         /// <param name="record"></param>
         void Delete<ModelT>(ModelT record) where ModelT : class, new();
         void Delete(IModelMetadata modelMetadata, dynamic record);
+    }
+
+    public interface IDataContext :ICRUD
+    {
+        /// <summary>
+        /// Получить объект источника данных для более гибкого обращения к данным.
+        /// </summary>
+        /// <returns></returns>
+        IDataSource GetDataSource();
+
+        /// <summary>
+        /// Выполнить запрос с параметрами без вощвращения результата.
+        /// </summary>
+        /// <param name="query"></param>
+        /// <param name="parameters"></param>
+        void Execute(SqlExpression query, params SqlParameter[] parameters);
+
+        object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
+
+        IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
 
         IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function, params SqlParameter[] parameters) where ModelT : class, new();
         IEnumerable<dynamic> CallTableFunction(IModelMetadata modelMetadata, SqlFunction function, params SqlParameter[] parameters);

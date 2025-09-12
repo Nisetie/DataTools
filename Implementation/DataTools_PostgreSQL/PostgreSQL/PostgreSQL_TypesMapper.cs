@@ -89,7 +89,7 @@ namespace DataTools.PostgreSQL
                 case DateTimeOffset dto:
                     if (dto.Year < 1970)
                         dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
-                    dto = dto.ToUniversalTime();
+                    //dto = dto.ToUniversalTime();
                     return $"('{dto:o}')::{sqlType}";
                 case byte[] byteArray:
                     return $"({ByteArrayToHexViaLookup32UnsafeDirect(byteArray)})::bytea";

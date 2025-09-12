@@ -40,7 +40,6 @@ namespace DataTools.Extensions
         }
         public static SqlUpdate Where<ModelT>(this SqlUpdate sqlUpdate, ModelT model) where ModelT : class, new()
         {
-            var meta = ModelMetadata<ModelT>.Instance;
             return sqlUpdate.Where(ModelMapper<ModelT>.GetWhereClause(model));
         }
         public static SqlUpdate Where(this SqlUpdate sqlUpdate, IModelMetadata modelMetadata, dynamic model)

@@ -24,7 +24,7 @@ namespace DataTools.Common
         /// строка данных из источника (object[]);
         /// кеш моделей (QueryCache).
         /// </summary>
-        public static Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapModel { get; private set; }
+        public static Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache> MapObjectArrayToModel { get; private set; }
         public static Func<ModelT, object[]> GetArrayOfValues { get; private set; }
 
         public static Func<ModelT, SqlWhere> GetWhereClause { get; private set; }
@@ -80,7 +80,7 @@ namespace DataTools.Common
             ParameterExpression param_queryCache
             )
         {
-            return Expression.Invoke(Expression.Property(null, typeof(ModelMapper<>).MakeGenericType(Type.GetType(modelMetadata.ModelTypeName)).GetProperty(nameof(MapModel))), var_model, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache);
+            return Expression.Invoke(Expression.Property(null, typeof(ModelMapper<>).MakeGenericType(Type.GetType(modelMetadata.ModelTypeName)).GetProperty(nameof(MapObjectArrayToModel))), var_model, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache);
         }
 
         private static void PrepareModelCopier()
@@ -100,7 +100,7 @@ namespace DataTools.Common
         static ModelMapper()
         {
             GetArrayOfValues = MappingHelper.PrepareGetArrayOfValuesCommand<Func<ModelT, object[]>>(Metadata, GetModelInputParameterExpression, GetModelPropertyExpression);
-            MapModel = MappingHelper.PrepareMapModel<Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
+            MapObjectArrayToModel = MappingHelper.PrepareMapModel<Action<ModelT, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
                Metadata,
                GetModelInputParameterExpression,
                GetModelPropertySetterExpression,
