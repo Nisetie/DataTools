@@ -3,15 +3,15 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlInsert : SqlExpression
+    public class SqlInsert : ISqlExpression
     {
         protected SqlName _into;
         protected IEnumerable<SqlName> _columns;
-        protected IEnumerable<SqlExpression> _values;
+        protected IEnumerable<ISqlExpression> _values;
 
-        public SqlExpression IntoDestination => _into;
+        public ISqlExpression IntoDestination => _into;
         public IEnumerable<SqlName> Columns => _columns;
-        public IEnumerable<SqlExpression> Values => _values;
+        public IEnumerable<ISqlExpression> Values => _values;
 
         public SqlInsert Into(SqlName objectName)
         {
@@ -23,7 +23,7 @@ namespace DataTools.DML
             _columns = columns;
             return this;
         }
-        public SqlInsert Value(params SqlExpression[] values)
+        public SqlInsert Value(params ISqlExpression[] values)
         {
             _values = values;
             return this;

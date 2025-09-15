@@ -24,64 +24,41 @@ namespace DataTools.MSSQL
             var sb = new StringBuilder(256);
 
             sb.Append("SELECT ");
-            if (sqlSelect.Selects == null)
-                sb.Append("*");
-            else
-            {
+
+            if (sqlSelect.Selects != null)
                 foreach (var s in sqlSelect.Selects)
                     sb.Append(ParseExpression(s)).Append(',');
-                sb.Length -= 1;
-            }
+            sb.Length -= 1;
+
             sb.AppendLine();
 
             if (sqlSelect.FromSource == null) return sb.ToString(); // select без источника (select getdate())
 
             sb.AppendLine("FROM ");
             if (sqlSelect.FromSource is SqlSelect sqlSelect1)
-            {
-                sb
-                    .Append("(")
-                    .Append(Parse_SqlSelect(sqlSelect1))
-                    .Append(")");
-            }
+                sb.Append("(").Append(Parse_SqlSelect(sqlSelect1)).Append(")");
             else sb.Append(ParseExpression(sqlSelect.FromSource));
             sb.AppendLine();
 
             if (sqlSelect.Wheres != null)
-            {
-                sb.Append("WHERE ");
-                sb.Append(ParseExpression(sqlSelect.Wheres));
-                sb.AppendLine();
-            }
+                sb.Append("WHERE ").Append(ParseExpression(sqlSelect.Wheres)).AppendLine();
 
             if (sqlSelect.Orders != null)
             {
                 sb.Append("ORDER BY ");
                 foreach (var o in sqlSelect.Orders)
-                {
-                    sb.Append(ParseExpression(o));
-                    sb.Append(',');
-                }
+                    sb.Append(ParseExpression(o)).Append(',');
                 sb.Length -= 1;
                 sb.AppendLine();
             }
-            else
-            {
-                if (sqlSelect.OffsetRows != null)
-                    sb.AppendLine("ORDER BY 1");
-            }
+            else if (sqlSelect.OffsetRows != null)
+                sb.AppendLine("ORDER BY 1");
 
             if (sqlSelect.OffsetRows != null)
             {
-                sb.Append("OFFSET ");
-                sb.Append(ParseExpression(sqlSelect.OffsetRows));
-                sb.AppendLine(" rows ");
+                sb.Append("OFFSET ").Append(ParseExpression(sqlSelect.OffsetRows)).AppendLine(" ROWS ");
                 if (sqlSelect.LimitRows != null)
-                {
-                    sb.AppendLine("fetch next ");
-                    sb.Append(ParseExpression(sqlSelect.LimitRows));
-                    sb.AppendLine(" rows only");
-                }
+                    sb.AppendLine("FETCH NEXT ").Append(ParseExpression(sqlSelect.LimitRows)).AppendLine(" ROWS ONLY");
             }
 
             return sb.ToString();
@@ -102,7 +79,7 @@ namespace DataTools.MSSQL
 
         protected override string Parse_SqlDelete(SqlDelete sqlDelete)
         {
-            var sb = new StringBuilder(128)
+            var sb = new StringBuilder(256)
                 .Append("DELETE FROM ")
                 .Append(ParseExpression(sqlDelete.FromSource))
                 .AppendLine();

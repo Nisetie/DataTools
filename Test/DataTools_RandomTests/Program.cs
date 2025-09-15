@@ -27,7 +27,7 @@ namespace DataTools_RandomTests
 
             var mm = modelDef.ModelMetadata;
 
-            var result = ctx.SelectFrom(mm).Select().ToArray();
+            var result = ctx.Select(mm).ToArray();
 
             dynamic dm = new DynamicModel(new ModelMetadata());
             Console.WriteLine(dm.ToString());
@@ -67,7 +67,7 @@ return (select * from SalesLT.SalesOrderDetail);
     {
         //IModelMetadata Metadata { get; }
         //Func<ModelT, SqlExpression> _select, _insert, _delete, _update;
-        
+
         //public CRUDReplacer(
         //    IModelMetadata modelMetadata,
         //    Func<ModelT, SqlExpression> select,
@@ -79,12 +79,12 @@ return (select * from SalesLT.SalesOrderDetail);
         //    Metadata = modelMetadata;            
         //}
 
-        public static SqlExpression CreateCallFunction<ModelT>(string functionName) where ModelT: class,new ()
+        public static ISqlExpression CreateCallFunction<ModelT>(string functionName) where ModelT : class, new()
         {
-           return CreateCallFunction(ModelMetadata<ModelT>.Instance, functionName); 
+            return CreateCallFunction(ModelMetadata<ModelT>.Instance, functionName);
         }
 
-        public static SqlExpression CreateCallFunction(IModelMetadata meta, string functionName)
+        public static ISqlExpression CreateCallFunction(IModelMetadata meta, string functionName)
         {
             List<SqlParameter> parameters = new List<SqlParameter>();
             foreach (var f in meta.GetFilterableFields())
@@ -111,7 +111,7 @@ return (select * from SalesLT.SalesOrderDetail);
             return new SqlFunction(functionName, parameters.ToArray());
         }
 
-        public static SqlExpression CreateCallProcedure<ModelT>(string procedureName) where ModelT : class, new()
+        public static ISqlExpression CreateCallProcedure<ModelT>(string procedureName) where ModelT : class, new()
         {
             var meta = ModelMetadata<ModelT>.Instance;
             List<SqlParameter> parameters = new List<SqlParameter>();

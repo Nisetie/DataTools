@@ -74,14 +74,14 @@ namespace DataTools.Common
         public void RemoveCustomModelDelete
             (IModelMetadata metadata)
             => _customModelDeletes.Remove(metadata.ModelName);
-        public override IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters)
+        public override IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null, params SqlParameter[] parameters)
         {
             if (_customModelSelects.TryGetValue(ModelMetadata<ModelT>.Instance.ModelName, out var func))
                 return func(DataContext).Select(obj => obj as ModelT);
             else
                 return base.Select<ModelT>(query, parameters);
         }
-        public override IEnumerable<dynamic> Select(IModelMetadata metadata, SqlExpression query = null, params SqlParameter[] parameters)
+        public override IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null, params SqlParameter[] parameters)
         {
             if (_customModelSelects.TryGetValue(metadata.ModelName, out var func))
                 return func(DataContext).Select(obj => (dynamic)obj);
@@ -124,7 +124,7 @@ namespace DataTools.Common
                 base.Delete(record);
         }
 
-        protected override IEnumerable<ModelT> ReturnResultExact<ModelT>(IDataSource ds, SqlExpression query, params SqlParameter[] parameters)
+        protected override IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query, params SqlParameter[] parameters)
         {
             var result = ds.ExecuteWithResult(query, parameters);
             var queryCache = new SelectCache();
@@ -147,7 +147,7 @@ namespace DataTools.Common
                 }
             }
         }
-        protected override IEnumerable<dynamic> ReturnResultDynamic(IModelMetadata modelMetadata, IDataSource ds, SqlExpression query, params SqlParameter[] parameters)
+        protected override IEnumerable<dynamic> GetResultDynamic(IModelMetadata modelMetadata, IDataSource ds, ISqlExpression query, params SqlParameter[] parameters)
         {
             var result = ds.ExecuteWithResult(query, parameters);
             var queryCache = new SelectCache();

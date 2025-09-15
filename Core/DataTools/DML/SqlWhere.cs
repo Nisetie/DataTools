@@ -2,12 +2,12 @@
 
 namespace DataTools.DML
 {
-    public class SqlWhere : SqlExpression
+    public class SqlWhere : ISqlExpression
     {
-        private List<SqlExpression> _nodes = new List<SqlExpression>();
+        private List<ISqlExpression> _nodes = new List<ISqlExpression>();
 
-        public IEnumerable<SqlExpression> Nodes => _nodes;
-        public SqlWhere AddNode(SqlExpression expression)
+        public IEnumerable<ISqlExpression> Nodes => _nodes;
+        public SqlWhere AddNode(ISqlExpression expression)
         {
             _nodes.Add(expression);
             return this;
@@ -17,7 +17,7 @@ namespace DataTools.DML
         {
         }
 
-        public SqlWhere(SqlExpression expression)
+        public SqlWhere(ISqlExpression expression)
         {
             _nodes.Add(expression);
         }
@@ -44,7 +44,7 @@ namespace DataTools.DML
         }
     }
 
-    public abstract class SqlLogicalOperator<T> : SqlExpression
+    public abstract class SqlLogicalOperator<T> : ISqlExpression
     {
         public override bool Equals(object obj)
         {

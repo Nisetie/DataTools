@@ -2,7 +2,7 @@
 
 namespace DataTools.DDL
 {
-    public class SqlDropTable : SqlExpression
+    public class SqlDropTable : ISqlExpression
     {
         public SqlName TableName { get; private set; }
 

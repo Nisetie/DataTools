@@ -1,13 +1,13 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlOrderByClause : SqlExpression
+    public class SqlOrderByClause : ISqlExpression
     {
         public enum E_ORDER { ASC, DESC }
 
-        public SqlExpression OrderValue;
+        public ISqlExpression OrderValue;
         public E_ORDER Order;
 
-        public SqlOrderByClause(SqlExpression expression, E_ORDER order = E_ORDER.ASC)
+        public SqlOrderByClause(ISqlExpression expression, E_ORDER order = E_ORDER.ASC)
         {
             OrderValue = expression; Order = order;
         }

@@ -193,6 +193,7 @@ namespace DataTools.Deploy
 
                 var selectQuery = new SqlSelect()
                     .From(meta)
+                    .Select(meta)
                     .Limit(new SqlConstant(rowsPerPage))
                     .Offset(offset);
                 if (orderedFields != null && orderedFields.Length > 0)

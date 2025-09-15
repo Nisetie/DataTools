@@ -10,9 +10,9 @@ namespace DataTools.Interfaces
         /// </summary>
         /// <param name="selectBuilder"></param>
         /// <returns></returns>
-        IEnumerable<ModelT> Select<ModelT>(SqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new();
+        IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new();
 
-        IEnumerable<dynamic> Select(IModelMetadata metadata, SqlExpression query = null, params SqlParameter[] parameters);
+        IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null, params SqlParameter[] parameters);
 
         /// <summary>
         /// Добавление экземпляра на стороне источника данных.
@@ -50,11 +50,11 @@ namespace DataTools.Interfaces
         /// </summary>
         /// <param name="query"></param>
         /// <param name="parameters"></param>
-        void Execute(SqlExpression query, params SqlParameter[] parameters);
+        void Execute(ISqlExpression query, params SqlParameter[] parameters);
 
-        object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
+        object ExecuteScalar(ISqlExpression query, params SqlParameter[] parameters);
 
-        IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
+        IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters);
 
         IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function, params SqlParameter[] parameters) where ModelT : class, new();
         IEnumerable<dynamic> CallTableFunction(IModelMetadata modelMetadata, SqlFunction function, params SqlParameter[] parameters);

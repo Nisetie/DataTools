@@ -17,6 +17,8 @@ namespace DataTools.Extensions
         {
             if (value == null)
                 return default(T);
+            else if (value is T)
+                return (T)value;
             else if (TypeExtensions<T>.IsConvertible)
                 return (T)Convert.ChangeType(value, TypeExtensions<T>.RealType);
             else if (TypeExtensions<T>.IsParsable)
@@ -67,8 +69,6 @@ namespace DataTools.Extensions
                 , var_result);
             Cast = Expression.Lambda<Func<object, T>>(expr, param_value).Compile();
         }
-
-
     }
 }
 

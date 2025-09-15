@@ -11,20 +11,20 @@ namespace DataTools.Deploy
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract SqlExpression GetClearTableQuery(IModelMetadata modelMetadata);
+        public abstract ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata);
 
         /// <summary>
         /// Подготовительные действия. Например, отключение автоинкрементов.
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract SqlExpression BeforeMigration(IModelMetadata modelMetadata);
+        public abstract ISqlExpression BeforeMigration(IModelMetadata modelMetadata);
 
         /// <summary>
         /// Действия после миграции данных. Например, включение автоинкрементов.
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract SqlExpression AfterMigration(IModelMetadata modelMetadata);
+        public abstract ISqlExpression AfterMigration(IModelMetadata modelMetadata);
     }
 }

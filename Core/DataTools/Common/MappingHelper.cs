@@ -17,7 +17,7 @@ namespace DataTools.Common
         {
             var cachedParameters = new Dictionary<string, SqlParameter>();
             var cachedWhereClause = new SqlWhere();
-            var sqlSelect = new SqlSelect().From(to);
+            var sqlSelect = new SqlSelect().From(to).Select(to);
 
             var fields = from.Fields;
 
@@ -43,17 +43,9 @@ namespace DataTools.Common
             return sqlSelect;
         }
 
-        private static bool ForeignKeysAreEmpty(params object[] keys)
-        {
-            for (int i = 0; i < keys.Length; i++)
-                if (keys[i] == null)
-                    return true;
-            return false;
-        }
-
         public static string GetModelUniqueString(params object[] keys)
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(8);
             for (int i = 0; i < keys.Length; i++)
             {
                 var key = keys[i];
@@ -208,6 +200,8 @@ namespace DataTools.Common
             var foreignModelVariables = new Dictionary<string, ParameterExpression>();
             var foreignModelSqlParameters = new Dictionary<string, Dictionary<string, ParameterExpression>>();
             var foreignModelKeys = new Dictionary<string, Dictionary<string, Expression>>();
+            var foreignModelKeysEmptyChecks = new Dictionary<string, Dictionary<string, Expression>>();
+            var foreignModelKeysEmptyCheck = new Dictionary<string, Expression>();
             var foreignModelKeysArray = new Dictionary<string, ParameterExpression>();
             var foreignModelSelects = new Dictionary<string, ParameterExpression>();
             var foreignModelSelectAssigns = new Dictionary<string, Expression>();
@@ -220,10 +214,12 @@ namespace DataTools.Common
 
                 var certaintForeignModelKeys = new Dictionary<string, Expression>();
                 var certainForeignModelSqlParameters = new Dictionary<string, ParameterExpression>();
-                foreach (var fk in f.ForeignColumnNames)
+                foreignModelKeysEmptyChecks[f.FieldName] = new Dictionary<string, Expression>();
+                foreach (var fcn in f.ForeignColumnNames)
                 {
-                    certaintForeignModelKeys[fk] = Expression.Variable(typeof(object), $"modelKey{f.FieldName}_{fk}");
-                    certainForeignModelSqlParameters[fk] = Expression.Variable(typeof(SqlParameter), $"model_{f.FieldName}_sqlParameter");
+                    certaintForeignModelKeys[fcn] = Expression.Variable(typeof(object), $"modelKey{f.FieldName}_{fcn}");
+                    certainForeignModelSqlParameters[fcn] = Expression.Variable(typeof(SqlParameter), $"model_{f.FieldName}_sqlParameter");
+                    foreignModelKeysEmptyChecks[f.FieldName][fcn] = Expression.NotEqual(certaintForeignModelKeys[fcn], Expression.Constant(null));
                 }
                 foreignModelKeys[f.FieldName] = certaintForeignModelKeys;
                 foreignModelKeysArray[f.FieldName] = Expression.Variable(typeof(object[]), $"modelKeyArray_{f.FieldName}");
@@ -237,7 +233,23 @@ namespace DataTools.Common
             all_variables = all_variables.Concat(foreignModelVariables.Select(kv => kv.Value));
 
             foreach (var fmk in foreignModelKeys)
+            {
                 all_variables = all_variables.Concat(fmk.Value.Select(kv => kv.Value as ParameterExpression));
+
+                if (fmk.Value.Count == 1)
+                    foreignModelKeysEmptyCheck[fmk.Key] = foreignModelKeysEmptyChecks[fmk.Key].Values.First();
+                else
+                {
+                    var checks = foreignModelKeysEmptyChecks[fmk.Key].Values.ToArray();
+                    int pairs = checks.Length >> 1;
+                    if (checks.Length % 2 == 1)
+                        foreignModelKeysEmptyCheck[fmk.Key] = checks[checks.Length - 1];
+                    else
+                        foreignModelKeysEmptyCheck[fmk.Key] = Expression.AndAlso(checks[0], checks[1]);
+                    for (int i = 2; i < pairs; i += 2)
+                        foreignModelKeysEmptyCheck[fmk.Key] = Expression.AndAlso(foreignModelKeysEmptyCheck[fmk.Key], Expression.AndAlso(checks[i], checks[i + 1]));
+                }
+            }
 
             all_variables = all_variables.Concat(foreignModelSelects.Select(kv => kv.Value));
 
@@ -308,7 +320,7 @@ namespace DataTools.Common
                     let RealType = IsNullable ? UnboxedType : fieldType
                     let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
-                    let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider),typeof(DateTimeStyles) })
+                    let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider), typeof(DateTimeStyles) })
                     let IsParsable = ParseMethod != null
                     let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
                     orderby f.FieldOrder
@@ -324,7 +336,7 @@ namespace DataTools.Common
                                         Expression.IsTrue(Expression.TypeIs(var_value, RealType))
                                         , Expression.Convert(var_value, fieldType)
                                         , RealType == typeof(DateTimeOffset)
-                                        ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)),Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
+                                        ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
                                         : IsConvertible
                                         ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
                                         : IsParsable
@@ -392,58 +404,59 @@ namespace DataTools.Common
                                 Expression.Assign(var_foreignKeyValue, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.columnOrder)))
                                 )
                             )
-                        // поиск внешних моделей в кеше или их запрос из БД
-                        , Expression.Block(
-                            from f in fields
-                            where f.IsForeignKey
-                            orderby f.FieldOrder
-                            let fieldName = f.FieldName
-                            // для поля - внешней модели
-                            let var_foreignModelCache = foreignModelCaches[fieldName]
-                            let var_foreignModel = foreignModelVariables[fieldName]
-                            let var_foreignModelSelect = foreignModelSelects[fieldName]
-                            let var_foreignKeysArray = foreignModelKeysArray[fieldName]
-                            select Expression.Block(
-                                variables: null
-                                , Expression.Assign(var_foreignKeysArray, Expression.NewArrayInit(typeof(object), foreignModelKeys[fieldName].Select(kv => kv.Value)))
-                                , Expression.IfThen(
-                                    Expression.Equal(Expression.Call(typeof(MappingHelper), nameof(MappingHelper.ForeignKeysAreEmpty), null, var_foreignKeysArray), Expression.Constant(false))
-                                    , Expression.IfThenElse(
-                                        Expression.Call(
-                                            var_foreignModelCache
-                                            , nameof(SelectDynamicCache.TryGetModelByKeys)
-                                            , null
-                                            , var_foreignModel, var_foreignKeysArray
+                        )
+                    )
+                // поиск внешних моделей в кеше или их запрос из БД
+                , Expression.Block(
+                    from f in fields
+                    where f.IsForeignKey
+                    orderby f.FieldOrder
+                    let fieldName = f.FieldName
+                    // для поля - внешней модели
+                    let var_foreignModelCache = foreignModelCaches[fieldName]
+                    let var_foreignModel = foreignModelVariables[fieldName]
+                    let var_foreignModelSelect = foreignModelSelects[fieldName]
+                    let var_foreignKeysArray = foreignModelKeysArray[fieldName]
+                    let var_foreignKeysCheck = foreignModelKeysEmptyCheck[fieldName]
+                    select Expression.Block(
+                        variables: null
+                        , Expression.Assign(var_foreignKeysArray, Expression.NewArrayInit(typeof(object), foreignModelKeys[fieldName].Select(kv => kv.Value)))
+                        , Expression.IfThen(
+                            Expression.IsTrue(var_foreignKeysCheck)
+                            , Expression.IfThenElse(
+                                Expression.Call(
+                                    var_foreignModelCache
+                                    , nameof(SelectDynamicCache.TryGetModelByKeys)
+                                    , null
+                                    , var_foreignModel, var_foreignKeysArray
+                                    )
+                                , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, var_foreignModel)
+                                , Expression.Block(
+                                    variables: null
+                                    , GetModelAssignNewExpressionFunction(f.ForeignModel, var_foreignModel)
+                                    , Expression.Assign(var_foreignModelSelect, Expression.Constant(GetForeignSelect(metadata, f.ForeignModel)))
+                                    , Expression.Assign(
+                                        var_foreignModelQueryResult
+                                        , Expression.Convert(
+                                            Expression.Call(
+                                                typeof(Enumerable)
+                                                , "FirstOrDefault", new Type[] { typeof(object[]) }
+                                                , Expression.Call(
+                                                    param_dataContext
+                                                    , nameof(IDataContext.ExecuteWithResult)
+                                                    , null
+                                                    , var_foreignModelSelect
+                                                    , Expression.NewArrayInit(typeof(SqlParameter), foreignModelSqlParameters[fieldName].Values.Select(v => v as Expression).ToArray())
+                                                    )
+                                                )
+                                            , typeof(object[])
                                             )
-                                        , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, var_foreignModel)
+                                        )
+                                    , Expression.IfThen(
+                                        Expression.NotEqual(var_foreignModelQueryResult, Expression.Constant(null))
                                         , Expression.Block(
-                                            variables: null
-                                            , GetModelAssignNewExpressionFunction(f.ForeignModel, var_foreignModel)
-                                            , Expression.Assign(var_foreignModelSelect, Expression.Constant(GetForeignSelect(metadata, f.ForeignModel)))
-                                            , Expression.Assign(
-                                                var_foreignModelQueryResult
-                                                , Expression.Convert(
-                                                    Expression.Call(
-                                                        typeof(Enumerable)
-                                                        , "FirstOrDefault", new Type[] { typeof(object[]) }
-                                                        , Expression.Call(
-                                                            param_dataContext
-                                                            , nameof(IDataContext.ExecuteWithResult)
-                                                            , null
-                                                            , var_foreignModelSelect
-                                                            , Expression.NewArrayInit(typeof(SqlParameter), foreignModelSqlParameters[fieldName].Values.Select(v => v as Expression).ToArray())
-                                                            )
-                                                        )
-                                                    , typeof(object[])
-                                                    )
-                                                )
-                                            , Expression.IfThen(
-                                                Expression.NotEqual(var_foreignModelQueryResult, Expression.Constant(null))
-                                                , Expression.Block(
-                                                    GetInvokeMapModelExpressionFunction(var_foreignModel, f.ForeignModel, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache),
-                                                    GetModelPropertySetterExpressionFunction(param_m, f.FieldName, var_foreignModel)
-                                                    )
-                                                )
+                                            GetInvokeMapModelExpressionFunction(var_foreignModel, f.ForeignModel, param_dataContext, param_customTypeConverters, var_foreignModelQueryResult, param_queryCache),
+                                            GetModelPropertySetterExpressionFunction(param_m, f.FieldName, var_foreignModel)
                                             )
                                         )
                                     )

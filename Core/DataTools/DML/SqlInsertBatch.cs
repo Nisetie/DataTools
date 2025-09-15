@@ -4,15 +4,15 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlInsertBatch : SqlExpression
+    public class SqlInsertBatch : ISqlExpression
     {
         protected SqlName _into;
         protected IEnumerable<SqlName> _columns;
-        protected IEnumerable<IEnumerable<SqlExpression>> _values;
+        protected IEnumerable<IEnumerable<ISqlExpression>> _values;
 
-        public SqlExpression IntoDestination => _into;
+        public ISqlExpression IntoDestination => _into;
         public IEnumerable<SqlName> Columns => _columns;
-        public IEnumerable<IEnumerable<SqlExpression>> Values => _values;
+        public IEnumerable<IEnumerable<ISqlExpression>> Values => _values;
 
         public SqlInsertBatch Into(SqlName objectName)
         {
@@ -24,7 +24,7 @@ namespace DataTools.DML
             _columns = columns;
             return this;
         }
-        public SqlInsertBatch Value(params SqlExpression[][] values)
+        public SqlInsertBatch Value(params ISqlExpression[][] values)
         {
             _values = values;
             return this;

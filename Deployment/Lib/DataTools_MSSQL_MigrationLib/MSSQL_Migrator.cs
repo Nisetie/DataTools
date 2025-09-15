@@ -7,7 +7,7 @@ namespace DataTools.Deploy
 {
     public class MSSQL_Migrator : MigratorBase
     {
-        public override SqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
+        public override ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
         {
             var query = new SqlComposition(
                new SqlCustom($"DELETE FROM "),
@@ -18,7 +18,7 @@ namespace DataTools.Deploy
             return new MSSQL_QueryParser().SimplifyQuery(query);
         }
 
-        public override SqlExpression BeforeMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression BeforeMigration(IModelMetadata modelMetadata)
         {
             IModelFieldMetadata field = null;
             foreach (var f in modelMetadata.Fields)
@@ -39,7 +39,7 @@ namespace DataTools.Deploy
             return new MSSQL_QueryParser().SimplifyQuery(query);
         }
 
-        public override SqlExpression AfterMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression AfterMigration(IModelMetadata modelMetadata)
         {
             IModelFieldMetadata field = null;
             foreach (var f in modelMetadata.Fields)

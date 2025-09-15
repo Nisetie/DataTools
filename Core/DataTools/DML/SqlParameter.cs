@@ -1,6 +1,6 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlParameter : SqlExpression
+    public class SqlParameter : ISqlExpression
     {
         private string _name;
         private object _value;

@@ -7,7 +7,7 @@ namespace DataTools.Deploy
 {
     public class PostgreSQL_Deployer : DeployerBase
     {
-        public override SqlExpression GetRestoreIdentityQuery(IModelMetadata metadata)
+        public override ISqlExpression GetRestoreIdentityQuery(IModelMetadata metadata)
         {
             IModelFieldMetadata field = null;
             foreach (var f in metadata.Fields)

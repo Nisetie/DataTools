@@ -1,10 +1,10 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlExpressionWithAlias : SqlExpression
+    public class SqlExpressionWithAlias : ISqlExpression
     {
-        public SqlExpression SqlExpression;
+        public ISqlExpression SqlExpression;
         public string Alias { get; set; }
-        public SqlExpressionWithAlias(SqlExpression expression, string alias)
+        public SqlExpressionWithAlias(ISqlExpression expression, string alias)
         {
             SqlExpression = expression;
             Alias = alias;

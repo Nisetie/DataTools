@@ -3,28 +3,28 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlSelect : SqlExpression
+    public class SqlSelect : ISqlSelect<SqlSelect>
     {
-        protected SqlExpression _from;
-        protected IEnumerable<SqlExpression> _selects;
+        protected ISqlExpression _from;
+        protected IEnumerable<ISqlExpression> _selects;
         protected SqlWhere _where;
         protected IEnumerable<SqlOrderByClause> _orders;
-        protected SqlExpression _offset;
-        protected SqlExpression _limit;
+        protected ISqlExpression _offset;
+        protected ISqlExpression _limit;
 
-        public IEnumerable<SqlExpression> Selects => _selects;
-        public SqlExpression FromSource => _from;
+        public IEnumerable<ISqlExpression> Selects => _selects;
+        public ISqlExpression FromSource => _from;
         public SqlWhere Wheres => _where;
         public IEnumerable<SqlOrderByClause> Orders => _orders;
-        public SqlExpression OffsetRows => _offset;
-        public SqlExpression LimitRows => _limit;
+        public ISqlExpression OffsetRows => _offset;
+        public ISqlExpression LimitRows => _limit;
 
-        public SqlSelect Select(params SqlExpression[] selects)
+        public SqlSelect Select(params ISqlExpression[] selects)
         {
             _selects = selects;
             return this;
         }
-        public SqlSelect From(SqlExpression objectName)
+        public SqlSelect From(ISqlExpression objectName)
         {
             _from = objectName;
             return this;
@@ -39,18 +39,16 @@ namespace DataTools.DML
             _orders = order;
             return this;
         }
-        public SqlSelect Offset(SqlExpression offset)
+        public SqlSelect Offset(ISqlExpression offset)
         {
             _offset = offset;
             return this;
         }
-        public SqlSelect Limit(SqlExpression limit)
+        public SqlSelect Limit(ISqlExpression limit)
         {
             _limit = limit;
             return this;
         }
-
-
         public override bool Equals(object obj)
         {
             if (obj is SqlSelect sqlSelect)

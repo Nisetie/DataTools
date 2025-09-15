@@ -6,7 +6,7 @@ namespace DataTools.Deploy
 {
     public class SQLite_Migrator : MigratorBase
     {
-        public override SqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
+        public override ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
         {
             // в SQLite нет TRUNCATE
             var query = new SqlComposition(
@@ -18,12 +18,12 @@ namespace DataTools.Deploy
             return new SQLite_QueryParser().SimplifyQuery(query);
         }
 
-        public override SqlExpression BeforeMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression BeforeMigration(IModelMetadata modelMetadata)
         {
             return new SqlCustom("");
         }
 
-        public override SqlExpression AfterMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression AfterMigration(IModelMetadata modelMetadata)
         {
             return new SqlCustom("");
         }

@@ -1,6 +1,6 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlCustom : SqlExpression
+    public class SqlCustom : ISqlExpression
     {
         public string Query;
         public SqlCustom() { Query = ""; }

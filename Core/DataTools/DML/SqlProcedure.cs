@@ -2,17 +2,17 @@
 
 namespace DataTools.DML
 {
-    public class SqlProcedure : SqlExpression
+    public class SqlProcedure : ISqlExpression
     {
-        private static readonly SqlExpression[] _emptyParameters = new SqlExpression[0];
+        private static readonly ISqlExpression[] _emptyParameters = new ISqlExpression[0];
 
         private string _procedureName;
-        private IEnumerable<SqlExpression> _parameters = _emptyParameters;
+        private IEnumerable<ISqlExpression> _parameters = _emptyParameters;
 
         public string ProcedureName => _procedureName;
-        public IEnumerable<SqlExpression> Parameters => _parameters;
+        public IEnumerable<ISqlExpression> Parameters => _parameters;
 
-        public SqlProcedure(string procedureName, params SqlExpression[] parameters)
+        public SqlProcedure(string procedureName, params ISqlExpression[] parameters)
         {
             _procedureName = procedureName;
             _parameters = parameters;
@@ -26,7 +26,7 @@ namespace DataTools.DML
             return this;
         }
 
-        public SqlProcedure Parameter(params SqlExpression[] parameters)
+        public SqlProcedure Parameter(params ISqlExpression[] parameters)
         {
             _parameters = parameters;
             return this;

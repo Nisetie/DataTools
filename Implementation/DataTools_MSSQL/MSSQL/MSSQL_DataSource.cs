@@ -17,15 +17,15 @@ namespace DataTools.MSSQL
             _conn.ConnectionString = connectionString;
             _command = _conn.CreateCommand();
         }
-        public override void Execute(SqlExpression query, params DML.SqlParameter[] parameters)
+        public override void Execute(ISqlExpression query, params DML.SqlParameter[] parameters)
         {
             Execute(_queryParser.ToString(query, parameters));
         }
-        public override object ExecuteScalar(SqlExpression query, params DML.SqlParameter[] parameters)
+        public override object ExecuteScalar(ISqlExpression query, params DML.SqlParameter[] parameters)
         {
             return ExecuteScalar(_queryParser.ToString(query, parameters));
         }
-        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params DML.SqlParameter[] parameters)
+        public override IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params DML.SqlParameter[] parameters)
         {
             return ExecuteWithResult(_queryParser.ToString(query, parameters));
         }

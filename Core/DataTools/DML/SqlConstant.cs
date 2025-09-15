@@ -1,6 +1,6 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlConstant : SqlExpression
+    public class SqlConstant : ISqlExpression
     {
         public object Value { get; set; }
         public SqlConstant(object value) => Value = value;

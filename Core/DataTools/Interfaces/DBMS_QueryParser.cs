@@ -9,7 +9,7 @@ namespace DataTools.Interfaces
     {
         public SqlParameter[] CurrentParameters { get; private set; }
 
-        public SqlExpression SimplifyQuery(SqlExpression query)
+        public ISqlExpression SimplifyQuery(ISqlExpression query)
         {
             var q = ParseExpression(query);
 
@@ -51,9 +51,9 @@ namespace DataTools.Interfaces
             return composition;
         }
 
-        public string ToString(SqlExpression query) => ToString(query, parameters: null);
+        public string ToString(ISqlExpression query) => ToString(query, parameters: null);
 
-        public string ToString(SqlExpression query, params SqlParameter[] parameters)
+        public string ToString(ISqlExpression query, params SqlParameter[] parameters)
         {
             CurrentParameters = parameters;
             return ParseExpression(query);
@@ -66,7 +66,7 @@ namespace DataTools.Interfaces
         /// <returns></returns>
         protected abstract string StringifyValue(object value);
 
-        protected string ParseExpression(SqlExpression expression)
+        protected string ParseExpression(ISqlExpression expression)
         {
             switch (expression)
             {
@@ -135,7 +135,7 @@ namespace DataTools.Interfaces
 
         protected virtual string Parse_SqlConstant(SqlConstant sqlConstant)
         {
-            if (sqlConstant.Value is SqlExpression sqlExpression)
+            if (sqlConstant.Value is ISqlExpression sqlExpression)
                 return ParseExpression(sqlExpression);
             else return StringifyValue(sqlConstant.Value);
         }

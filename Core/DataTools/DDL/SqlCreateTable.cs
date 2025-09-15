@@ -6,7 +6,7 @@ using System.Text;
 
 namespace DataTools.DDL
 {
-    public class SqlCreateTable : SqlExpression
+    public class SqlCreateTable : ISqlExpression
     {
         public SqlName TableName { get; set; } = null;
         public IEnumerable<SqlColumnDefinition> Columns { get; set; } = null;
@@ -102,9 +102,9 @@ namespace DataTools.DDL
         }
     }
 
-    public abstract class SqlColumnConstraint : SqlExpression { }
+    public abstract class SqlColumnConstraint : ISqlExpression { }
 
-    public abstract class SqlTableConstraint : SqlExpression { }
+    public abstract class SqlTableConstraint : ISqlExpression { }
 
     public class SqlColumnNullable : SqlColumnConstraint
     {

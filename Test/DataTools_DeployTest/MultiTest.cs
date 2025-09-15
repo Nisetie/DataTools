@@ -100,9 +100,9 @@ namespace DataTools_Tests
                         if (orderArray.Length == 0)
                             orderArray = meta.GetColumnsForSelect().ToArray();
 
-                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).OrderBy(orderArray)).ToArray();
+                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(orderArray)).ToArray();
                         var leftModels = new object[leftData.Length];
-                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).OrderBy(orderArray)).ToArray();
+                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(orderArray)).ToArray();
                         var rightModels = new object[rightData.Length];
 
                         leftData = leftData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();

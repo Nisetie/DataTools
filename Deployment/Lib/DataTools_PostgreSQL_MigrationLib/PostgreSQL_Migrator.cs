@@ -7,7 +7,7 @@ namespace DataTools.Deploy
 {
     public class PostgreSQL_Migrator : MigratorBase
     {
-        public override SqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
+        public override ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
         {
             // в PSQL при очистке таблицы автоинкременты сбрасываются через RESTART IDENTITY
             var query = new SqlComposition(
@@ -19,7 +19,7 @@ namespace DataTools.Deploy
             return new PostgreSQL_QueryParser().SimplifyQuery(query);
         }
 
-        public override SqlExpression BeforeMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression BeforeMigration(IModelMetadata modelMetadata)
         {
             IModelFieldMetadata identityColumn = null;
             foreach (var f in modelMetadata.Fields)
@@ -43,7 +43,7 @@ namespace DataTools.Deploy
             return new PostgreSQL_QueryParser().SimplifyQuery(query);
         }
 
-        public override SqlExpression AfterMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression AfterMigration(IModelMetadata modelMetadata)
         {
             IModelFieldMetadata identityColumn = null;
             foreach (var f in modelMetadata.Fields)

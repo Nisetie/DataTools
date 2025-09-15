@@ -92,8 +92,6 @@ namespace DataTools.Extensions
         {
             List<SqlColumnConstraint> constraints = new List<SqlColumnConstraint>();
 
-            //if (modelField.IsUnique) constraints.Add(new SqlColumnUnique());
-
             if (modelField.IsAutoincrement) constraints.Add(new SqlColumnAutoincrement());
 
             constraints.Add(new SqlColumnNullable(!(modelField.IsAutoincrement || modelField.IsUnique || modelField.IsPrimaryKey)));
@@ -120,8 +118,6 @@ namespace DataTools.Extensions
         private static void FillForeignColumnDefinition(SqlColumnDefinition def, IModelFieldMetadata modelField, IModelFieldMetadata foreignModelField, Type fType)
         {
             List<SqlColumnConstraint> constraints = new List<SqlColumnConstraint>();
-
-            //if (modelField.IsUnique) constraints.Add(new SqlColumnUnique());
 
             constraints.Add(new SqlColumnNullable(!(modelField.IsUnique || modelField.IsPrimaryKey)));
 

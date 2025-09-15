@@ -10,9 +10,14 @@ namespace DataTools.Extensions
 {
     public static class DataContextExtensions
     {
-        public static SelectCommand<ModelT> SelectFrom<ModelT>(this IDataContext context) where ModelT : class, new() => new SelectCommand<ModelT>(context);
+        public static SelectCommand<ModelT> SelectFrom<ModelT>
+            (this IDataContext context)
+            where ModelT : class, new() 
+            => new SelectCommand<ModelT>(context).From().Select();
 
-        public static SelectCommand SelectFrom(this IDataContext context, IModelMetadata metadata) => new SelectCommand(context, metadata);
+        public static SelectCommandDynamic SelectFrom
+            (this IDataContext context, IModelMetadata metadata) 
+            => new SelectCommandDynamic(context,metadata).From().Select();
 
         public static void CreateTable(this IDataContext context, IModelMetadata modelMetadata) => context.Execute(new SqlCreateTable().Table(modelMetadata));
         public static void CreateTable<ModelT>(this IDataContext context) where ModelT : class, new() => CreateTable(context, ModelMetadata<ModelT>.Instance);

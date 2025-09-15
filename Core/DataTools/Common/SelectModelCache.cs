@@ -18,6 +18,7 @@ namespace DataTools.Common
         public Dictionary<string, ModelT> CachedModels = new Dictionary<string, ModelT>();
 
         private static Func<ModelT, string> _getModelKeyValue;
+        private static Func<object[], string> _getModelUniquestring;
 
         public static readonly string ModelName;
 
@@ -25,18 +26,12 @@ namespace DataTools.Common
         {
             ModelName = ModelMetadata<ModelT>.Instance.ModelName;
             _getModelKeyValue = ModelMapper<ModelT>.GetModelKeyValue;
+            _getModelUniquestring = MappingHelper.GetModelUniqueString;
         }
 
-        public bool TryGetModelByKeys(out ModelT model, params object[] keys)
-        {
-            return CachedModels.TryGetValue(MappingHelper.GetModelUniqueString(keys), out model);
-        }
+        public bool TryGetModelByKeys(out ModelT model, params object[] keys) => CachedModels.TryGetValue(_getModelUniquestring(keys), out model);
 
-        public void AddModel(ModelT model)
-        {
-            var keyValue = _getModelKeyValue(model);
-            CachedModels[keyValue] = model;
-        }
+        public void AddModel(ModelT model) => CachedModels[_getModelKeyValue(model)] = model;
     }
 }
 

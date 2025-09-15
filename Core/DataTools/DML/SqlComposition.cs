@@ -3,13 +3,13 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlComposition : SqlExpression
+    public class SqlComposition : ISqlExpression
     {
-        private List<SqlExpression> _list;
+        private List<ISqlExpression> _list;
 
-        public List<SqlExpression> Elements => _list;
+        public List<ISqlExpression> Elements => _list;
 
-        public SqlComposition(params SqlExpression[] elements) => _list = new List<SqlExpression>(elements);
+        public SqlComposition(params ISqlExpression[] elements) => _list = new List<ISqlExpression>(elements);
 
         public override string ToString()
         {

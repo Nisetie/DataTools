@@ -20,15 +20,15 @@ namespace DataTools.InMemory_SQLite
             _conn.Open();
             _command = _conn.CreateCommand();
         }
-        public override void Execute(SqlExpression query, params SqlParameter[] parameters)
+        public override void Execute(ISqlExpression query, params SqlParameter[] parameters)
         {
             Execute(_queryParser.ToString(query, parameters));
         }
-        public override object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters)
+        public override object ExecuteScalar(ISqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteScalar(_queryParser.ToString(query, parameters));
         }
-        public override IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters)
+        public override IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters)
         {
             return ExecuteWithResult(_queryParser.ToString(query, parameters));
         }

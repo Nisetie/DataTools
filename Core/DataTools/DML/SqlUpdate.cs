@@ -3,16 +3,16 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlUpdate : SqlExpression
+    public class SqlUpdate : ISqlExpression
     {
         protected SqlWhere _where;
-        protected SqlExpression _from;
+        protected ISqlExpression _from;
         protected IEnumerable<SqlName> _columns;
-        protected IEnumerable<SqlExpression> _values;
+        protected IEnumerable<ISqlExpression> _values;
 
-        public SqlExpression FromSource => _from;
+        public ISqlExpression FromSource => _from;
         public IEnumerable<SqlName> Columns => _columns;
-        public IEnumerable<SqlExpression> Values => _values;
+        public IEnumerable<ISqlExpression> Values => _values;
         public SqlWhere Wheres => _where;
 
         public SqlUpdate From(SqlName objectName)
@@ -26,7 +26,7 @@ namespace DataTools.DML
             return this;
         }
 
-        public SqlUpdate Value(params SqlExpression[] values)
+        public SqlUpdate Value(params ISqlExpression[] values)
         {
             _values = values;
             return this;

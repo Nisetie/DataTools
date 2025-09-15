@@ -6,8 +6,8 @@ namespace DataTools.Common
 {
     public abstract class DataSource : IDataSource
     {
-        public abstract void Execute(SqlExpression query, params SqlParameter[] parameters);
-        public abstract object ExecuteScalar(SqlExpression query, params SqlParameter[] parameters);
-        public abstract IEnumerable<object[]> ExecuteWithResult(SqlExpression query, params SqlParameter[] parameters);
+        public abstract void Execute(ISqlExpression query, params SqlParameter[] parameters);
+        public abstract object ExecuteScalar(ISqlExpression query, params SqlParameter[] parameters);
+        public abstract IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters);
     }
 }

@@ -116,7 +116,7 @@ namespace DataTools_Tests
 
             var ar = new int[100];
 
-            batch.Value(ar.Select(i => new SqlExpression[] { new SqlConstant(i) }).ToArray());
+            batch.Value(ar.Select(i => new ISqlExpression[] { new SqlConstant(i) }).ToArray());
 
             var parser = GetQueryParser();
             var str = parser.ToString(batch);
@@ -290,7 +290,7 @@ namespace DataTools_Tests
 
             ctx.AddCustomModelMapper<TestModel>(mapper);
 
-            var result = ctx.SelectFrom<TestModel>().Select().OrderBy(m=>m.Id).ToArray();
+            var result = ctx.Select<TestModel>(new SqlSelect().From<TestModel>().Select<TestModel>()).OrderBy(m => m.Id).ToArray();
 
             ctx.RemoveCustomModelMapper<TestModel>();
 
@@ -518,7 +518,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectWithoutException()
         {
-            var result = DataContext.SelectFrom<TestModelChild>().OrderBy("Name").Select();
+            var result = DataContext.Select<TestModelChild>(new SqlSelect().From<TestModelChild>().OrderBy("Name"));
         }
 
         [Category("Select")]
@@ -526,19 +526,19 @@ namespace DataTools_Tests
         public void TestSelectWithParameter()
         {
             var par = new SqlParameter("par1");
-            var query = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhere().Name("Name").Eq(par));
 
             par.Value = "TestModelChild";
+            var query = new SqlSelect().From<TestModelChild>().Select<TestModelChild>().Where(new SqlWhere().Name("Name").Eq(par)); ;
 
             TestContext.Out.WriteLine(query.ToString());
 
-            var result = query.Select(par);
+            var result = DataContext.Select<TestModelChild>(query, par);
 
             int a = result.Count();
 
             par.Value = "TestModelChild1";
 
-            result = query.Select(par);
+            result = DataContext.Select<TestModelChild>(query, par);
 
             int b = result.Count();
 
@@ -550,19 +550,19 @@ namespace DataTools_Tests
         public void TestSelectDynamicWithParameter()
         {
             var par = new SqlParameter("par1");
-            var query = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("Name").Eq(par));
+            var query = new SqlSelect().From(ModelMetadata<TestModelChild>.Instance).Select(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("Name").Eq(par));
 
             par.Value = "TestModelChild";
 
             TestContext.Out.WriteLine(query.ToString());
 
-            var result = query.Select(par);
+            var result = DataContext.Select<TestModelChild>(query, par);
 
             int a = result.Count();
 
             par.Value = "TestModelChild1";
 
-            result = query.Select(par);
+            result = DataContext.Select<TestModelChild>(query, par);
 
             int b = result.Count();
 
@@ -632,7 +632,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectLessOrEqual()
         {
-            var result = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhere().Name("FValue").LeValue(1.1F)).OrderBy("Name").Select();
+            var result = DataContext.Select<TestModelChild>(new SqlSelect().From<TestModelChild>().Select<TestModelChild>().Where(new SqlWhere().Name("FValue").LeValue(1.1F)).OrderBy("Name"));
             Assert.That(result.Count() == 1);
         }
 
@@ -640,7 +640,10 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectLessOrEqualDynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("FValue").LeValue(1.1F)).OrderBy("Name").Select();
+            var result = DataContext
+                .Select(
+                ModelMetadata<TestModelChild>.Instance,
+                new SqlSelect().From(ModelMetadata<TestModelChild>.Instance).Select(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("FValue").LeValue(1.1F)).OrderBy("Name"));
             Assert.That(result.Count() == 1);
         }
 
@@ -664,7 +667,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectMany()
         {
-            var result = DataContext.SelectFrom<TestModel>().OrderBy("Name").Select().ToArray();
+            var result = DataContext.Select<TestModel>(new SqlSelect().From<TestModel>().Select<TestModel>().OrderBy("Name")).ToArray();
 
             var check1 = result.Length == 3;
             var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && BitConverter.ToString(result[0].bindata) == "01-02-03-04";
@@ -688,7 +691,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectManyDynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModel>.Instance).OrderBy("Name").Select().ToArray();
+            var result = DataContext.Select(ModelMetadata<TestModel>.Instance, new SqlSelect().From(ModelMetadata<TestModel>.Instance).Select(ModelMetadata<TestModel>.Instance).OrderBy("Name")).ToArray();
 
             var check1 = result.Length == 3;
             var check2 = result[0].Id == 1 && result[0].LongId == 1L && result[0].ShortId == 1 && result[0].Name == "TestModel1" && result[0].CharCode == "a" && result[0].Checked == false && result[0].Value == 1 && result[0].FValue == 1.1F && result[0].GValue == 1.2 && result[0].Money == (decimal)1.3 && result[0].Timestamp == DateTime.Parse("2024-01-01") && result[0].Duration == TimeSpan.Parse("23:59:59") && BitConverter.ToString(result[0].bindata) == "01-02-03-04";
@@ -712,7 +715,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectMany1()
         {
-            var result = DataContext.SelectFrom<TestModelChild>().OrderBy("Name").Select().ToArray();
+            var result = DataContext.Select<TestModelChild>(new SqlSelect().From<TestModelChild>().Select<TestModelChild>().OrderBy("Name")).ToArray();
             Assert.That(
                 (
                 result.Length > 0 &&
@@ -742,7 +745,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectMany1Dynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).OrderBy("Name").Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).OrderBy("Name").Run().ToArray();
             Assert.That(
                 (
                 result.Length > 0 &&
@@ -805,7 +808,7 @@ namespace DataTools_Tests
 
             DataContext.Insert(n);
 
-            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 7;
             bool check2 = result[0].Child.i == 1 && result[0].Child.j == 1 && result[0].k == "abc";
@@ -836,7 +839,7 @@ namespace DataTools_Tests
 
             DataContext.Insert(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance, n);
 
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 7;
             bool check2 = result[0].Child.i == 1 && result[0].Child.j == 1 && result[0].k == "abc";
@@ -854,7 +857,7 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectPrimaryKeyAsForeignKey()
         {
-            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 6;
             bool check2 = result[0].Child.i == 1 && result[0].Child.j == 1 && result[0].k == "abc";
@@ -871,7 +874,10 @@ namespace DataTools_Tests
         [Test]
         public void TestSelectPrimaryKeyAsForeignKeyDynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.Select(
+                ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance,
+                new SqlSelect().From(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).Select(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j")
+                ).ToArray();
 
             bool check1 = result.Length == 6;
             bool check2 = result[0].Child.i == 1 && result[0].Child.j == 1 && result[0].k == "abc";
@@ -888,14 +894,17 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKey()
         {
-            var model = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(m => m.i == 1 && m.j == 1).Select().ToArray()[0];
+            var model = DataContext.Select<TestModelCompositePrimaryKey>(
+                new SqlSelect()
+                .From<TestModelCompositePrimaryKey>().Select<TestModelCompositePrimaryKey>()
+                .Where<TestModelCompositePrimaryKey>(m => m.i == 1 && m.j == 1)).ToArray()[0];
             var model1 = new TestModelCompositePrimaryKey();
             ModelMapper<TestModelCompositePrimaryKey>.CopyValues(model, model1);
             model1.i = 500;
             var sql = new SqlUpdate().From<TestModelCompositePrimaryKey>().Where(model).Value(model1);
             DataContext.Execute(sql);
 
-            var result = DataContext.SelectFrom<TestModelCompositePrimaryKey>().OrderBy("i", "j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelCompositePrimaryKey>().OrderBy("i", "j").Run().ToArray();
             Assert.That(
                 result.Length == 6 &&
                 result[0].i == 1 && result[0].j == 2 && result[0].k == "ghi" &&
@@ -911,7 +920,7 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKeyDynamic()
         {
-            dynamic m = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("j").EqValue(1)).Select().ToArray()[0];
+            dynamic m = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("j").EqValue(1)).Run().ToArray()[0];
             dynamic m1 = new DynamicModel(ModelMetadata<TestModelCompositePrimaryKey>.Instance);
             DynamicMapper.CopyValues(ModelMetadata<TestModelCompositePrimaryKey>.Instance, m, m1);
             m1.i = 500;
@@ -923,7 +932,7 @@ namespace DataTools_Tests
 
             DataContext.Execute(sql);
 
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j").Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j").Run().ToArray();
             Assert.That(
                 result.Length == 6 &&
                 result[0].i == 1 && result[0].j == 2 && result[0].k == "ghi" &&
@@ -939,9 +948,9 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKeyAsForeignKey()
         {
-            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
-            var result1 = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().OrderBy("i", "j").Select().ToArray();
+            var result1 = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().OrderBy("i", "j").Run().ToArray();
 
 
             var a = result[0];
@@ -953,7 +962,7 @@ namespace DataTools_Tests
 
             DataContext.Execute(new SqlUpdate().From<TestModelPrimaryKeyAsForeignKey>().Value(a.Child.i, a.Child.j, a.k).Where(new SqlWhere().Name("Child_i").EqValue(old_b.i).AndName("Child_j").EqValue(old_b.j)));
 
-            result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 6;
             bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
@@ -970,9 +979,9 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdatePrimaryKeyAsForeignKeyDynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Run().ToArray();
 
-            var result1 = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j").Select().ToArray();
+            var result1 = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j").Run().ToArray();
 
 
             var a = result[0];
@@ -987,7 +996,7 @@ namespace DataTools_Tests
 
             DataContext.Execute(new SqlUpdate().From(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).Value((object)a.Child.i, (object)a.Child.j, (object)a.k).Where(new SqlWhere().Name("Child_i").EqValue((object)(old_b.i)).AndName("Child_j").EqValue((object)(old_b.j))));
 
-            result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+            result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 6;
             bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
@@ -1004,13 +1013,13 @@ namespace DataTools_Tests
         [Test]
         public void TestDeletePrimaryKeyAsForeignKey()
         {
-            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
             var a = result[0];
 
             DataContext.Delete(a);
 
-            result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Select().ToArray();
+            result = DataContext.SelectFrom<TestModelPrimaryKeyAsForeignKey>().OrderBy("Child_i", "Child_j").Run().ToArray();
 
             bool check1 = result.Length == 5;
             bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
@@ -1028,13 +1037,13 @@ namespace DataTools_Tests
         {
             try
             {
-                var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+                var result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Run().ToArray();
 
                 var a = result[0];
 
                 DataContext.Delete(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance, a);
 
-                result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Select().ToArray();
+                result = DataContext.SelectFrom(ModelMetadata<TestModelPrimaryKeyAsForeignKey>.Instance).OrderBy("Child_i", "Child_j").Run().ToArray();
 
                 bool check1 = result.Length == 5;
                 bool check4 = result[0].Child.i == 1 && result[0].Child.j == 2 && result[0].k == "ghi";
@@ -1057,7 +1066,7 @@ namespace DataTools_Tests
         {
             //var result1 = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChildCompositePrimaryKey>().OrderBy("i", "j")).ToArray();
 
-            var result = DataContext.Select<TestModelChildCompositePrimaryKey>(new SqlSelect().From<TestModelChildCompositePrimaryKey>().OrderBy("i", "j")).ToArray();
+            var result = DataContext.Select<TestModelChildCompositePrimaryKey>(new SqlSelect().From<TestModelChildCompositePrimaryKey>().Select<TestModelChildCompositePrimaryKey>().OrderBy("i", "j")).ToArray();
 
             bool check1 = result.Length == 7;
             bool check2 = result[0].i == 1 && result[0].j == 1 && result[0].Parent.i == 1 && result[0].Parent.j == 1;
@@ -1077,7 +1086,7 @@ namespace DataTools_Tests
         {
             //var result1 = DataContext.ExecuteWithResult(new SqlSelect().From(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j")).ToArray();
 
-            var result = DataContext.Select(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance, new SqlSelect().From(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j")).ToArray();
+            var result = DataContext.Select(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance, new SqlSelect().From(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).Select(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j")).ToArray();
 
             bool check1 = result.Length == 7;
             bool check2 = result[0].i == 1 && result[0].j == 1 && result[0].Parent.i == 1 && result[0].Parent.j == 1;
@@ -1095,13 +1104,13 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdateCompositeForeignKey()
         {
-            var child = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().Where(new SqlWhere().Name("Parent_i").IsNull().AndName("Parent_j").IsNull()).Select().ToArray();
+            var child = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().Where(new SqlWhere().Name("Parent_i").IsNull().AndName("Parent_j").IsNull()).Run().ToArray();
 
             bool check1 = child.Length == 1;
 
             bool check11 = child[0].i == 4 && child[0].j == 1;
 
-            var parent = DataContext.SelectFrom<TestModelParentCompositePrimaryKey>().Where(new SqlWhere().Name("i").EqValue(3).AndName("j").EqValue(3)).Select().ToArray();
+            var parent = DataContext.SelectFrom<TestModelParentCompositePrimaryKey>().Where(new SqlWhere().Name("i").EqValue(3).AndName("j").EqValue(3)).Run().ToArray();
 
             bool check2 = parent.Length == 1;
 
@@ -1111,7 +1120,7 @@ namespace DataTools_Tests
 
             DataContext.Update(child[0]);
 
-            var result = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().OrderBy("i", "j").Select().ToArray();
+            var result = DataContext.SelectFrom<TestModelChildCompositePrimaryKey>().OrderBy("i", "j").Run().ToArray();
 
             bool check4 = result.Length == 7;
             bool check5 = result[0].i == 1 && result[0].j == 1 && result[0].Parent.i == 1 && result[0].Parent.j == 1;
@@ -1129,13 +1138,13 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdateCompositeForeignKeyDynamic()
         {
-            var child = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("Parent_i").IsNull().AndName("Parent_j").IsNull()).Select().ToArray();
+            var child = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("Parent_i").IsNull().AndName("Parent_j").IsNull()).Run().ToArray();
 
             bool check1 = child.Length == 1;
 
             bool check11 = child[0].i == 4 && child[0].j == 1;
 
-            var parent = DataContext.SelectFrom(ModelMetadata<TestModelParentCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(3).AndName("j").EqValue(3)).Select().ToArray();
+            var parent = DataContext.SelectFrom(ModelMetadata<TestModelParentCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(3).AndName("j").EqValue(3)).Run().ToArray();
 
             bool check2 = parent.Length == 1;
 
@@ -1145,7 +1154,7 @@ namespace DataTools_Tests
 
             DataContext.Update(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance, child[0]);
 
-            var result = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j").Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModelChildCompositePrimaryKey>.Instance).OrderBy("i", "j").Run().ToArray();
 
             bool check4 = result.Length == 7;
             bool check5 = result[0].i == 1 && result[0].j == 1 && result[0].Parent.i == 1 && result[0].Parent.j == 1;
@@ -1163,11 +1172,11 @@ namespace DataTools_Tests
         [Test]
         public void TestDeleteCompositePrimaryKey()
         {
-            var child = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(new SqlWhere().Name("i").EqValue(1).AndName("i").EqValue(1)).Select().ToArray();
+            var child = DataContext.SelectFrom<TestModelCompositePrimaryKey>().Where(new SqlWhere().Name("i").EqValue(1).AndName("i").EqValue(1)).Run().ToArray();
 
             DataContext.Delete(child[0]);
 
-            var result = DataContext.Select<TestModelCompositePrimaryKey>(new SqlSelect().From<TestModelCompositePrimaryKey>().OrderBy("i", "j")).ToArray();
+            var result = DataContext.Select<TestModelCompositePrimaryKey>(new SqlSelect().From<TestModelCompositePrimaryKey>().Select<TestModelCompositePrimaryKey>().OrderBy("i", "j")).ToArray();
 
             bool check1 = result.Length == 5;
             bool check2 = result[0].i == 1 && result[0].j == 2;
@@ -1181,11 +1190,11 @@ namespace DataTools_Tests
         [Test]
         public void TestDeleteCompositePrimaryKeyDynamic()
         {
-            var child = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("i").EqValue(1)).Select().ToArray();
+            var child = DataContext.SelectFrom(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Where(new SqlWhere().Name("i").EqValue(1).AndName("i").EqValue(1)).Run().ToArray();
 
             DataContext.Delete(ModelMetadata<TestModelCompositePrimaryKey>.Instance, child[0]);
 
-            var result = DataContext.Select(ModelMetadata<TestModelCompositePrimaryKey>.Instance, new SqlSelect().From(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j")).ToArray();
+            var result = DataContext.Select(ModelMetadata<TestModelCompositePrimaryKey>.Instance, new SqlSelect().From(ModelMetadata<TestModelCompositePrimaryKey>.Instance).Select(ModelMetadata<TestModelCompositePrimaryKey>.Instance).OrderBy("i", "j")).ToArray();
 
             bool check1 = result.Length == 5;
             bool check2 = result[0].i == 1 && result[0].j == 2;
@@ -1200,16 +1209,16 @@ namespace DataTools_Tests
         [TestCase(0, ExpectedResult = 0)]
         public int TestWhere(int id)
         {
-            var ar = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Select().ToArray();
+            var ar = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Run().ToArray();
             return ar.Length;
         }
 
         [Test]
         public void TestWhereExpression()
         {
-            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == 1);
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(filterExpression: m => m.Id == 1);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
@@ -1218,7 +1227,7 @@ namespace DataTools_Tests
         {
             var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id >= 2);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 2);
         }
 
@@ -1227,7 +1236,7 @@ namespace DataTools_Tests
         {
             var cmd = DataContext.SelectFrom<TestModelSimple>().Where(m => m.Id == null);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == null);
         }
 
@@ -1237,7 +1246,7 @@ namespace DataTools_Tests
             int a = 1;
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
@@ -1250,7 +1259,7 @@ namespace DataTools_Tests
             };
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a.i);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
@@ -1265,7 +1274,7 @@ namespace DataTools_Tests
             var a = new TestWhereExpression5Test();
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a.a);
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
@@ -1275,7 +1284,7 @@ namespace DataTools_Tests
             var f = new Func<int>(() => 1);
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == f());
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
-            var result = cmd.Select().ToArray();
+            var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
@@ -1283,7 +1292,7 @@ namespace DataTools_Tests
         [Test]
         public void TestWhereIsNull()
         {
-            var ar = DataContext.SelectFrom<TestModelSimple>().Where("Id", null).Select().ToArray();
+            var ar = DataContext.SelectFrom<TestModelSimple>().Where("Id", null).Run().ToArray();
             TestContext.Out.WriteLine($"{ar.Length} {string.Join<TestModelSimple>(",", ar)}"); ;
             Assert.That(ar.Length == 1);
         }
@@ -1310,7 +1319,7 @@ namespace DataTools_Tests
         {
             bool isLong = false;
 
-            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
+            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>().Select<TestModelChild>()).Count();
             if (count is long)
                 isLong = true;
 
@@ -1326,7 +1335,7 @@ namespace DataTools_Tests
             };
             DataContext.Insert(m);
 
-            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>().Select<TestModelChild>()).Count();
 
             if (isLong)
                 Assert.That((long)count + 1 == newCount && m.Id == 3);
@@ -1336,7 +1345,7 @@ namespace DataTools_Tests
 
         public void TestInsertInMemory()
         {
-            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
+            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>().Select<TestModelChild>()).Count();
 
             var m = new TestModelChild()
             {
@@ -1351,7 +1360,7 @@ namespace DataTools_Tests
             };
             DataContext.Insert(m);
 
-            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>()).Count();
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModelChild>().Select<TestModelChild>()).Count();
             TestContext.Out.WriteLine($"old count {count}; new count {newCount}");
             Assert.That(count + 1 == newCount && m.Id == 3);
         }
@@ -1380,9 +1389,9 @@ namespace DataTools_Tests
             };
             DataContext.Insert(m);
 
-            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>()).Count();
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>().Select<TestModel>()).Count();
 
-            var inserted = DataContext.SelectFrom<TestModel>().Where("Id", 4).Select().ToArray()[0];
+            var inserted = DataContext.SelectFrom<TestModel>().Where("Id", 4).Run().ToArray()[0];
 
             Assert.That(count + 1 == newCount
                 && (
@@ -1408,7 +1417,7 @@ namespace DataTools_Tests
 
         public void TestInsertRDBMS1()
         {
-            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>()).Count();
+            var count = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>().Select<TestModel>()).Count();
 
             var m = new TestModel()
             {
@@ -1429,9 +1438,9 @@ namespace DataTools_Tests
             };
             DataContext.Insert(m);
 
-            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>()).Count();
+            var newCount = DataContext.ExecuteWithResult(new SqlSelect().From<TestModel>().Select<TestModel>()).Count();
 
-            var inserted = DataContext.SelectFrom<TestModel>().Where("Id", 4).Select().ToArray()[0];
+            var inserted = DataContext.SelectFrom<TestModel>().Where("Id", 4).Run().ToArray()[0];
 
             Assert.That(count + 1 == newCount
                 && (
@@ -1459,7 +1468,7 @@ namespace DataTools_Tests
         [TestCase(arg: 0)]
         public void TestUpdate(int id)
         {
-            var r = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Select().ToArray();
+            var r = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Run().ToArray();
 
             if (r.Count() == 1)
                 Assert.That(true);
@@ -1471,8 +1480,8 @@ namespace DataTools_Tests
 
             DataContext.Update(model);
 
-            var n = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Select().ToArray()[0];
-            var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhere().Name("Id").NeValue(id)).Select().ToArray();
+            var n = DataContext.SelectFrom<TestModelChild>().Where("Id", id).Run().ToArray()[0];
+            var nn = DataContext.SelectFrom<TestModelChild>().Where(new SqlWhere().Name("Id").NeValue(id)).Run().ToArray();
 
             Assert.That(n.Name == "NewName" && nn.All(m => m.Name != "NewName"));
         }
@@ -1482,7 +1491,7 @@ namespace DataTools_Tests
         [TestCase(arg: 0)]
         public void TestUpdateDynamic(int id)
         {
-            var r = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where("Id", id).Select().ToArray();
+            var r = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where("Id", id).Run().ToArray();
 
             if (r.Count() == 1)
                 Assert.That(true);
@@ -1494,8 +1503,8 @@ namespace DataTools_Tests
 
             DataContext.Update(ModelMetadata<TestModelChild>.Instance, model);
 
-            var n = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where("Id", id).Select().ToArray()[0];
-            var nn = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("Id").NeValue(id)).Select().ToArray();
+            var n = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where("Id", id).Run().ToArray()[0];
+            var nn = DataContext.SelectFrom(ModelMetadata<TestModelChild>.Instance).Where(new SqlWhere().Name("Id").NeValue(id)).Run().ToArray();
 
             Assert.That(n.Name == "NewName" && nn.All(m => m.Name != "NewName"));
         }
@@ -1530,7 +1539,7 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdateBinary()
         {
-            var result = DataContext.SelectFrom<TestModel>().Where("Id", 1).Select().ToArray();
+            var result = DataContext.SelectFrom<TestModel>().Where("Id", 1).Run().ToArray();
             TestContext.Out.WriteLine(JsonConvert.SerializeObject(result));
             var s = BitConverter.ToString(new byte[] { 255, 255, 0, 255 });
 
@@ -1538,7 +1547,7 @@ namespace DataTools_Tests
 
             DataContext.Update(result[0]);
 
-            result = DataContext.Select<TestModel>(new SqlSelect().From<TestModel>().Where("Id", 1)).ToArray();
+            result = DataContext.Select<TestModel>(new SqlSelect().From<TestModel>().Select<TestModel>().Where("Id", 1)).ToArray();
 
             Assert.That(s == BitConverter.ToString(result[0].bindata));
         }
@@ -1547,7 +1556,7 @@ namespace DataTools_Tests
         [Test]
         public void TestUpdateBinaryDynamic()
         {
-            var result = DataContext.SelectFrom(ModelMetadata<TestModel>.Instance).Where("Id", 1).Select().ToArray();
+            var result = DataContext.SelectFrom(ModelMetadata<TestModel>.Instance).Where("Id", 1).Run().ToArray();
             TestContext.Out.WriteLine(JsonConvert.SerializeObject(result));
             var s = BitConverter.ToString(new byte[] { 255, 255, 0, 255 });
 
@@ -1555,7 +1564,7 @@ namespace DataTools_Tests
 
             DataContext.Update(ModelMetadata<TestModel>.Instance, result[0]);
 
-            result = DataContext.Select(ModelMetadata<TestModel>.Instance, new SqlSelect().From(ModelMetadata<TestModel>.Instance).Where("Id", 1)).ToArray();
+            result = DataContext.Select(ModelMetadata<TestModel>.Instance, new SqlSelect().From(ModelMetadata<TestModel>.Instance).Select(ModelMetadata<TestModel>.Instance).Where("Id", 1)).ToArray();
 
             Assert.That(s == BitConverter.ToString(result[0].bindata));
         }
@@ -1581,7 +1590,7 @@ namespace DataTools_Tests
         }
 
         [Category("Random")]
-        private void WriteSQLQuery(SqlExpression q)
+        private void WriteSQLQuery(ISqlExpression q)
         {
             var ds = DataContext.GetDataSource();
             switch (ds)
@@ -1942,7 +1951,7 @@ namespace DataTools_Tests
             a.Name = "child3";
             DataContext.Insert(a);
 
-            var r = DataContext.Select<TestModelGuidChild>(new SqlSelect().From<TestModelGuidChild>().Where("Id", g)).ToArray();
+            var r = DataContext.Select<TestModelGuidChild>(new SqlSelect().From<TestModelGuidChild>().Select<TestModelGuidChild>().Where("Id", g)).ToArray();
 
             Assert.That(r.Length == 1 && r[0].Id == g);
         }
@@ -1958,7 +1967,7 @@ namespace DataTools_Tests
             a.Name = "child3";
             DataContext.Insert(ModelMetadata<TestModelGuidChild>.Instance, a);
 
-            var r = DataContext.Select(ModelMetadata<TestModelGuidChild>.Instance, new SqlSelect().From(ModelMetadata<TestModelGuidChild>.Instance).Where("Id", g)).ToArray();
+            var r = DataContext.Select(ModelMetadata<TestModelGuidChild>.Instance, new SqlSelect().From(ModelMetadata<TestModelGuidChild>.Instance).Select(ModelMetadata<TestModelGuidChild>.Instance).Where("Id", g)).ToArray();
 
             Assert.That(r.Length == 1 && r[0].Id == g);
         }

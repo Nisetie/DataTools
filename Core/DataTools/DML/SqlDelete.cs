@@ -2,12 +2,12 @@
 
 namespace DataTools.DML
 {
-    public class SqlDelete : SqlExpression
+    public class SqlDelete : ISqlExpression
     {
-        protected SqlExpression _from;
+        protected ISqlExpression _from;
         protected SqlWhere _where;
 
-        public SqlExpression FromSource => _from;
+        public ISqlExpression FromSource => _from;
         public SqlWhere Wheres => _where;
 
         public SqlDelete From(SqlName objectName)
