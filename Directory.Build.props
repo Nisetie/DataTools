@@ -2,7 +2,7 @@
 	<!-- See https://aka.ms/dotnet/msbuild/customize for more details on customizing your build -->
 	<PropertyGroup>
 		<CommonFrameworks>netstandard2.0</CommonFrameworks>
-		<VersionPrefix>1.0.36</VersionPrefix>
+		<VersionPrefix>1.0.37</VersionPrefix>
 		<VersionSuffix Condition="'$(Configuration)'!='Release'">$(Configuration)</VersionSuffix>
 		<DebugType>embedded</DebugType>
 		<IncludeSymbols>true</IncludeSymbols>

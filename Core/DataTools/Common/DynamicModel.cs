@@ -48,7 +48,7 @@ namespace DataTools.Common
         {
             var presentation = new StringBuilder();
             foreach (var f in ModelMetadata.Fields)
-                if (f.isPresentation)
+                if (f.IsPresentation)
                     presentation.Append($"{(_members[f.FieldName] == null ? "NULL" : _members[f.FieldName])};");
             if (presentation.Length == 0)
                 foreach (var f in ModelMetadata.Fields)

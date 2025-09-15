@@ -10,7 +10,7 @@ namespace DataTools.Attributes
     {
         public override void ProcessMetadata(PropertyInfo propertyInfo, IModelFieldMetadata metadata)
         {
-            metadata.isPresentation = true;
+            metadata.IsPresentation = true;
         }
     }
 }

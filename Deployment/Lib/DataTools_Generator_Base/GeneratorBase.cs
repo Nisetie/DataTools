@@ -119,6 +119,7 @@ namespace DataTools.Deploy
                         tableCache.Columns[row.foreignKeyConstraintName] = foreignColumnCache = new ForeignColumnCachedInfo();
                         foreignColumnCache.IsForeignKey = true;
                         foreignColumnCache.OrdinalPosition = ordinalPosition++;
+                        foreignColumnCache.Metadata = row;
                         (foreignColumnCache as ForeignColumnCachedInfo).ConstraintName = row.foreignKeyConstraintName;
                         (foreignColumnCache as ForeignColumnCachedInfo).SchemaName = row.TABLE_SCHEMA;
                         (foreignColumnCache as ForeignColumnCachedInfo).TableName = row.TABLE_NAME;
@@ -176,10 +177,10 @@ namespace DataTools.Deploy
 
                 foreach (var column in from c in tableCache.Columns orderby c.Value.OrdinalPosition select c.Value)
                 {
-                    var modelField = new ModelFieldMetadata();
-
                     // пока что пропускаем внешние ключи
                     if (column is ForeignColumnCachedInfo) continue;
+
+                    var modelField = new ModelFieldMetadata();
 
                     var columnMetadata = column.Metadata;
                     colName = columnMetadata.COLUMN_NAME;
@@ -205,6 +206,7 @@ namespace DataTools.Deploy
                     modelField.IsPrimaryKey = columnMetadata.isPrimaryKey;
                     modelField.IsUnique = columnMetadata.isUnique;
                     modelField.UniqueConstraintName = columnMetadata.UniqueConstraintName;
+                    modelField.IsNullable = columnMetadata.isNullable;
 
                     modelMetadata.AddField(modelField);
                 }
@@ -225,10 +227,10 @@ namespace DataTools.Deploy
 
                 foreach (var column in from c in tableCache.Columns orderby c.Value.OrdinalPosition select c.Value)
                 {
-                    var modelField = new ModelFieldMetadata();
-
                     // пропускаем не внешние ключи
                     if (!(column is ForeignColumnCachedInfo foreignColumn)) continue;
+
+                    var modelField = new ModelFieldMetadata();
 
                     modelField.IsForeignKey = true;
 
@@ -245,6 +247,8 @@ namespace DataTools.Deploy
                     if (foreignColumn.Metadatas.Any(m => m.isUnique))
                         modelField.IsUnique = true;
 
+                    modelField.UniqueConstraintName = columnMetadata.UniqueConstraintName;
+                    modelField.IsNullable = columnMetadata.isNullable;
 
                     // ищем внешнюю модель в коллекции метаданных с помощью заглушки
                     var foreignModelMetadata = new ModelMetadata();
@@ -396,7 +400,7 @@ namespace DataTools.Deploy
 
                         modelCode.AppendLine($"\t\t[{nameof(ColumnNameAttribute)}(\"{colName}\")]");
                         modelCode.AppendLine($"\t\t[{nameof(ColumnTypeAttribute)}(\"{modelField.ColumnType.Name}\")]");
-                        modelCode.AppendLine($"\t\tpublic {fieldTypeName}{(columnMetadata.isNullable && netType.IsValueType ? "?" : "")} {colName.Replace(' ', '_')} {{get; set;}}");
+                        modelCode.AppendLine($"\t\tpublic {fieldTypeName}{(modelField.IsNullable ? "?" : "")} {colName.Replace(' ', '_')} {{get; set;}}");
                     }
                     modelCode.AppendLine();
                 }

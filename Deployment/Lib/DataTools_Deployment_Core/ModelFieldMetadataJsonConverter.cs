@@ -28,7 +28,8 @@ namespace DataTools.Deploy
         public int? NumericPrecision { get; set; }
         public int? NumericScale { get; set; }
         public IModelMetadata ForeignModel { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public bool isPresentation { get; set; }
+        public bool IsPresentation { get; set; }
+        public bool IsNullable { get; set; }
 
         public ModelFieldMetadataJSON() { }
 
@@ -52,7 +53,8 @@ namespace DataTools.Deploy
             this.TextLength = modelFieldMetadata.TextLength;
             this.NumericPrecision = modelFieldMetadata.NumericPrecision;
             this.NumericScale = modelFieldMetadata.NumericScale;
-            this.isPresentation = modelFieldMetadata.isPresentation;
+            this.IsPresentation = modelFieldMetadata.IsPresentation;
+            this.IsNullable = modelFieldMetadata.IsNullable;
         }
 
         public IModelFieldMetadata Copy()
@@ -97,7 +99,8 @@ namespace DataTools.Deploy
                             case nameof(ModelFieldMetadataJSON.IsPrimaryKey): _mfm.IsPrimaryKey = reader.GetBoolean(); break;
                             case nameof(ModelFieldMetadataJSON.NumericPrecision): _mfm.NumericPrecision = reader.TryGetInt32(out int numericPrecision) ? numericPrecision : (int?)null; break;
                             case nameof(ModelFieldMetadataJSON.NumericScale): _mfm.NumericScale = reader.TryGetInt32(out int numericScale) ? numericScale : (int?)null; break;
-                            case nameof(ModelFieldMetadataJSON.isPresentation): _mfm.isPresentation = reader.GetBoolean(); break;
+                            case nameof(ModelFieldMetadataJSON.IsPresentation): _mfm.IsPresentation = reader.GetBoolean(); break;
+                            case nameof(ModelFieldMetadataJSON.IsNullable): _mfm.IsNullable = reader.GetBoolean(); break;
 
                             default: reader.Skip(); break;
                         }
@@ -129,7 +132,8 @@ namespace DataTools.Deploy
             writer.WriteBoolean(nameof(ModelFieldMetadataJSON.IsForeignKey), value.IsForeignKey);
             writer.WriteBoolean(nameof(ModelFieldMetadataJSON.IsPrimaryKey), value.IsPrimaryKey);
             writer.WriteBoolean(nameof(ModelFieldMetadataJSON.IsUnique), value.IsUnique);
-            writer.WriteBoolean(nameof(ModelFieldMetadataJSON.isPresentation), value.isPresentation);
+            writer.WriteBoolean(nameof(ModelFieldMetadataJSON.IsPresentation), value.IsPresentation);
+            writer.WriteBoolean(nameof(ModelFieldMetadataJSON.IsNullable), value.IsNullable);
             writer.WriteString(nameof(ModelFieldMetadataJSON.UniqueConstraintName), value.UniqueConstraintName);
             if (value.TextLength.HasValue)
                 writer.WriteNumber(nameof(ModelFieldMetadataJSON.TextLength), value.TextLength.Value);

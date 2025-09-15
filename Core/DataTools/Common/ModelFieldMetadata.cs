@@ -27,7 +27,8 @@ namespace DataTools.Meta
         public int FieldOrder { get; set; }
         public bool IsAutoincrement { get; set; } = false;
         public bool IsPrimaryKey { get; set; } = false;
-        public bool isPresentation { get; set; } = false;
+        public bool IsPresentation { get; set; } = false;
+        public bool IsNullable { get; set; } = true;
 
         public ModelFieldMetadata() { }
 
@@ -74,7 +75,8 @@ namespace DataTools.Meta
             field.FieldOrder = FieldOrder;
             field.IsAutoincrement = IsAutoincrement;
             field.IsPrimaryKey = IsPrimaryKey;
-            field.isPresentation = isPresentation;
+            field.IsPresentation = IsPresentation;
+            field.IsNullable = IsNullable;
 
             return field;
         }

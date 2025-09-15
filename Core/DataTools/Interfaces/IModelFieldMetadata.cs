@@ -29,7 +29,8 @@ namespace DataTools.Interfaces
         int? NumericPrecision { get; set; }
         int? NumericScale { get; set; }
         string UniqueConstraintName { get; set; }
-        bool isPresentation { get; set; }
+        bool IsPresentation { get; set; }
+        bool IsNullable { get; set; }
 
         IModelFieldMetadata Copy();
     }
