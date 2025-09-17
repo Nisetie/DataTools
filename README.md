@@ -38,12 +38,6 @@
 ### Библиотека DataTools_PostgreSQL
 Реализация взаимодействия с СУБД PostgreSQL.
 
-**Внимание!** Следует быть внимательным при работе с типом данных **timestamptz**! Возможна потеря или искажение точности временных меток при их получении из СУБД из-за неочевидной интерпретации часовых поясов. Для универсального подхода было решено явно указать способ преобразования поля из DataReader через такой код в классе PostgreSQL_DataContext:
-
-```
-this.AddCustomTypeConverter<DateTimeOffset>(o => DateTimeOffset.Parse(o.ToString(), null, DateTimeStyles.AssumeUniversal));
-```
-
 ### Библиотека DataTools_SQLite
 Реализация взаимодействия с БД SQLite.
 
