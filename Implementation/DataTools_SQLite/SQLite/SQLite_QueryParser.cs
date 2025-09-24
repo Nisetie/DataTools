@@ -76,7 +76,6 @@ namespace DataTools.SQLite
                 _queryBuilder.AppendLine();
             }
 
-
             if (sqlSelect.LimitRows != null)
             {
                 _queryBuilder.Append("LIMIT ");
