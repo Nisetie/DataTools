@@ -90,6 +90,7 @@ namespace DataTools.Common
             MapObjectArrayToModel = MappingHelper.PrepareMapModel<Action<dynamic, IDataContext, Dictionary<Type, Func<object, object>>, object[], SelectCache>>(
                 metadata,
                 GetModelInputParameterExpression,
+                GetModelPropertyExpression,
                 GetModelPropertySetterExpression,
                 GetForeignModelCacheVariableExpression,
                 GetForeignModelVariableExpression,

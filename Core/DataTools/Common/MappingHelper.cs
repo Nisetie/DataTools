@@ -4,6 +4,7 @@ using DataTools.Extensions;
 using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -173,6 +174,7 @@ namespace DataTools.Common
         public static T PrepareMapModel<T>(
             IModelMetadata metadata,
             Func<ParameterExpression> GetModelVariableExpressionFunction,
+            Func<ParameterExpression, string, Expression> GetModelPropertyExpressionFunction,
             Func<ParameterExpression, string, Expression, Expression> GetModelPropertySetterExpressionFunction,
             Func<IModelMetadata, ParameterExpression> GetForeignModelCacheVariableExpressionFunction,
             Func<IModelFieldMetadata, ParameterExpression> GetForeignModelVariableExpressionFunction,
@@ -190,6 +192,7 @@ namespace DataTools.Common
             ParameterExpression var_customConverter = Expression.Variable(typeof(Func<object, object>), "customConverter");
             ParameterExpression param_queryCache = Expression.Parameter(typeof(SelectCache), "queryCache");
             ParameterExpression var_foreignModelQueryResult = Expression.Variable(typeof(object[]), "foreignModelQueryResult");
+            ParameterExpression var_sb = Expression.Variable(typeof(StringBuilder));
 
             var fields = from f in metadata.Fields orderby f.FieldOrder select f;
 
@@ -202,6 +205,7 @@ namespace DataTools.Common
             var foreignModelKeys = new Dictionary<string, Dictionary<string, Expression>>();
             var foreignModelKeysEmptyChecks = new Dictionary<string, Dictionary<string, Expression>>();
             var foreignModelKeysEmptyCheck = new Dictionary<string, Expression>();
+            var foreignModelKeysStringBuilders = new Dictionary<string, ParameterExpression>();
             var foreignModelKeysArray = new Dictionary<string, ParameterExpression>();
             var foreignModelSelects = new Dictionary<string, ParameterExpression>();
             var foreignModelSelectAssigns = new Dictionary<string, Expression>();
@@ -225,6 +229,8 @@ namespace DataTools.Common
                 foreignModelKeysArray[f.FieldName] = Expression.Variable(typeof(object[]), $"modelKeyArray_{f.FieldName}");
                 foreignModelSqlParameters[f.FieldName] = certainForeignModelSqlParameters;
                 foreignModelSelects[f.FieldName] = Expression.Variable(typeof(SqlSelect), $"select{f.FieldName}");
+
+                foreignModelKeysStringBuilders[f.FieldName] = Expression.Variable(typeof(StringBuilder), $"sb{f.FieldName}");
             }
             var var_modelCache = GetTargetModelCacheVariableExpressionFunction();
 
@@ -255,58 +261,14 @@ namespace DataTools.Common
 
             all_variables = all_variables.Concat(foreignModelKeysArray.Select(kv => kv.Value));
 
+            all_variables = all_variables.Concat(foreignModelKeysStringBuilders.Select(kv => kv.Value));
+
             foreach (var fmp in foreignModelSqlParameters)
                 all_variables = all_variables.Concat(fmp.Value.Select(kv => kv.Value));
 
-            all_variables = all_variables.Concat(new[] { var_value, var_customConverter, var_foreignModelQueryResult, var_modelCache });
+            all_variables = all_variables.Concat(new[] { var_value, var_customConverter, var_foreignModelQueryResult, var_modelCache, var_sb });
 
-            var blockSimplePropertiesWithCustomConvertersCheck = Expression.Block(
-                variables: null,
-                Expression.Block(
-                    from f
-                    in fields
-                    where !f.IsForeignKey
-                    // для поля с простым типом данных
-                    let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement
-                    let fieldType = Type.GetType(f.FieldTypeName)
-                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
-                    let IsNullable = UnboxedType != null
-                    let RealType = IsNullable ? UnboxedType : fieldType
-                    let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
-                    let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
-                    let IsParsable = ParseMethod != null
-                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
-                    orderby f.FieldOrder
-                    select Expression.Block(
-                        Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
-                        // свойства, имеющие примитивные типы
-                        , Expression.IfThenElse(
-                            Expression.Equal(var_value, Expression.Constant(null))
-                            , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Default(fieldType))
-                            , Expression.Block(
-                                Expression.IfThenElse(
-                                    Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
-                                    , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Convert(Expression.Invoke(var_customConverter, var_value), fieldType))
-                                    , GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
-                                    Expression.Condition(
-                                        Expression.IsTrue(Expression.TypeIs(var_value, RealType))
-                                        , Expression.Convert(var_value, fieldType)
-                                        , IsConvertible
-                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                                        : IsParsable
-                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                                        : Expression.Convert(var_value, fieldType)
-                                        )
-                                    )
-                                )
-                                )
-                            )
-                        )
-                    )
-                , Expression.Assign(var_modelCache, GetCallGetModelCacheExpressionFunction(param_queryCache, metadata))
-                , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, param_m)
-                );
-            var blockSimplePropertiesWithoutCustomConvertersCheck = Expression.Block(
+            var blockSimplePropertiesWithCustomConverters = Expression.Block(
                 variables: null,
                 Expression.Block(
                     from f
@@ -321,35 +283,97 @@ namespace DataTools.Common
                     let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
                     let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
                     let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider), typeof(DateTimeStyles) })
+                    let stringBuilderAppend = typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) })
                     let IsParsable = ParseMethod != null
-                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
+                    let IsTrueNullable = f.IsNullable                    
                     orderby f.FieldOrder
                     select Expression.Block(
                         Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
                         // свойства, имеющие примитивные типы
                         , Expression.IfThenElse(
                             Expression.Equal(var_value, Expression.Constant(null))
-                            , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Default(fieldType))
                             , Expression.Block(
-                                    GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
-                                     Expression.Condition(
-                                        Expression.IsTrue(Expression.TypeIs(var_value, RealType))
-                                        , Expression.Convert(var_value, fieldType)
-                                        , RealType == typeof(DateTimeOffset)
-                                        ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
-                                        : IsConvertible
-                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                                        : IsParsable
-                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                                        : Expression.Convert(var_value, fieldType)
-                                        )
-                                     )
+                                GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Default(fieldType)),
+                                isPrimaryKey
+                                ? Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("NULL;"))
+                                : Expression.Empty() as Expression
+                                )
+                            , Expression.Block(
+                                Expression.IfThenElse(
+                                    Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
+                                    , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Convert(Expression.Invoke(var_customConverter, var_value), fieldType))
+                                    , GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
+                                    GetValueConvertedExpression(fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
+                                    )
+                                )
+                                , isPrimaryKey
+                                ? Expression.Block(
+                                    Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("\""))
+                                    , Expression.Call(var_sb, stringBuilderAppend,
+                                    RealType == typeof(byte[])
+                                    ? Expression.Call(null, typeof(BitConverter).GetMethod("ToString", new Type[] { typeof(byte[]) }), GetModelPropertyExpressionFunction(param_m, f.FieldName))
+                                    : Expression.Call(GetModelPropertyExpressionFunction(param_m, f.FieldName), "ToString", null, null)
+                                    )
+                                    , Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("\";"))
+                                    )
+                                : Expression.Empty() as Expression
                                 )
                             )
                         )
                     )
                 , Expression.Assign(var_modelCache, GetCallGetModelCacheExpressionFunction(param_queryCache, metadata))
-                , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, param_m)
+                , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, Expression.Call(var_sb, "ToString", null, null), param_m)
+                );
+            var blockSimplePropertiesIfCustomConvertersIsNull = Expression.Block(
+                variables: null,
+                Expression.Block(
+                    from f
+                    in fields
+                    where !f.IsForeignKey
+                    // для поля с простым типом данных
+                    let isPrimaryKey = f.IsPrimaryKey || f.IsAutoincrement || f.IsUnique
+                    let fieldType = Type.GetType(f.FieldTypeName)
+                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
+                    let IsNullable = UnboxedType != null
+                    let RealType = IsNullable ? UnboxedType : fieldType
+                    let IsConvertible = typeof(IConvertible).IsAssignableFrom(RealType)
+                    let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
+                    let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider), typeof(DateTimeStyles) })
+                    let stringBuilderAppend = typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) })
+                    let IsParsable = ParseMethod != null
+                    orderby f.FieldOrder
+                    select Expression.Block(
+                        Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
+                        // свойства, имеющие примитивные типы
+                        , Expression.IfThenElse(
+                            Expression.Equal(var_value, Expression.Constant(null))
+                            , Expression.Block(
+                                GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Default(fieldType)),
+                                isPrimaryKey
+                                ? Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("NULL;"))
+                                : Expression.Empty() as Expression
+                                )
+                            , Expression.Block(
+                                GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
+                                GetValueConvertedExpression(fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
+                                )
+                                , isPrimaryKey
+                                ? Expression.Block(
+                                    Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("\""))
+                                    , Expression.Call(var_sb, stringBuilderAppend,
+                                    RealType == typeof(byte[])
+                                    ? Expression.Call(null, typeof(BitConverter).GetMethod("ToString", new Type[] { typeof(byte[]) }), GetModelPropertyExpressionFunction(param_m, f.FieldName))
+                                    : Expression.Call(GetModelPropertyExpressionFunction(param_m, f.FieldName), "ToString", null, null)
+                                    )
+                                    , Expression.Call(var_sb, stringBuilderAppend, Expression.Constant("\";"))
+                                    )
+                                : Expression.Empty() as Expression
+                                )
+                            )
+                        )
+                    )
+                , Expression.Assign(var_modelCache, GetCallGetModelCacheExpressionFunction(param_queryCache, metadata))
+                , Expression.Call(var_modelCache, nameof(SelectDynamicCache.AddModel), null, Expression.Call(var_sb, "ToString", null, null), param_m)
                 );
 
             var blockSimpleProperties = Expression.IfThenElse(
@@ -358,8 +382,8 @@ namespace DataTools.Common
                         Expression.Equal(param_customTypeConverters, Expression.Constant(null)),
                         Expression.Equal(Expression.Property(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.Count)), Expression.Constant(0)))
                     ),
-                blockSimplePropertiesWithoutCustomConvertersCheck,
-                blockSimplePropertiesWithCustomConvertersCheck
+                blockSimplePropertiesIfCustomConvertersIsNull,
+                blockSimplePropertiesWithCustomConverters
                 );
 
             var foreignKeysDenormalized = new List<(IModelFieldMetadata field, IModelMetadata foreignModel, string foreignColumn, int columnOrder)>();
@@ -371,64 +395,97 @@ namespace DataTools.Common
                     foreignKeysDenormalized.Add((f, f.ForeignModel, foreignColumnName, f.FieldOrder + columnOrder++));
             }
 
-            var block_prep = Expression.Block(
-                    from f in fields
-                    where f.IsForeignKey
-                    orderby f.FieldOrder
-                    select Expression.Assign(foreignModelCaches[f.FieldName], GetCallGetModelCacheExpressionFunction(param_queryCache, f.ForeignModel))
-                    );
+            BlockExpression block_prep;
+            if (foreignKeysDenormalized.Count == 0)
+                block_prep = Expression.Block();
+            else
+                block_prep = Expression.Block(
+                from f in fields
+                where f.IsForeignKey
+                orderby f.FieldOrder
+                select Expression.Block(
+                    Expression.Assign(foreignModelCaches[f.FieldName], GetCallGetModelCacheExpressionFunction(param_queryCache, f.ForeignModel)),
+                    Expression.Assign(foreignModelKeysStringBuilders[f.FieldName], Expression.New(typeof(StringBuilder)))
+                    )
+                );
 
-            var blockForeignModels = Expression.Block(
-                // перебор всех полей внешних ключей и присвоение их значений из внешних моделей
-                Expression.Block(
-                    from f in foreignKeysDenormalized
-                    let fieldName = f.field.FieldName
-                    // для поля с простым типом данных
-                    let fieldType = Type.GetType(f.foreignModel.GetColumn(f.foreignColumn).FieldTypeName)
-                    let UnboxedType = Nullable.GetUnderlyingType(fieldType)
-                    let IsNullable = UnboxedType != null
-                    let RealType = IsNullable ? UnboxedType : fieldType
-                    let IsConvertible = RealType.GetInterface(nameof(IConvertible)) != null
-                    let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
-                    let IsParsable = ParseMethod != null
-                    let ToStringMethod = typeof(object).GetMethod(nameof(ToString), new Type[] { })
-                    // для поля - внешней модели
-                    let var_foreignKeyValue = foreignModelKeys[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
-                    let var_foreignKeySqlParameter = foreignModelSqlParameters[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
-                    select Expression.Block(
-                        Expression.Assign(
-                            var_foreignKeySqlParameter,
-                            Expression.New(
-                                typeof(SqlParameter).GetConstructor(new Type[] { typeof(string), typeof(object) }),
-                                Expression.Constant(f.foreignModel.GetColumn(f.foreignColumn).FieldName),
-                                Expression.Assign(var_foreignKeyValue, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.columnOrder)))
+            BlockExpression blockForeignModels;
+            if (foreignKeysDenormalized.Count == 0)
+                blockForeignModels = Expression.Block();
+            else
+                blockForeignModels = Expression.Block(
+                    // перебор всех полей внешних ключей и присвоение их значений из внешних моделей
+                    Expression.Block(
+                        from f in foreignKeysDenormalized
+                        let fieldName = f.field.FieldName
+                        // для поля с простым типом данных
+                        let fieldType = Type.GetType(f.foreignModel.GetColumn(f.foreignColumn).FieldTypeName)
+                        let UnboxedType = Nullable.GetUnderlyingType(fieldType)
+                        let IsNullable = UnboxedType != null
+                        let RealType = IsNullable ? UnboxedType : fieldType
+                        let IsConvertible = RealType.GetInterface(nameof(IConvertible)) != null
+                        let ParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string) })
+                        let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider), typeof(DateTimeStyles) })
+                        let IsParsable = ParseMethod != null
+                        // для поля - внешней модели
+                        let var_foreignKeyValue = foreignModelKeys[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
+                        let var_foreignKeySqlParameter = foreignModelSqlParameters[fieldName][f.foreignModel.GetColumn(f.foreignColumn).FieldName]
+                        let var_foreignStringBuilder = foreignModelKeysStringBuilders[fieldName]
+                        select Expression.Block(
+                            Expression.Assign(var_foreignKeyValue, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.columnOrder))),
+                            Expression.IfThenElse(
+                                Expression.Equal(var_foreignKeyValue, Expression.Constant(null)),
+                                Expression.Call(var_foreignStringBuilder, typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) }), Expression.Constant("NULL;")),
+                                Expression.Block(
+                                    Expression.Assign(var_foreignKeyValue,
+                                        RealType == typeof(DateTimeOffset)
+                                        ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_foreignKeyValue, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), typeof(object))
+                                        : IsConvertible
+                                        ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_foreignKeyValue, Expression.Constant(RealType)), typeof(object))
+                                        : IsParsable
+                                        ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_foreignKeyValue, "ToString", null, null)), typeof(object))
+                                        : Expression.Convert(var_foreignKeyValue, typeof(object))
+                                        ),
+                                    Expression.Block(
+                                        Expression.Call(var_foreignStringBuilder, typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) }), Expression.Constant("\""))
+                                        , Expression.Call(var_foreignStringBuilder, typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) }),
+                                        RealType == typeof(byte[])
+                                        ? Expression.Call(null, typeof(BitConverter).GetMethod("ToString", new Type[] { typeof(byte[]) }), var_foreignKeyValue)
+                                        : Expression.Call(var_foreignKeyValue, "ToString", null, null)
+                                        )
+                                        , Expression.Call(var_foreignStringBuilder, typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) }), Expression.Constant("\";"))
+                                        )
+                                    )
+                                ),
+                            Expression.Assign(
+                                var_foreignKeySqlParameter,
+                                Expression.New(
+                                    typeof(SqlParameter).GetConstructor(new Type[] { typeof(string), typeof(object) }),
+                                    Expression.Constant(f.foreignModel.GetColumn(f.foreignColumn).FieldName),
+                                    var_foreignKeyValue
+                                    )
                                 )
                             )
                         )
-                    )
-                // поиск внешних моделей в кеше или их запрос из БД
-                , Expression.Block(
-                    from f in fields
-                    where f.IsForeignKey
-                    orderby f.FieldOrder
-                    let fieldName = f.FieldName
-                    // для поля - внешней модели
-                    let var_foreignModelCache = foreignModelCaches[fieldName]
-                    let var_foreignModel = foreignModelVariables[fieldName]
-                    let var_foreignModelSelect = foreignModelSelects[fieldName]
-                    let var_foreignKeysArray = foreignModelKeysArray[fieldName]
-                    let var_foreignKeysCheck = foreignModelKeysEmptyCheck[fieldName]
-                    select Expression.Block(
-                        variables: null
-                        , Expression.Assign(var_foreignKeysArray, Expression.NewArrayInit(typeof(object), foreignModelKeys[fieldName].Select(kv => kv.Value)))
-                        , Expression.IfThen(
-                            Expression.IsTrue(var_foreignKeysCheck)
+                    // поиск внешних моделей в кеше или их запрос из БД
+                    , Expression.Block(
+                        from f in fields
+                        where f.IsForeignKey
+                        orderby f.FieldOrder
+                        let fieldName = f.FieldName
+                        // для поля - внешней модели
+                        let var_foreignModelCache = foreignModelCaches[fieldName]
+                        let var_foreignModel = foreignModelVariables[fieldName]
+                        let var_foreignModelSelect = foreignModelSelects[fieldName]
+                        let var_foreignStringBuilder = foreignModelKeysStringBuilders[fieldName]
+                        select Expression.Block(
+                            variables: null
                             , Expression.IfThenElse(
                                 Expression.Call(
                                     var_foreignModelCache
-                                    , nameof(SelectDynamicCache.TryGetModelByKeys)
+                                    , nameof(SelectDynamicCache.TryGetModelByKey)
                                     , null
-                                    , var_foreignModel, var_foreignKeysArray
+                                    , var_foreignModel, Expression.Call(var_foreignStringBuilder, "ToString", null, null) //, var_foreignKeysArray
                                     )
                                 , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, var_foreignModel)
                                 , Expression.Block(
@@ -463,16 +520,16 @@ namespace DataTools.Common
                                 )
                             )
                         )
-                    )
-                );
+                    );
 
             var all_script = Expression.Block(
                 all_variables
+                , Expression.Assign(var_sb, Expression.New(typeof(StringBuilder)))
                 , blockSimpleProperties
                 , block_prep
                 , blockForeignModels
                 );
-
+            
             return
                 Expression.Lambda<T>(
                 all_script,
@@ -482,6 +539,48 @@ namespace DataTools.Common
                 param_dataRow,
                 param_queryCache
                 ).Compile();
+
+            UnaryExpression GetValueConvertedExpression(Type fieldType, Type RealType, bool IsConvertible, System.Reflection.MethodInfo ParseMethod, System.Reflection.MethodInfo DateTimeOffsetParseMethod, bool IsParsable)
+            {
+                return
+                    RealType == typeof(DateTimeOffset)
+                    ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
+                    : RealType == typeof(Boolean)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToBoolean), null, var_value), fieldType)
+                    : RealType == typeof(Byte)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToByte), null, var_value), fieldType)
+                    : RealType == typeof(Int16)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt16), null, var_value), fieldType)
+                    : RealType == typeof(Int32)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt32), null, var_value), fieldType)
+                    : RealType == typeof(Int64)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt64), null, var_value), fieldType)
+                    : RealType == typeof(SByte)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSByte), null, var_value), fieldType)
+                    : RealType == typeof(UInt16)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt16), null, var_value), fieldType)
+                    : RealType == typeof(UInt32)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt32), null, var_value), fieldType)
+                    : RealType == typeof(UInt64)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt64), null, var_value), fieldType)
+                    : RealType == typeof(Single)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSingle), null, var_value), fieldType)
+                    : RealType == typeof(Double)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDouble), null, var_value), fieldType)
+                    : RealType == typeof(Decimal)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDecimal), null, var_value), fieldType)
+                    : RealType == typeof(String)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToString), null, var_value), fieldType)
+                    : RealType == typeof(Char)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToChar), null, var_value), fieldType)
+                    : RealType == typeof(DateTime)
+                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDateTime), null, var_value), fieldType)
+                    : IsConvertible
+                    ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                    : IsParsable
+                    ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                    : Expression.Convert(var_value, fieldType);
+            }
         }
     }
 }

@@ -23,7 +23,7 @@ namespace DataTools.Common
         {
             string modelName = metadata.ModelName;
             if (!_caches.TryGetValue(modelName, out var cache))
-                _caches[modelName] = cache = new SelectDynamicCache(metadata);
+                _caches[modelName] = cache = new SelectDynamicCache();
             return cache as SelectDynamicCache;
         }
     }

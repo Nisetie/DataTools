@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using DataTools.Attributes;
-using DataTools.Commands;
 using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
@@ -27,7 +26,7 @@ namespace DataTools_Benchmarks
 
             var sw = new Stopwatch();
             var b = new DataTools_Benchs();
-
+            
             b.Setup();
 
             while (true)
