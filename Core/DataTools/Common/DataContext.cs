@@ -31,7 +31,8 @@ namespace DataTools.Common
         {
             _dataSources.Push(ds);
         }
-
+        public IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null) where ModelT : class, new()
+            => Select<ModelT>(query, null);
         public virtual IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
@@ -47,6 +48,8 @@ namespace DataTools.Common
             }
         }
 
+        public IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null)
+            => Select(metadata, query, null);
         public virtual IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -177,6 +180,7 @@ namespace DataTools.Common
             }
         }
 
+        public void Execute(ISqlExpression query) => Execute(query, null);
         public void Execute(ISqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -190,6 +194,7 @@ namespace DataTools.Common
             }
         }
 
+        public object ExecuteScalar(ISqlExpression query) => ExecuteScalar(query, null);
         public object ExecuteScalar(ISqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -203,6 +208,7 @@ namespace DataTools.Common
             }
         }
 
+        public IEnumerable<object[]> ExecuteWithResult(ISqlExpression query)=> ExecuteWithResult(query, null);
         public IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -217,16 +223,29 @@ namespace DataTools.Common
         }
 
         public IEnumerable<ModelT> CallTableFunction<ModelT>
+            (SqlFunction function)
+            where ModelT : class, new()
+            => CallTableFunction<ModelT>(function,null);
+        public IEnumerable<ModelT> CallTableFunction<ModelT>
             (SqlFunction function, params SqlParameter[] parameters)
             where ModelT : class, new()
             => Select<ModelT>(new SqlSelect().From(function, "f").Select(ModelMetadata<ModelT>.Instance), parameters);
         public IEnumerable<dynamic> CallTableFunction
+            (IModelMetadata modelMetadata, SqlFunction function)
+            => CallTableFunction(modelMetadata,function,null);
+        public IEnumerable<dynamic> CallTableFunction
             (IModelMetadata modelMetadata, SqlFunction function, params SqlParameter[] parameters)
             => Select(modelMetadata, new SqlSelect().From(function, "f").Select(modelMetadata), parameters);
+        public object CallScalarFunction
+            (SqlFunction function)
+            => CallScalarFunction(function, null);
         public object CallScalarFunction
             (SqlFunction function, params SqlParameter[] parameters)
             => ExecuteScalar(new SqlSelect().Select(function), parameters);
 
+        public IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure)
+            where ModelT : class, new()
+            => CallProcedure<ModelT>(procedure, null);
         public IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure, params SqlParameter[] parameters) where ModelT : class, new()
         {
             var ds = this.GetDataSource();
@@ -241,6 +260,8 @@ namespace DataTools.Common
             }
         }
 
+        public IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure)
+            => CallProcedure(modelMetadata,procedure,null);
         public IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -255,6 +276,7 @@ namespace DataTools.Common
             }
         }
 
+        public void CallProcedure(SqlProcedure procedure) => CallProcedure(procedure, null);
         public void CallProcedure(SqlProcedure procedure, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -268,6 +290,9 @@ namespace DataTools.Common
             }
         }
 
+        protected IEnumerable<dynamic> GetResultDynamic
+            (IModelMetadata modelMetadata, IDataSource ds, ISqlExpression query)
+            => GetResultDynamic(modelMetadata,ds,query,null);   
         protected virtual IEnumerable<dynamic> GetResultDynamic(IModelMetadata modelMetadata, IDataSource ds, ISqlExpression query, params SqlParameter[] parameters)
         {
             var result = ds.ExecuteWithResult(query, parameters);
@@ -280,7 +305,9 @@ namespace DataTools.Common
                 yield return model;
             }
         }
-
+        protected IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query) 
+            where ModelT : class, new()
+            => GetResultExact<ModelT>(ds,query,null);   
         protected virtual IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query, params SqlParameter[] parameters) where ModelT : class, new()
         {
             var result = ds.ExecuteWithResult(query, parameters);

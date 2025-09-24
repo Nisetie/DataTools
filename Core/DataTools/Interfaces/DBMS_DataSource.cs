@@ -2,6 +2,9 @@
 
 namespace DataTools.Common
 {
+    /// <summary>
+    /// Обертка вокруг специфической реализации ISQLConnection
+    /// </summary>
     public abstract class DBMS_DataSource : DataSource
     {
         protected IDBMS_QueryParser _queryParser;

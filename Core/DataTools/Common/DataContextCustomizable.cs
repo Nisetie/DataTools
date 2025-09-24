@@ -163,12 +163,20 @@ namespace DataTools.Common
             else
             {
                 var map = DynamicMapper.GetMapper(modelMetadata).MapObjectArrayToModel;
-                foreach (var dataRow in result)
-                {
-                    var model = new DynamicModel(modelMetadata);
-                    map(model, this, _customTypeConverters.Count == 0 ? null : _customTypeConverters, dataRow, queryCache);
-                    yield return model;
-                }
+                if (_customTypeConverters.Count == 0)
+                    foreach (var dataRow in result)
+                    {
+                        var model = new DynamicModel(modelMetadata);
+                        map(model, this, null, dataRow, queryCache);
+                        yield return model;
+                    }
+                else
+                    foreach (var dataRow in result)
+                    {
+                        var model = new DynamicModel(modelMetadata);
+                        map(model, this, _customTypeConverters, dataRow, queryCache);
+                        yield return model;
+                    }
             }
         }
 

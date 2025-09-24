@@ -84,6 +84,7 @@ namespace DataTools.Deploy
                         field.IsUnique = false;
                         field.IsPrimaryKey = false;
                         field.IsAutoincrement = false;
+                        field.IsNullable = false;
                         if (field.IsForeignKey)
                         {
                             meta.RemoveField(field);
@@ -93,6 +94,7 @@ namespace DataTools.Deploy
                                 var newField = field.ForeignModel.GetColumn(field.ForeignColumnNames[i]).Copy();
                                 newField.ColumnName = col;
                                 newField.FieldName = col;
+                                newField.IsNullable = false;
                                 newField.IsUnique = false;
                                 newField.IsPrimaryKey = false;
                                 newField.IsAutoincrement = false;

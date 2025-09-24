@@ -1,6 +1,7 @@
 ﻿using DataTools.Meta;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 
 namespace DataTools.Common
 {
@@ -13,25 +14,18 @@ namespace DataTools.Common
         where ModelT : class, new()
     {
         /// <summary>
-        /// Составной первичный ключ преобразуется в строку для универсальности.
+        /// Составной первичный ключ (или иные поля с ограничением уникальности) преобразуется в строку для универсальности.
         /// </summary>
         public Dictionary<string, ModelT> CachedModels = new Dictionary<string, ModelT>();
-
-        private static Func<ModelT, string> _getModelKeyValue;
-        private static Func<object[], string> _getModelUniquestring;
 
         public static readonly string ModelName;
 
         static SelectModelCache()
         {
             ModelName = ModelMetadata<ModelT>.Instance.ModelName;
-            _getModelKeyValue = ModelMapper<ModelT>.GetModelKeyValue;
-            _getModelUniquestring = MappingHelper.GetModelUniqueString;
         }
-
-        public bool TryGetModelByKeys(out ModelT model, params object[] keys) => CachedModels.TryGetValue(_getModelUniquestring(keys), out model);
-
-        public void AddModel(ModelT model) => CachedModels[_getModelKeyValue(model)] = model;
+        public bool TryGetModelByKey(out ModelT model, string key) => CachedModels.TryGetValue(key, out model);
+        public void AddModel(string key, ModelT model) => CachedModels[key] = model;
     }
 }
 

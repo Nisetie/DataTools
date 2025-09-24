@@ -11,8 +11,10 @@ namespace DataTools.Interfaces
         /// <param name="selectBuilder"></param>
         /// <returns></returns>
         IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null, params SqlParameter[] parameters) where ModelT : class, new();
+        IEnumerable<ModelT> Select<ModelT>(ISqlExpression query = null) where ModelT : class, new();
 
         IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null, params SqlParameter[] parameters);
+        IEnumerable<dynamic> Select(IModelMetadata metadata, ISqlExpression query = null);
 
         /// <summary>
         /// Добавление экземпляра на стороне источника данных.
@@ -51,16 +53,25 @@ namespace DataTools.Interfaces
         /// <param name="query"></param>
         /// <param name="parameters"></param>
         void Execute(ISqlExpression query, params SqlParameter[] parameters);
+        void Execute(ISqlExpression query);
 
         object ExecuteScalar(ISqlExpression query, params SqlParameter[] parameters);
+        object ExecuteScalar(ISqlExpression query);
 
         IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters);
+        IEnumerable<object[]> ExecuteWithResult(ISqlExpression query);
 
         IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function, params SqlParameter[] parameters) where ModelT : class, new();
+        IEnumerable<ModelT> CallTableFunction<ModelT>(SqlFunction function) where ModelT : class, new();
         IEnumerable<dynamic> CallTableFunction(IModelMetadata modelMetadata, SqlFunction function, params SqlParameter[] parameters);
+        IEnumerable<dynamic> CallTableFunction(IModelMetadata modelMetadata, SqlFunction function);
         object CallScalarFunction(SqlFunction function, params SqlParameter[] parameters);
+        object CallScalarFunction(SqlFunction function);
         IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure, params SqlParameter[] parameters) where ModelT : class, new();
+        IEnumerable<ModelT> CallProcedure<ModelT>(SqlProcedure procedure) where ModelT : class, new();
         IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure, params SqlParameter[] parameters);
+        IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure);
         void CallProcedure(SqlProcedure procedure, params SqlParameter[] parameters);
+        void CallProcedure(SqlProcedure procedure);
     }
 }

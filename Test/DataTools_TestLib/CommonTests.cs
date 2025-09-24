@@ -547,6 +547,34 @@ namespace DataTools_Tests
 
         [Category("Select")]
         [Test]
+        public void TestSelectWithInlineParameter()
+        {
+            var par = new SqlParameter("par1");
+
+            par.Value = "TestModelChild";
+            var query = new SqlComposition(
+                new SqlCustom($"select * from "),
+                new SqlName(ModelMetadata<TestModelChild>.Instance.FullObjectName),
+                new SqlCustom($" where {nameof(TestModelChild.Name)} = <$par1>;")
+                );
+
+            TestContext.Out.WriteLine(query.ToString());
+
+            var result = DataContext.Select<TestModelChild>(query, par);
+
+            int a = result.Count();
+
+            par.Value = "TestModelChild1";
+
+            result = DataContext.Select<TestModelChild>(query, par);
+
+            int b = result.Count();
+
+            Assert.That(a == 0 && b == 1);
+        }
+
+        [Category("Select")]
+        [Test]
         public void TestSelectDynamicWithParameter()
         {
             var par = new SqlParameter("par1");
@@ -1273,6 +1301,16 @@ namespace DataTools_Tests
         {
             var a = new TestWhereExpression5Test();
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a.a);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Run().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        [Test]
+        public void TestWhereExpression55()
+        {
+            var a = new TestWhereExpression5Test();
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == (int)((long)a.a));
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
             var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);

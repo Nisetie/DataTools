@@ -11,7 +11,7 @@ namespace DataTools.Commands
         public static ISqlExpression ProcessExpression(IModelMetadata modelMetadata, Expression expression)
         {
             var where = new SqlWhere();
-
+            
             switch (expression)
             {
                 case BinaryExpression binaryExpression:
@@ -54,6 +54,8 @@ namespace DataTools.Commands
             if (unaryExpression.NodeType == ExpressionType.Not)
                 return new SqlWhere().Not(ProcessExpression(modelMetadata, unaryExpression.Operand));
             if (unaryExpression.NodeType == ExpressionType.Convert)
+                return ProcessExpression(modelMetadata, unaryExpression.Operand);
+            else
                 return ProcessExpression(modelMetadata, unaryExpression.Operand);
             throw new NotImplementedException();
         }

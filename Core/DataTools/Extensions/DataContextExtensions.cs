@@ -10,14 +10,26 @@ namespace DataTools.Extensions
 {
     public static class DataContextExtensions
     {
+        /// <summary>
+        /// Подготовить запрос select ... from ...
+        /// </summary>
+        /// <typeparam name="ModelT">Модель данных (используется для извлечения метаданных)</typeparam>
+        /// <param name="context">Контекст данных</param>
+        /// <returns>Объект команды с подготовленным запросом</returns>
         public static SelectCommand<ModelT> SelectFrom<ModelT>
             (this IDataContext context)
-            where ModelT : class, new() 
+            where ModelT : class, new()
             => new SelectCommand<ModelT>(context).From().Select();
 
+        /// <summary>
+        /// Подготовить запрос select ... from ...
+        /// </summary>
+        /// <param name="context">Контекст данных</param>
+        /// /// <param name="metadata">Метаданные модели</param>
+        /// <returns>Объект команды с подготовленным запросом</returns>
         public static SelectCommandDynamic SelectFrom
-            (this IDataContext context, IModelMetadata metadata) 
-            => new SelectCommandDynamic(context,metadata).From().Select();
+            (this IDataContext context, IModelMetadata metadata)
+            => new SelectCommandDynamic(context, metadata).From().Select();
 
         public static void CreateTable(this IDataContext context, IModelMetadata modelMetadata) => context.Execute(new SqlCreateTable().Table(modelMetadata));
         public static void CreateTable<ModelT>(this IDataContext context) where ModelT : class, new() => CreateTable(context, ModelMetadata<ModelT>.Instance);

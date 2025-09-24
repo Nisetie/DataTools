@@ -7,11 +7,20 @@ namespace DataTools.Interfaces
 {
     public abstract class DBMS_QueryParser : IDBMS_QueryParser
     {
+        protected StringBuilder _queryBuilder = new StringBuilder();
         public SqlParameter[] CurrentParameters { get; private set; }
+
 
         public ISqlExpression SimplifyQuery(ISqlExpression query)
         {
-            var q = ParseExpression(query);
+            return SimplifyQuery(query, null);  
+        }
+        public ISqlExpression SimplifyQuery(ISqlExpression query, params SqlParameter[] sqlParameters)
+        {
+            CurrentParameters = sqlParameters;
+            _queryBuilder.Clear();
+            ParseExpression(query);
+            var q = _queryBuilder.ToString();
 
             SqlComposition composition = new SqlComposition();
             var compositionElements = composition.Elements;
@@ -45,18 +54,23 @@ namespace DataTools.Interfaces
 
             }
 
-            if (from < pos)
-                compositionElements.Add(new SqlCustom(q.Substring(from, pos - from + 1)));
+            if (from <= to)
+                compositionElements.Add(new SqlCustom(q.Substring(from)));
 
-            return composition;
+            if (composition.Elements.Count == 1)
+                return composition.Elements[0];
+            else
+                return composition;
         }
 
         public string ToString(ISqlExpression query) => ToString(query, parameters: null);
 
         public string ToString(ISqlExpression query, params SqlParameter[] parameters)
         {
+            _queryBuilder.Clear();
             CurrentParameters = parameters;
-            return ParseExpression(query);
+            ParseExpression(query);
+            return _queryBuilder.ToString();
         }
 
         /// <summary>
@@ -66,113 +80,114 @@ namespace DataTools.Interfaces
         /// <returns></returns>
         protected abstract string StringifyValue(object value);
 
-        protected string ParseExpression(ISqlExpression expression)
+        protected void ParseExpression(ISqlExpression expression)
         {
             switch (expression)
             {
-                case DML.SqlSelect sqlSelect: return Parse_SqlSelect(sqlSelect);
-                case DML.SqlInsert sqlInsert: return Parse_SqlInsert(sqlInsert);
-                case DML.SqlInsertBatch sqlInsertBatch: return Parse_SqlInsertBatch(sqlInsertBatch);
-                case DML.SqlDelete sqlDelete: return Parse_SqlDelete(sqlDelete);
-                case DML.SqlUpdate sqlUpdate: return Parse_SqlUpdate(sqlUpdate);
-                case DML.SqlName sqlName: return Parse_SqlName(sqlName);
-                case DML.SqlConstant sqlConstant: return Parse_SqlConstant(sqlConstant);
-                case DML.SqlExpressionWithAlias sqlExpressionWithAlias: return Parse_SqlExpressionWithAlias(sqlExpressionWithAlias);
-                case DML.SqlCustom sqlCustom: return Parse_SqlCustom(sqlCustom);
-                case DML.SqlWhere sqlWhereClause: return Parse_SqlWhereClause(sqlWhereClause);
-                case DML.SqlOrderByClause sqlOrderByClause: return Parse_SqlOrderByClause(sqlOrderByClause);
-                case DML.SqlFunction sqlFunction: return Parse_SqlFunction(sqlFunction);
-                case DML.SqlProcedure sqlProcedure: return Parse_SqlProcedure(sqlProcedure);
-                case DML.SqlGreaterThan sqlGreaterThan: return Parse_SqlGreaterThan(sqlGreaterThan);
-                case DML.SqlGreaterOrEqual sqlGreaterOrEqual: return Parse_SqlGreaterOrEqual(sqlGreaterOrEqual);
-                case DML.SqlLessThan sqlLesserThan: return Parse_SqlLesserThan(sqlLesserThan);
-                case DML.SqlLessOrEqual sqlLesserOrEqual: return Parse_SqlLesserOrEqual(sqlLesserOrEqual);
-                case DML.SqlEqual sqlEqual: return Parse_SqlEqual(sqlEqual);
-                case DML.SqlNotEqual sqlNotEqual: return Parse_SqlNotEqual(sqlNotEqual);
-                case DML.SqlIsNull sqlIsNull: return Parse_SqlIsNull(sqlIsNull);
-                case DML.SqlAnd sqlAnd: return Parse_SqlAnd(sqlAnd);
-                case DML.SqlOr sqlOr: return Parse_SqlOr(sqlOr);
-                case DML.SqlNot sqlNot: return Parse_SqlNot(sqlNot);
-                case DML.SqlComposition sqlComposition: return Parse_SqlComposition(sqlComposition);
-                case DML.SqlParameter sqlParameter: return Parse_SqlParameter(sqlParameter);
+                case DML.SqlSelect sqlSelect: Parse_SqlSelect(sqlSelect); break;
+                case DML.SqlInsert sqlInsert: Parse_SqlInsert(sqlInsert); break;
+                case DML.SqlInsertBatch sqlInsertBatch: Parse_SqlInsertBatch(sqlInsertBatch); break;
+                case DML.SqlDelete sqlDelete: Parse_SqlDelete(sqlDelete); break;
+                case DML.SqlUpdate sqlUpdate: Parse_SqlUpdate(sqlUpdate); break;
+                case DML.SqlName sqlName: Parse_SqlName(sqlName); break;
+                case DML.SqlConstant sqlConstant: Parse_SqlConstant(sqlConstant); break;
+                case DML.SqlExpressionWithAlias sqlExpressionWithAlias: Parse_SqlExpressionWithAlias(sqlExpressionWithAlias); break;
+                case DML.SqlCustom sqlCustom: Parse_SqlCustom(sqlCustom); break;
+                case DML.SqlWhere sqlWhereClause: Parse_SqlWhereClause(sqlWhereClause); break;
+                case DML.SqlOrderByClause sqlOrderByClause: Parse_SqlOrderByClause(sqlOrderByClause); break;
+                case DML.SqlFunction sqlFunction: Parse_SqlFunction(sqlFunction); break;
+                case DML.SqlProcedure sqlProcedure: Parse_SqlProcedure(sqlProcedure); break;
 
-                case DDL.SqlCreateTable sqlCreateTable: return Parse_SqlCreateTable(sqlCreateTable);
-                case DDL.SqlDropTable sqlDropTable: return Parse_SqlDropTable(sqlDropTable);
-                case DDL.SqlColumnAutoincrement sqlColumnAutoincrement: return Parse_SqlColumnAutoincrement(sqlColumnAutoincrement);
-                case DDL.SqlTablePrimaryKey sqlTablePrimaryKey: return Parse_SqlTablePrimaryKey(sqlTablePrimaryKey);
-                case DDL.SqlTableUnique sqlTableUnique: return Parse_SqlTableUnique(sqlTableUnique);
-                case DDL.SqlTableForeignKey sqlTableForeignKey: return Parse_SqlTableForeignKey(sqlTableForeignKey);
-                case DDL.SqlColumnNullable sqlColumnNullable: return Parse_SqlColumnNullable(sqlColumnNullable);
+                case DML.SqlGreaterThan sqlGreaterThan: Parse_SqlGreaterThan(sqlGreaterThan); break;
+                case DML.SqlGreaterOrEqual sqlGreaterOrEqual: Parse_SqlGreaterOrEqual(sqlGreaterOrEqual); break;
+                case DML.SqlLessThan sqlLesserThan: Parse_SqlLesserThan(sqlLesserThan); break;
+                case DML.SqlLessOrEqual sqlLesserOrEqual: Parse_SqlLesserOrEqual(sqlLesserOrEqual); break;
+                case DML.SqlEqual sqlEqual: Parse_SqlEqual(sqlEqual); break;
+                case DML.SqlNotEqual sqlNotEqual: Parse_SqlNotEqual(sqlNotEqual); break;
+                case DML.SqlIsNull sqlIsNull: Parse_SqlIsNull(sqlIsNull); break;
+                case DML.SqlAnd sqlAnd: Parse_SqlAnd(sqlAnd); break;
+                case DML.SqlOr sqlOr: Parse_SqlOr(sqlOr); break;
+                case DML.SqlNot sqlNot: Parse_SqlNot(sqlNot); break;
+
+                case DML.SqlComposition sqlComposition: Parse_SqlComposition(sqlComposition); break;
+                case DML.SqlParameter sqlParameter: Parse_SqlParameter(sqlParameter); break;
+
+                case DDL.SqlCreateTable sqlCreateTable: Parse_SqlCreateTable(sqlCreateTable); break;
+                case DDL.SqlDropTable sqlDropTable: Parse_SqlDropTable(sqlDropTable); break;
+                case DDL.SqlColumnAutoincrement sqlColumnAutoincrement: Parse_SqlColumnAutoincrement(sqlColumnAutoincrement); break;
+                case DDL.SqlTablePrimaryKey sqlTablePrimaryKey: Parse_SqlTablePrimaryKey(sqlTablePrimaryKey); break;
+                case DDL.SqlTableUnique sqlTableUnique: Parse_SqlTableUnique(sqlTableUnique); break;
+                case DDL.SqlTableForeignKey sqlTableForeignKey: Parse_SqlTableForeignKey(sqlTableForeignKey); break;
+                case DDL.SqlColumnNullable sqlColumnNullable: Parse_SqlColumnNullable(sqlColumnNullable); break;
                 default: throw new NotSupportedException($"{nameof(ParseExpression)}: expression is {expression.GetType()}. Unsupported.");
             }
         }
 
-        protected abstract string Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch);
-        protected virtual string Parse_SqlColumnNullable(SqlColumnNullable sqlColumnNullable) => sqlColumnNullable.IsNullable ? "NULL" : "NOT NULL";
-        protected virtual string Parse_SqlTableForeignKey(SqlTableForeignKey sqlTableForeignKey) => $"FOREIGN KEY ({string.Join(",", sqlTableForeignKey.Columns)}) REFERENCES {sqlTableForeignKey.ForeignTableName}({string.Join(",", sqlTableForeignKey.ForeignColumns)})";
-        protected virtual string Parse_SqlTableUnique(SqlTableUnique sqlTableUnique) => $"UNIQUE ({string.Join(",", sqlTableUnique.Columns)})";
-        protected virtual string Parse_SqlTablePrimaryKey(SqlTablePrimaryKey sqlTablePrimaryKey) => $"PRIMARY KEY ({string.Join(",", sqlTablePrimaryKey.Columns)})";
-        protected abstract string Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement);
-        protected abstract string Parse_SqlDropTable(SqlDropTable sqlDropTable);
-        protected abstract string Parse_SqlCreateTable(SqlCreateTable sqlCreateTable);
-        protected abstract string Parse_SqlUpdate(SqlUpdate sqlUpdate);
-        protected abstract string Parse_SqlDelete(SqlDelete sqlDelete);
-        protected abstract string Parse_SqlInsert(SqlInsert sqlInsert);
-        protected abstract string Parse_SqlSelect(SqlSelect sqlSelect);
-        protected abstract string Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias);
-        protected abstract string Parse_SqlProcedure(SqlProcedure sqlProcedure);
-        protected abstract string Parse_SqlFunction(SqlFunction sqlFunction);
-        protected abstract string Parse_SqlOrderByClause(SqlOrderByClause sqlOrderByClause);
-        protected virtual string Parse_SqlWhereClause(SqlWhere sqlWhereClause)
+        protected abstract void Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch);
+        protected virtual void Parse_SqlColumnNullable(SqlColumnNullable sqlColumnNullable) => _queryBuilder.Append(sqlColumnNullable.IsNullable ? "NULL" : "NOT NULL");
+        protected virtual void Parse_SqlTableForeignKey(SqlTableForeignKey sqlTableForeignKey) => _queryBuilder.Append($"FOREIGN KEY({string.Join(",", sqlTableForeignKey.Columns)}) REFERENCES {sqlTableForeignKey.ForeignTableName}({string.Join(",", sqlTableForeignKey.ForeignColumns)})");
+        protected virtual void Parse_SqlTableUnique(SqlTableUnique sqlTableUnique) => _queryBuilder.Append($"UNIQUE({string.Join(",", sqlTableUnique.Columns)})");
+        protected virtual void Parse_SqlTablePrimaryKey(SqlTablePrimaryKey sqlTablePrimaryKey) => _queryBuilder.Append($"PRIMARY KEY({string.Join(",", sqlTablePrimaryKey.Columns)})");
+        protected abstract void Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement);
+        protected abstract void Parse_SqlDropTable(SqlDropTable sqlDropTable);
+        protected abstract void Parse_SqlCreateTable(SqlCreateTable sqlCreateTable);
+        protected abstract void Parse_SqlUpdate(SqlUpdate sqlUpdate);
+        protected abstract void Parse_SqlDelete(SqlDelete sqlDelete);
+        protected abstract void Parse_SqlInsert(SqlInsert sqlInsert);
+        protected abstract void Parse_SqlSelect(SqlSelect sqlSelect);
+        protected abstract void Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias);
+        protected abstract void Parse_SqlProcedure(SqlProcedure sqlProcedure);
+        protected abstract void Parse_SqlFunction(SqlFunction sqlFunction);
+        protected abstract void Parse_SqlOrderByClause(SqlOrderByClause sqlOrderByClause);
+        protected virtual void Parse_SqlWhereClause(SqlWhere sqlWhereClause)
         {
-            var sb = new StringBuilder();
-            sb.Append("(");
+            _queryBuilder.Append("(");
             foreach (var el in sqlWhereClause.Nodes)
-                sb.Append(ParseExpression(el)).Append(" ");
-            sb.Append(")");
-            return sb.ToString();
+            {
+                ParseExpression(el);
+                _queryBuilder.Append(" ");
+            }
+            _queryBuilder.Append(")");
         }
 
-        protected virtual string Parse_SqlConstant(SqlConstant sqlConstant)
+        protected virtual void Parse_SqlConstant(SqlConstant sqlConstant)
         {
             if (sqlConstant.Value is ISqlExpression sqlExpression)
-                return ParseExpression(sqlExpression);
-            else return StringifyValue(sqlConstant.Value);
+                ParseExpression(sqlExpression);
+            else _queryBuilder.Append(StringifyValue(sqlConstant.Value));
         }
 
-        protected virtual string Parse_SqlCustom(SqlCustom sqlCustomQuery) => sqlCustomQuery.Query;
+        protected virtual void Parse_SqlCustom(SqlCustom sqlCustomQuery) => _queryBuilder.Append(sqlCustomQuery.Query);
 
-        protected virtual string Parse_SqlName(SqlName sqlName) => sqlName.Name;
+        protected virtual void Parse_SqlName(SqlName sqlName) => _queryBuilder.Append(sqlName.Name);
 
-        protected virtual string Parse_SqlOr(SqlOr sqlOr) => "OR";
+        protected virtual void Parse_SqlOr(SqlOr sqlOr) => _queryBuilder.Append("OR");
 
-        protected virtual string Parse_SqlAnd(SqlAnd sqlAnd) => "AND";
+        protected virtual void Parse_SqlAnd(SqlAnd sqlAnd) => _queryBuilder.Append("AND");
 
-        protected virtual string Parse_SqlIsNull(SqlIsNull sqlIsNull) => "IS NULL";
+        protected virtual void Parse_SqlIsNull(SqlIsNull sqlIsNull) => _queryBuilder.Append("IS NULL");
 
-        protected virtual string Parse_SqlEqual(SqlEqual sqlEqual) => "=";
+        protected virtual void Parse_SqlEqual(SqlEqual sqlEqual) => _queryBuilder.Append("=");
 
-        protected virtual string Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual) => "<=";
+        protected virtual void Parse_SqlLesserOrEqual(SqlLessOrEqual sqlLesserOrEqual) => _queryBuilder.Append("<=");
 
-        protected virtual string Parse_SqlLesserThan(SqlLessThan sqlLesserThan) => "<";
+        protected virtual void Parse_SqlLesserThan(SqlLessThan sqlLesserThan) => _queryBuilder.Append("<");
 
-        protected virtual string Parse_SqlGreaterOrEqual(SqlGreaterOrEqual sqlGreaterOrEqual) => ">=";
+        protected virtual void Parse_SqlGreaterOrEqual(SqlGreaterOrEqual sqlGreaterOrEqual) => _queryBuilder.Append(">=");
 
-        protected virtual string Parse_SqlGreaterThan(SqlGreaterThan sqlGreaterThan) => ">";
+        protected virtual void Parse_SqlGreaterThan(SqlGreaterThan sqlGreaterThan) => _queryBuilder.Append(">");
 
-        protected virtual string Parse_SqlNot(SqlNot sqlNot) => "NOT";
+        protected virtual void Parse_SqlNot(SqlNot sqlNot) => _queryBuilder.Append("NOT");
 
-        protected virtual string Parse_SqlNotEqual(SqlNotEqual sqlNotEqual) => "<>";
+        protected virtual void Parse_SqlNotEqual(SqlNotEqual sqlNotEqual) => _queryBuilder.Append("<>");
 
-        protected virtual string Parse_SqlComposition(SqlComposition sqlComposition)
+        protected virtual void Parse_SqlComposition(SqlComposition sqlComposition)
         {
-            var sb = new StringBuilder();
             foreach (var el in sqlComposition.Elements)
-                sb.Append(ParseExpression(el));
-            return sb.ToString();
+                ParseExpression(el);
         }
 
-        protected virtual string Parse_SqlParameter(DML.SqlParameter sqlParameter)
+        protected virtual void Parse_SqlParameter(DML.SqlParameter sqlParameter)
         {
             string parName = sqlParameter.Name;
             var pars = CurrentParameters;
@@ -181,9 +196,13 @@ namespace DataTools.Interfaces
                 {
                     var par = pars[i];
                     if (parName == par.Name)
-                        return StringifyValue(par.Value);
+                    {
+                        _queryBuilder.Append(StringifyValue(par.Value));
+                        return;
+                    }
+                    
                 }
-            return $"<{sqlParameter}>";
+            _queryBuilder.Append($"<{sqlParameter}>");
         }
     }
 }

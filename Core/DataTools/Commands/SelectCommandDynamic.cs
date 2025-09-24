@@ -25,6 +25,11 @@ namespace DataTools.Commands
             Query = new SqlSelect();
         }
 
+        /// <summary>
+        /// Передать запрос контексту данных на выполнение.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <returns></returns>
         public IEnumerable<dynamic> Run(params SqlParameter[] parameters) => DataContext.Select(Metadata, Query, parameters);
 
         public SelectCommandDynamic From() => From(Metadata);

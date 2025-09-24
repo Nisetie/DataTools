@@ -94,7 +94,7 @@ namespace DataTools.Extensions
 
             if (modelField.IsAutoincrement) constraints.Add(new SqlColumnAutoincrement());
 
-            constraints.Add(new SqlColumnNullable(!(modelField.IsAutoincrement || modelField.IsUnique || modelField.IsPrimaryKey)));
+            constraints.Add(new SqlColumnNullable(modelField.IsNullable && !(modelField.IsAutoincrement || modelField.IsUnique || modelField.IsPrimaryKey)));
 
             if (modelField.TextLength != null && fType == typeof(string) || fType == typeof(byte[]))
                 def.TextLength = modelField.TextLength;
