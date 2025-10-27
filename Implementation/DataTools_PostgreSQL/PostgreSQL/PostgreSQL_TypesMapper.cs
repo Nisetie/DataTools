@@ -1,6 +1,7 @@
 ﻿using DataTools.Common;
 using DataTools.Interfaces;
 using System;
+using System.Data;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -49,7 +50,7 @@ namespace DataTools.PostgreSQL
         public static string GetSqlType(DBType dbtype)
         {
             string sqltype;
-            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.PostgreSQL, dbtype);
+            sqltype = TypesMap.GetSqlType(E_DBMS.PostgreSQL, dbtype);
             return sqltype;
         }
 
@@ -76,26 +77,35 @@ namespace DataTools.PostgreSQL
                 return "NULL";
 
             var dbType = DBType.GetDBTypeByType(value.GetType());
+            return ToStringSQL(dbType, value);
+        }
+
+        public static string ToStringSQL(DBType dbType, object value)
+        {
+            if (value == null)
+                return "NULL";
+
             var sqlType = GetSqlType(dbType);
             if (dbType.IsNumber)
-                return $"({value.ToString().Replace(',', '.')})::{sqlType}";            
-
-            switch (value)
-            {
-                case DateTime dt:
-                    if (dt.Year < 1970)
-                        dt = new DateTime(1970, 01, 01, 00, 00, 00);
-                    return $"('{dt:yyyy-MM-dd HH:mm:ss.fff}')::{sqlType}";
-                case DateTimeOffset dto:
-                    if (dto.Year < 1970)
-                        dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
-                    //dto = dto.ToUniversalTime();
-                    return $"('{dto:o}')::{sqlType}";
-                case byte[] byteArray:
-                    return $"({ByteArrayToHexViaLookup32UnsafeDirect(byteArray)})::bytea";
-                default:
-                    return $"('{value.ToString().Replace("'", "''")}')::{sqlType}";
-            }
+                return $"({value.ToString().Replace(',', '.')})::{sqlType}";
+            else if (dbType.IsText)
+                return $"('{value.ToString().Replace("'", "''").Replace("\0", "")}')::{sqlType}";
+            else
+                switch (value)
+                {
+                    case DateTime dt:
+                        if (dt.Year < 1970)
+                            dt = new DateTime(1970, 01, 01, 00, 00, 00);
+                        return $"('{dt:yyyy-MM-dd HH:mm:ss.fff}')::{sqlType}";
+                    case DateTimeOffset dto:
+                        if (dto.Year < 1970)
+                            dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
+                        return $"('{dto:o}')::{sqlType}";
+                    case byte[] byteArray:
+                        return $"({ByteArrayToHexViaLookup32UnsafeDirect(byteArray)})::bytea";
+                    default:
+                        return $"('{value.ToString().Replace("'", "''").Replace("\0", "")}')::{sqlType}";
+                }
         }
 
         // https://stackoverflow.com/questions/311165/how-do-you-convert-a-byte-array-to-a-hexadecimal-string-and-vice-versa

@@ -2,6 +2,7 @@
 using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.Meta;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace DataTools.Extensions
@@ -29,7 +30,7 @@ namespace DataTools.Extensions
         {
             return sqlInsert
                 .Into(meta.FullObjectName)
-                .Column(meta.GetColumnsForInsertUpdate().ToArray());
+                .Column(MetadataHelper.GetColumnNamesFromColumnMetas(meta.GetColumnsForInsertUpdate()));
         }
         public static SqlInsert Value<ModelT>(this SqlInsert sqlInsert, ModelT model) where ModelT : class, new()
         {
@@ -49,6 +50,33 @@ namespace DataTools.Extensions
         public static SqlInsert Value(this SqlInsert sqlInsert, params object[] values)
         {
             return sqlInsert.Value(values.Select(c => new SqlConstant(c)).ToArray());
+        }
+
+        public static SqlInsert Value(this SqlInsert sqlInsert, IModelMetadata modelMetadata, params object[] values)
+        {
+            var columns = new List<IModelFieldMetadata>();
+            foreach (var fieldInfo in modelMetadata.GetColumnsForInsertUpdate())
+            {
+                if (!fieldInfo.IsForeignKey)
+                    columns.Add(fieldInfo);
+                else
+                {
+                    for (int i = 0; i < fieldInfo.ForeignColumnNames.Length; ++i)
+                        columns.Add(fieldInfo.ForeignModel.GetColumn(fieldInfo.ForeignColumnNames[i]));
+                }
+            }
+            var sqlValues = new ISqlExpression[values.Length];
+            for (int j = 0; j < values.Length; ++j)
+            {
+                var fieldMetadata = columns[j];
+                sqlValues[j] = new SqlInsertConstant(new SqlConstant(values[j]), fieldMetadata.ColumnDBType)
+                {
+                    TextLength = fieldMetadata.TextLength,
+                    NumericScale = fieldMetadata.NumericScale,
+                    NumericPrecision = fieldMetadata.NumericPrecision
+                };
+            }
+            return sqlInsert.Value(sqlValues);
         }
     }
 }

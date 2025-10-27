@@ -15,7 +15,7 @@ namespace DataTools.Interfaces
         /// <summary>
         /// NULL или тип из атрибута <see cref="ColumnTypeAttribute"/>
         /// </summary>
-        DBType ColumnType { get; set; }
+        DBType ColumnDBType { get; set; }
         string ColumnDisplayName { get; set; }
         string FieldTypeName { get; set; }
         bool IsUnique { get; set; }

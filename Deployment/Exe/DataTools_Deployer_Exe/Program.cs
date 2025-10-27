@@ -232,7 +232,7 @@ namespace DataTools.Deploy
                     modelFieldMetadata.ColumnName = ModelFieldMetadataJSON.ColumnName;
                     modelFieldMetadata.ColumnNames = ModelFieldMetadataJSON.ColumnNames.Clone() as string[];
                     modelFieldMetadata.ColumnDisplayName = ModelFieldMetadataJSON.ColumnDisplayName;
-                    modelFieldMetadata.ColumnType = ModelFieldMetadataJSON.ColumnType;
+                    modelFieldMetadata.ColumnDBType = ModelFieldMetadataJSON.ColumnDBType;
                     modelFieldMetadata.FieldTypeName = ModelFieldMetadataJSON.FieldTypeName;
                     modelFieldMetadata.TextLength = ModelFieldMetadataJSON.TextLength;
                     modelFieldMetadata.NumericPrecision = ModelFieldMetadataJSON.NumericPrecision;

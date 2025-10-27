@@ -78,7 +78,7 @@ namespace DataTools.MSSQL
                     _queryBuilder.AppendLine(" ROWS ONLY");
                 }
             }
-            _queryBuilder.Append(";");
+            _queryBuilder.AppendLine(";");
         }
 
         protected override void Parse_SqlExpressionWithAlias(SqlExpressionWithAlias sqlExpressionWithAlias)
@@ -114,7 +114,27 @@ namespace DataTools.MSSQL
                 _queryBuilder.Append("WHERE ");
                 ParseExpression(sqlDelete.Wheres);
             }
-            _queryBuilder.Append(";");
+            _queryBuilder.AppendLine(";");
+        }
+
+        protected override void Parse_SqlInsertConstant(SqlInsertConstant sqlInsertConstant)
+        {
+            _queryBuilder.Append($"cast(");
+            ParseExpression(sqlInsertConstant.Value);
+            _queryBuilder.Append($" as {MSSQL_TypesMapper.GetSqlType(sqlInsertConstant.ValueDBType)}");
+            if (sqlInsertConstant.ValueDBType.HasLength)
+            {
+                if (sqlInsertConstant.TextLength != null && sqlInsertConstant.TextLength > 0)
+                    _queryBuilder.Append($"({sqlInsertConstant.TextLength})");
+                else
+                    _queryBuilder.Append($"(max)");
+            }
+            else if (sqlInsertConstant.ValueDBType.HasPrecision)
+            {
+                if (sqlInsertConstant.NumericScale != null)
+                    _queryBuilder.Append($"({sqlInsertConstant.NumericPrecision},{sqlInsertConstant.NumericScale})");
+            }
+            _queryBuilder.Append($")");
         }
 
         protected override void Parse_SqlInsert(SqlInsert sqlInsert)
@@ -142,7 +162,7 @@ namespace DataTools.MSSQL
                 .Remove(_queryBuilder.Length - 1, 1)
                 .AppendLine("),")
                 .Remove(_queryBuilder.Length - 3, 3)
-                .Append(";");
+                .AppendLine(";");
         }
 
         protected override void Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch)
@@ -173,7 +193,7 @@ namespace DataTools.MSSQL
                 _queryBuilder.AppendLine("),");
             }
             _queryBuilder.Length -= 3;
-            _queryBuilder.Append(";");
+            _queryBuilder.AppendLine(";");
         }
 
         protected override void Parse_SqlUpdate(SqlUpdate sqlUpdate)
@@ -200,7 +220,7 @@ namespace DataTools.MSSQL
                 ParseExpression(sqlUpdate.Wheres);
                 _queryBuilder.AppendLine();
             }
-            _queryBuilder.Append(";");
+            _queryBuilder.AppendLine(";");
         }
 
         protected override void Parse_SqlFunction(SqlFunction sqlFunction)
@@ -241,49 +261,53 @@ namespace DataTools.MSSQL
                 _queryBuilder.Append($"[{name}]");
         }
 
+        protected override void Parse_SqlDDLColumnDefinition(SqlDDLColumnDefinition column)
+        {
+            Parse_SqlName(column.ColumnName);
+            _queryBuilder.Append($" ");
+
+            var colType = column.ColumnType;
+            var sqlType = MSSQL_TypesMapper.GetSqlTypeFromType(column.ColumnType.Type);
+            if (sqlType == null) throw new NullReferenceException($"Unknown sql type of {column.ColumnName} {colType}!");
+
+            if (colType.HasLength)
+            {
+                var textLength = column.TextLength;
+                string textLengthString = string.Empty;
+
+                if (textLength != null && textLength > 0)
+                    textLengthString = $"({textLength})";
+                else
+                    textLengthString = $"(max)";
+
+                _queryBuilder.Append($"{sqlType}{textLengthString} ");
+            }
+            else if (colType.Id == DBType.Decimal.Id)
+            {
+                if (column.NumericPrecision != null && column.NumericScale != null)
+                    _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                else
+                    _queryBuilder.Append($"{sqlType}(38,19) ");
+            }
+            else _queryBuilder.Append($"{sqlType} ");
+
+            if (column.Constraints != null)
+                foreach (var constraint in column.Constraints)
+                {
+                    ParseExpression(constraint);
+                    _queryBuilder.Append($" ");
+                }
+        }
+
         protected override void Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
         {
             _queryBuilder.AppendLine($"if (object_id('{sqlCreateTable.TableName}') is null) CREATE TABLE {sqlCreateTable.TableName} (");
 
             foreach (var column in sqlCreateTable.Columns)
             {
-                Parse_SqlName(column.ColumnName);
-                _queryBuilder.Append($" ");
-
-                var colType = column.ColumnType;
-                var sqlType = MSSQL_TypesMapper.GetSqlTypeFromType(column.ColumnType.Type);
-                if (sqlType == null) throw new NullReferenceException($"{nameof(MSSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {sqlCreateTable.TableName}.{column.ColumnName} {colType}");
-
-                if (colType.HasLength)
-                {
-                    var textLength = column.TextLength;
-                    string textLengthString = string.Empty;
-
-                    if (textLength != null && textLength > 0)
-                        textLengthString = $"({textLength})";
-                    else
-                        textLengthString = $"(max)";
-
-                    _queryBuilder.Append($"{sqlType}{textLengthString} ");
-                }
-                else if (colType.Id == DBType.Decimal.Id)
-                {
-                    if (column.NumericPrecision != null && column.NumericScale != null)
-                        _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
-                    else
-                        _queryBuilder.Append($"{sqlType}(38,19) ");
-                }
-                else _queryBuilder.Append($"{sqlType} ");
-
-                if (column.Constraints != null)
-                    foreach (var constraint in column.Constraints)
-                    {
-                        ParseExpression(constraint);
-                        _queryBuilder.Append($" ");
-                    }
+                Parse_SqlDDLColumnDefinition(column);
                 _queryBuilder.AppendLine(",");
             }
-
             if (sqlCreateTable.Constraints != null)
                 foreach (var constraint in sqlCreateTable.Constraints)
                 {
@@ -292,7 +316,7 @@ namespace DataTools.MSSQL
                 }
 
             _queryBuilder.Length -= $",{Environment.NewLine}".Length;
-            _queryBuilder.Append(");");
+            _queryBuilder.AppendLine(");");
         }
 
         protected override void Parse_SqlColumnAutoincrement(SqlColumnAutoincrement sqlColumnAutoincrement)
@@ -304,7 +328,7 @@ namespace DataTools.MSSQL
         {
             _queryBuilder.Append($"drop table if exists ");
             Parse_SqlName(sqlDropTable.TableName);
-            _queryBuilder.Append($";");
+            _queryBuilder.AppendLine($";");
         }
     }
 }

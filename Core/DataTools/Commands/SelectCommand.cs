@@ -65,7 +65,32 @@ namespace DataTools.Commands
             return this;
         }
         public SelectCommand<ModelT> Select() => Select(ModelMetadata<ModelT>.Instance);
-        public SelectCommand<ModelT> Select(IModelMetadata modelMetadata) => Select(modelMetadata.GetColumnsForSelect().Select(colName => new SqlName(colName)).ToArray());
+        public SelectCommand<ModelT> Select(IModelMetadata modelMetadata)
+        {
+            return Select(GetColumnNamesFromColumnMetas(modelMetadata.GetColumnsForSelect()));
+        }
+
+        private static SqlName[] GetColumnNamesFromColumnMetas(IEnumerable<IModelFieldMetadata> modelFields)
+        {
+            var columnMetas = modelFields.ToArray();
+            var columnNamesList = new List<SqlName>();
+            for (int i = 0; i < columnMetas.Length; ++i)
+            {
+                var column = columnMetas[i];
+                if (!column.IsForeignKey)
+                    columnNamesList.Add(new SqlName(column.ColumnName));
+                else
+                {
+                    if (column.ColumnNames != null && column.ColumnNames.Length > 0)
+                        for (int j = 0; j < column.ColumnNames.Length; ++j)
+                            columnNamesList.Add(new SqlName(column.ColumnNames[j]));
+                    else
+                        columnNamesList.Add(new SqlName(column.ColumnName));
+                }
+            }
+            return columnNamesList.ToArray();
+        }
+
         public SelectCommand<ModelT> Select(params string[] selects) => Select(selects.Select(s => new SqlCustom(s)).ToArray());
         public SelectCommand<ModelT> Select(params ISqlExpression[] selects)
         {
@@ -74,9 +99,9 @@ namespace DataTools.Commands
         }
 
         public SelectCommand<ModelT> Where
-            (string columnName, object value) 
-            => value == null 
-            ? Where(new SqlWhere(new SqlName(columnName)).IsNull()) 
+            (string columnName, object value)
+            => value == null
+            ? Where(new SqlWhere(new SqlName(columnName)).IsNull())
             : Where(new SqlWhere(new SqlName(columnName)).Eq(new SqlConstant(value)));
         public SelectCommand<ModelT> Where(ModelT model) => Where(ModelMapper<ModelT>.GetWhereClause(model));
         public SelectCommand<ModelT> Where(Expression<Func<ModelT, bool>> filterExpression)

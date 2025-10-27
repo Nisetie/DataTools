@@ -2,6 +2,7 @@
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
+using DataTools.Meta;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -67,7 +68,11 @@ namespace DataTools.Commands
             return this;
         }
         public SelectCommandDynamic Select() => Select(Metadata);
-        public SelectCommandDynamic Select(IModelMetadata modelMetadata) => Select(modelMetadata.GetColumnsForSelect().Select(colName => new SqlName(colName)).ToArray());
+        public SelectCommandDynamic Select(IModelMetadata modelMetadata)
+        {
+            return Select(MetadataHelper.GetColumnNamesFromColumnMetas(modelMetadata.GetColumnsForSelect()));
+        }
+
         public SelectCommandDynamic Select(params string[] selects) => Select(selects.Select(s => new SqlCustom(s)).ToArray());
         public SelectCommandDynamic Select(params ISqlExpression[] selects)
         {

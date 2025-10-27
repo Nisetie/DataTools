@@ -100,9 +100,9 @@ namespace DataTools_Tests
                         if (orderArray.Length == 0)
                             orderArray = meta.GetColumnsForSelect().ToArray();
 
-                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(orderArray)).ToArray();
+                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
                         var leftModels = new object[leftData.Length];
-                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(orderArray)).ToArray();
+                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
                         var rightModels = new object[rightData.Length];
 
                         leftData = leftData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
@@ -119,11 +119,11 @@ namespace DataTools_Tests
                         {
                             object[]? r = leftData[i1];
                             object m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
-                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] {m, deployer.DataContext, _customTypeConverters, r, sc });
+                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
                             leftModels[i1] = m;
                             object[]? rr = rightData[i1];
                             m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
-                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] {m, deployer.DataContext, _customTypeConverters, r, sc });
+                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
                             rightModels[i1] = m;
                         }
 

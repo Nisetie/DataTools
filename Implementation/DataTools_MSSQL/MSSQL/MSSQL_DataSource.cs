@@ -10,6 +10,7 @@ namespace DataTools.MSSQL
     public sealed class MSSQL_DataSource : DBMS_DataSource
     {
         private const int CACHE_SIZE = 64;
+        private const int MAXIMUM_CACHED_QUERY_LENGTH = 1024;
         private LinkedList<(string, ISqlExpression)> _plans = new LinkedList<(string, ISqlExpression)>();
         private Dictionary<string, LinkedListNode<(string, ISqlExpression)>> _queryCache = new Dictionary<string, LinkedListNode<(string, ISqlExpression)>>();
         private SqlConnection _conn = new SqlConnection();
@@ -23,6 +24,8 @@ namespace DataTools.MSSQL
         private ISqlExpression GetFromCache(ISqlExpression query)
         {
             string queryString = query.ToString();
+            if (queryString.Length > MAXIMUM_CACHED_QUERY_LENGTH)
+                return query;
             if (!_queryCache.TryGetValue(queryString, out var node))
             {
                 _queryCache[queryString] = node = _plans.AddFirst((queryString, _queryParser.SimplifyQuery(query)));

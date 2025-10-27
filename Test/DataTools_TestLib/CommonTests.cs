@@ -444,11 +444,11 @@ namespace DataTools_Tests
         {
             var cmd = new SqlCreateTable();
             cmd.Table("dbo.TestCreation").Column(
-                new SqlColumnDefinition().Name("i").Type<int>().Constraint(new SqlColumnAutoincrement()),
-                new SqlColumnDefinition().Name("j").Type<int>(),
-                new SqlColumnDefinition().Name("k").Type<string>(),
-                new SqlColumnDefinition().Name("l").Type<Guid>(),
-                new SqlColumnDefinition().Name("m").Type<byte[]>()
+                new SqlDDLColumnDefinition().Name("i").Type<int>().Constraint(new SqlColumnAutoincrement()),
+                new SqlDDLColumnDefinition().Name("j").Type<int>(),
+                new SqlDDLColumnDefinition().Name("k").Type<string>(),
+                new SqlDDLColumnDefinition().Name("l").Type<Guid>(),
+                new SqlDDLColumnDefinition().Name("m").Type<byte[]>()
                 );
 
             TestContext.Out.WriteLine(cmd.ToString());
@@ -469,11 +469,11 @@ namespace DataTools_Tests
         {
             var cmd = new SqlCreateTable();
             cmd.Table("dbo.TestCreation").Column(
-                new SqlColumnDefinition().Name("i").Type<int>().Constraint(new SqlColumnAutoincrement()),
-                new SqlColumnDefinition().Name("j").Type<int>(),
-                new SqlColumnDefinition().Name("k").Type<string>(),
-                new SqlColumnDefinition().Name("l").Type<Guid>(),
-                new SqlColumnDefinition().Name("m").Type<byte[]>()
+                new SqlDDLColumnDefinition().Name("i").Type<int>().Constraint(new SqlColumnAutoincrement()),
+                new SqlDDLColumnDefinition().Name("j").Type<int>(),
+                new SqlDDLColumnDefinition().Name("k").Type<string>(),
+                new SqlDDLColumnDefinition().Name("l").Type<Guid>(),
+                new SqlDDLColumnDefinition().Name("m").Type<byte[]>()
                 );
 
             TestContext.Out.WriteLine(cmd.ToString());
@@ -1273,6 +1273,26 @@ namespace DataTools_Tests
         {
             int a = 1;
             var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == a);
+            TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
+            var result = cmd.Run().ToArray();
+            Assert.That(result.Length == 1 && result[0].Id == 1);
+        }
+
+        interface ITest
+        {
+            int id { get; }
+        }
+
+        class Test : ITest
+        {
+            public int id { get; set; }
+        }
+
+        [Test]
+        public void TestWhereExpression33()
+        {
+            ITest t = new Test() { id = 1 };
+            var cmd = DataContext.SelectFrom<TestModelChild>().Where(m => m.Id == t.id && m.Name != "Test");
             TestContext.Out.WriteLine(GetQueryParser().SimplifyQuery(cmd.Query));
             var result = cmd.Run().ToArray();
             Assert.That(result.Length == 1 && result[0].Id == 1);

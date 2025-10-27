@@ -13,7 +13,7 @@ namespace DataTools.Meta
         public string FieldName { get; set; }
         public string ColumnName { get; set; }
         public string[] ColumnNames { get; set; }
-        public DBType ColumnType { get; set; } = null;
+        public DBType ColumnDBType { get; set; } = null;
         public int? TextLength { get; set; } = -1;
         public int? NumericPrecision { get; set; }
         public int? NumericScale { get; set; }
@@ -44,9 +44,9 @@ namespace DataTools.Meta
             ColumnDisplayName = ColumnName;
             FieldTypeName = fieldType.AssemblyQualifiedName;
             if (Nullable.GetUnderlyingType(fieldType) != null)
-                ColumnType = DBType.GetDBTypeByType(Nullable.GetUnderlyingType(fieldType));
+                ColumnDBType = DBType.GetDBTypeByType(Nullable.GetUnderlyingType(fieldType));
             else
-                ColumnType = DBType.GetDBTypeByType(fieldType);
+                ColumnDBType = DBType.GetDBTypeByType(fieldType);
             IEnumerable<FieldAttribute> attrs = propertyInfo.GetCustomAttributes<FieldAttribute>(true);
             foreach (var attr in attrs)
                 attr.ProcessMetadata(propertyInfo, this);
@@ -61,7 +61,7 @@ namespace DataTools.Meta
             field.FieldName = FieldName;
             field.ColumnName = ColumnName;
             field.ColumnNames = ColumnNames == null ? null : ColumnNames.Clone() as string[];
-            field.ColumnType = ColumnType;
+            field.ColumnDBType = ColumnDBType;
             field.TextLength = TextLength;
             field.NumericPrecision = NumericPrecision;
             field.NumericScale = NumericScale;

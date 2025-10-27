@@ -190,7 +190,10 @@ namespace DataTools_DataMigration
             if (_verbose)
                 foreach (var p in _worker.RunProgress())
                 {
-                    ConsoleWriteLine($"{p.Metadata.FullObjectName} {p.Progress} {p.InsertedRows}/{p.TotalRows}");
+                    if (p.Progress == DataMigrationWorker.E_MIGRATION_PROGRESS.MIGRATING)
+                        ConsoleWriteLine($"{p.Metadata.FullObjectName} {p.Progress} {p.InsertedRows}/{p.TotalRows}");
+                    else
+                        ConsoleWriteLine($"{p.Metadata.FullObjectName} {p.Progress}");
                 }
             else
                 _worker.Run();
@@ -278,7 +281,7 @@ namespace DataTools_DataMigration
                     mfm.ColumnName = metafj.ColumnName;
                     mfm.ColumnNames = metafj.ColumnNames.Clone() as string[];
                     mfm.ColumnDisplayName = metafj.ColumnDisplayName;
-                    mfm.ColumnType = metafj.ColumnType;
+                    mfm.ColumnDBType = metafj.ColumnDBType;
                     mfm.FieldTypeName = metafj.FieldTypeName;
                     mfm.TextLength = metafj.TextLength;
                     mfm.NumericPrecision = metafj.NumericPrecision;

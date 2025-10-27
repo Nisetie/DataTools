@@ -3,7 +3,9 @@ using DataTools.DDL;
 using DataTools.DML;
 using DataTools.Interfaces;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 
 namespace DataTools.SQLite
 {
@@ -119,6 +121,24 @@ namespace DataTools.SQLite
                 ParseExpression(sqlDelete.Wheres);
             }
             _queryBuilder.AppendLine(";");
+        }
+
+        protected override void Parse_SqlInsertConstant(SqlInsertConstant sqlInsertConstant)
+        {
+            _queryBuilder.Append($"cast(");
+            ParseExpression(sqlInsertConstant.Value);
+            _queryBuilder.Append($" as {SQLite_TypesMapper.GetSqlType(sqlInsertConstant.ValueDBType)}");
+            if (sqlInsertConstant.ValueDBType.HasLength)
+            {
+                if (sqlInsertConstant.TextLength != null && sqlInsertConstant.TextLength > 0)
+                    _queryBuilder.Append($"({sqlInsertConstant.TextLength})");
+            }
+            else if (sqlInsertConstant.ValueDBType.HasPrecision)
+            {
+                if (sqlInsertConstant.NumericScale != null)
+                    _queryBuilder.Append($"({sqlInsertConstant.NumericPrecision},{sqlInsertConstant.NumericScale})");
+            }
+            _queryBuilder.Append($")");
         }
 
         protected override void Parse_SqlInsert(SqlInsert sqlInsert)
@@ -268,76 +288,106 @@ namespace DataTools.SQLite
             _queryBuilder.Append(name.Contains(" ") ? $"[{name}]" : name);
         }
 
+        protected override void Parse_SqlDDLColumnDefinition(SqlDDLColumnDefinition column)
+        {
+            int sbLength = _queryBuilder.Length;
+            Parse_SqlName(column.ColumnName);
+            _queryBuilder.Append(" ");
+
+            var colType = column.ColumnType;
+            var sqlType = SQLite_TypesMapper.GetSqlType(colType);
+            if (sqlType == null) throw new NullReferenceException($"Unknown sql type of {column.ColumnName} {colType}!");
+
+            if (colType.HasLength)
+            {
+                var textLength = column.TextLength;
+                string textLengthString = string.Empty;
+                if (textLength != null)
+                {
+                    if (textLength > 0)
+                        textLengthString = $"({textLength})";
+                }
+                _queryBuilder.Append($"{sqlType}{textLengthString} ");
+            }
+            else
+            {
+                if (colType.Id == DBType.Decimal.Id)
+                {
+                    if (column.NumericPrecision != null && column.NumericScale != null)
+                        _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                    else
+                        _queryBuilder.Append($"{sqlType} ");
+                }
+                else
+                    _queryBuilder.Append($"{sqlType} ");
+            }
+
+            if (column.Constraints != null)
+                foreach (var constraint in column.Constraints)
+                {
+                    // если объявлен автоинкремент на уровне колонки и первичный целочисленный ключ на уровне таблицы,
+                    // тогда пропустить ограничение автоинкремента для исключения дубля первичного ключа
+                    //if (constraint is SqlColumnAutoincrement && sqlCreateTable.Constraints != null && sqlCreateTable.Constraints.Any(tablec => (tablec is SqlTablePrimaryKey sqlTablePrimaryKey && sqlTablePrimaryKey.Columns.Any(pkc => pkc == column.ColumnName.Name)))) continue;
+                    //if (constraint is SqlColumnAutoincrement && column.ColumnType == DBType.Int32)
+                    //    continue;
+
+                    ParseExpression(constraint);
+                    _queryBuilder.Append(" ");
+                }
+
+            string colDef = _queryBuilder.ToString();
+            int firstIndex = colDef.IndexOf("INTEGER PRIMARY KEY", sbLength);
+            if (firstIndex != -1)
+            {
+                // удалить лишние ограничения
+                _queryBuilder.Length -= _queryBuilder.Length - sbLength;
+                Parse_SqlName(column.ColumnName);
+                _queryBuilder.Append($" INTEGER PRIMARY KEY");
+            }
+        }
         protected override void Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
         {
+            // в SQLite автоинкрементное поле одновременно и первичный ключ
+            // поэтому надо убрать повторное объявление первичного ключа
+            bool thereIsAutoincrement = false;
+            foreach (var column in sqlCreateTable.Columns)
+            {
+                foreach (var columnConstraint in column.Constraints)
+                    if (columnConstraint is SqlColumnAutoincrement)
+                    {
+                        thereIsAutoincrement = true;
+                        break;
+                    }
+                if (thereIsAutoincrement) break;
+            }
+
+            var tableConstraints = sqlCreateTable.Constraints;
+
+            if (thereIsAutoincrement && tableConstraints != null)
+            {
+                var newTableConstrains = new List<SqlTableConstraint>();
+                foreach (var tableConstraint in tableConstraints)
+                    if (!(tableConstraint is SqlTablePrimaryKey))
+                        newTableConstrains.Add(tableConstraint);
+                tableConstraints = newTableConstrains;
+            }
+
+
             var name = sqlCreateTable.TableName.Name;
             if (name.IndexOf('.') == name.LastIndexOf('.'))
                 name = name.Replace('.', '_');
 
             _queryBuilder.AppendLine($"CREATE TABLE IF NOT EXISTS {name} (");
 
-            int sbLength = default;
+            //int sbLength = default;
             foreach (var column in sqlCreateTable.Columns)
             {
-                sbLength = _queryBuilder.Length;
-                Parse_SqlName(column.ColumnName);
-                _queryBuilder.Append(" ");
-
-                var colType = column.ColumnType;
-                var sqlType = SQLite_TypesMapper.GetSqlType(colType);
-                if (sqlType == null) throw new NullReferenceException($"{nameof(SQLite_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
-
-                if (colType.HasLength)
-                {
-                    var textLength = column.TextLength;
-                    string textLengthString = string.Empty;
-                    if (textLength != null)
-                    {
-                        if (textLength > 0)
-                            textLengthString = $"({textLength})";
-                    }
-                    _queryBuilder.Append($"{sqlType}{textLengthString} ");
-                }
-                else
-                {
-                    if (colType.Id == DBType.Decimal.Id)
-                    {
-                        if (column.NumericPrecision != null && column.NumericScale != null)
-                            _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
-                        else
-                            _queryBuilder.Append($"{sqlType} ");
-                    }
-                    else
-                        _queryBuilder.Append($"{sqlType} ");
-                }
-
-                if (column.Constraints != null)
-                    foreach (var constraint in column.Constraints)
-                    {
-                        // если объявлен автоинкремент на уровне колонки и первичный целочисленный ключ на уровне таблицы,
-                        // тогда пропустить ограничение автоинкремента для исключения дубля первичного ключа
-                        if (constraint is SqlColumnAutoincrement && sqlCreateTable.Constraints != null && sqlCreateTable.Constraints.Any(tablec => (tablec is SqlTablePrimaryKey sqlTablePrimaryKey && sqlTablePrimaryKey.Columns.Any(pkc => pkc == column.ColumnName.Name)))) continue;
-
-                        ParseExpression(constraint);
-                        _queryBuilder.Append(" ");
-                    }
-
-                string colDef = _queryBuilder.ToString();
-                int firstIndex = colDef.IndexOf("PRIMARY KEY", sbLength);
-                if (firstIndex != -1)
-                {
-                    // удалить все лишние ограничения для автоинкрементного ID
-                    if (colDef.IndexOf("INTEGER", sbLength) > 0)
-                    {
-                        _queryBuilder.Length -= _queryBuilder.Length - sbLength;
-                        Parse_SqlName(column.ColumnName);
-                        _queryBuilder.Append($" INTEGER PRIMARY KEY");
-                    }
-                }
+                Parse_SqlDDLColumnDefinition(column);
                 _queryBuilder.AppendLine($",");
             }
-            if (sqlCreateTable.Constraints != null)
-                foreach (var constraint in sqlCreateTable.Constraints)
+
+            if (tableConstraints != null)
+                foreach (var constraint in tableConstraints)
                 {
                     ParseExpression(constraint);
                     _queryBuilder.AppendLine(",");

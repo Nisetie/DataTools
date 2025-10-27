@@ -49,6 +49,7 @@ namespace DataTools.Interfaces
                     else
                         if (q.Substring(pos, (qp = 1 << (qc - 1))) == new string('\'', qp))
                         pos += (1 << (qc -= 1));
+                    else pos++;
                 }
                 else pos++;
 
@@ -111,7 +112,9 @@ namespace DataTools.Interfaces
 
                 case DML.SqlComposition sqlComposition: Parse_SqlComposition(sqlComposition); break;
                 case DML.SqlParameter sqlParameter: Parse_SqlParameter(sqlParameter); break;
+                case DML.SqlInsertConstant sqlInsertConstant: Parse_SqlInsertConstant(sqlInsertConstant); break;
 
+                case DDL.SqlDDLColumnDefinition sqlColumnDefinition: Parse_SqlDDLColumnDefinition(sqlColumnDefinition); break;
                 case DDL.SqlCreateTable sqlCreateTable: Parse_SqlCreateTable(sqlCreateTable); break;
                 case DDL.SqlDropTable sqlDropTable: Parse_SqlDropTable(sqlDropTable); break;
                 case DDL.SqlColumnAutoincrement sqlColumnAutoincrement: Parse_SqlColumnAutoincrement(sqlColumnAutoincrement); break;
@@ -123,6 +126,8 @@ namespace DataTools.Interfaces
             }
         }
 
+        protected abstract void Parse_SqlInsertConstant(SqlInsertConstant sqlInsertConstant);
+        protected abstract void Parse_SqlDDLColumnDefinition(SqlDDLColumnDefinition sqlColumnDefinition);
         protected abstract void Parse_SqlInsertBatch(SqlInsertBatch sqlInsertBatch);
         protected virtual void Parse_SqlColumnNullable(SqlColumnNullable sqlColumnNullable) => _queryBuilder.Append(sqlColumnNullable.IsNullable ? "NULL" : "NOT NULL");
         protected virtual void Parse_SqlTableForeignKey(SqlTableForeignKey sqlTableForeignKey) => _queryBuilder.Append($"FOREIGN KEY({string.Join(",", sqlTableForeignKey.Columns)}) REFERENCES {sqlTableForeignKey.ForeignTableName}({string.Join(",", sqlTableForeignKey.ForeignColumns)})");

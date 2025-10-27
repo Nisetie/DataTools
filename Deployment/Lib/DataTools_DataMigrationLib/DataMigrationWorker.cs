@@ -1,4 +1,5 @@
-﻿using DataTools.Common;
+﻿using DataTools.Attributes;
+using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
@@ -8,6 +9,7 @@ using DataTools.SQLite;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime;
 
 namespace DataTools.Deploy
 {
@@ -96,7 +98,10 @@ namespace DataTools.Deploy
             RunProgress().Last();
         }
 
-        public enum E_MIGRATION_PROGRESS { BEFORE, MIGRATING, AFTER }
+        public enum E_MIGRATION_PROGRESS
+        {
+            PREPARING, MIGRATING, FINALIZING
+        }
 
         public class MigrationInfo
         {
@@ -152,6 +157,8 @@ namespace DataTools.Deploy
             foreach (var meta in metas)
             {
                 if (meta.IsView) continue;
+
+                yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.PREPARING, Metadata = meta };
                 var queryBefore = _toMigrator.BeforeMigration(meta);
                 if (!string.IsNullOrEmpty(queryBefore.ToString()))
                     _toContext.Execute(queryBefore);
@@ -187,8 +194,6 @@ namespace DataTools.Deploy
                 long rowsPerPage = RowsPerBatch;
                 long pages = count / rowsPerPage;
 
-                var orderedFields = meta.GetColumnsForFilterOrder().ToArray();
-
                 var offset = new SqlConstant(startBound);
 
                 var selectQuery = new SqlSelect()
@@ -196,14 +201,14 @@ namespace DataTools.Deploy
                     .Select(meta)
                     .Limit(new SqlConstant(rowsPerPage))
                     .Offset(offset);
-                if (orderedFields != null && orderedFields.Length > 0)
-                    selectQuery.OrderBy(orderedFields);
+
+                selectQuery.OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(meta.GetColumnsForFilterOrder()));
 
                 var insertBatch = new SqlInsertBatch().Into(toMeta);
                 var results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
                 while (results.Length > 0)
                 {
-                    insertBatch.Value(results);
+                    insertBatch.Value(toMeta, results);
                     _toContext.Execute(new SqlComposition(queryBefore, insertBatch));
 
                     startBound += rowsPerPage;
@@ -212,9 +217,12 @@ namespace DataTools.Deploy
                     offset.Value = startBound;
                     results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
 
+                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
                     GC.Collect(2, GCCollectionMode.Forced, true, true);
+                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
                 }
 
+                yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.FINALIZING, Metadata = meta };
                 var queryAfter = _toMigrator.AfterMigration(meta);
                 if (!string.IsNullOrEmpty(queryAfter.ToString()))
                     _toContext.Execute(queryAfter);

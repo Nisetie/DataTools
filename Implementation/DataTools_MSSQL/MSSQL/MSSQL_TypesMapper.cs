@@ -48,18 +48,18 @@ namespace DataTools.MSSQL
         /// <returns></returns>
         public static string GetSqlTypeFromType(Type type)
         {
-            return GetSqlTypeFromDBType(DBType.GetDBTypeByType(type));
+            return GetSqlType(DBType.GetDBTypeByType(type));
         }
         /// <summary>
         /// Получить название sql-типа в СУБД MSSQL для абстрактного <paramref name="dbtype"/> типа данных.
         /// </summary>
         /// <param name="dbtype"></param>
         /// <returns></returns>
-        public static string GetSqlTypeFromDBType(DBType dbtype)
+        public static string GetSqlType(DBType dbtype)
         {
             string sqltype;
 
-            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.MSSQL, dbtype);
+            sqltype = TypesMap.GetSqlType(E_DBMS.MSSQL, dbtype);
             return sqltype;
         }
 

@@ -58,7 +58,7 @@ namespace DataTools.Common
         public static IEnumerable<IModelFieldMetadata> GetPrimaryKeys(IModelMetadata modelMetadata)
         {
             List<IModelFieldMetadata> primaryKeys = new List<IModelFieldMetadata>();
-            primaryKeys.AddRange(modelMetadata.GetFilterableFields());
+            primaryKeys.AddRange(modelMetadata.GetColumnsForFilterOrder());
             if (primaryKeys.Count == 0)
                 foreach (var f in modelMetadata.Fields)
                     primaryKeys.Add(f);
@@ -103,7 +103,7 @@ namespace DataTools.Common
 
             var valueExpressions = new List<Expression>();
 
-            foreach (var field in metadata.GetChangeableFields())
+            foreach (var field in metadata.GetColumnsForInsertUpdate())
                 if (field.IsForeignKey)
                     foreach (var foreignColumn in field.ForeignColumnNames)
                         valueExpressions.Add(Expression.Condition(
@@ -128,7 +128,7 @@ namespace DataTools.Common
 
             var whereExpressions = new List<Expression>();
 
-            foreach (var f in metadata.NoUniqueKey ? metadata.Fields : metadata.GetFilterableFields())
+            foreach (var f in metadata.NoUniqueKey ? metadata.Fields : metadata.GetColumnsForFilterOrder())
             {
                 if (f.IsForeignKey)
                 {

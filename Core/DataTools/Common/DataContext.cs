@@ -5,6 +5,7 @@ using DataTools.Meta;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace DataTools.Common
 {
@@ -73,7 +74,7 @@ namespace DataTools.Common
                 ModelMapper<ModelT>.CopyValues(
                    GetResultExact<ModelT>(
                        ds,
-                       new SqlInsert().Into<ModelT>().Value(ModelMapper<ModelT>.GetArrayOfValues(model))
+                       new SqlInsert().Into<ModelT>().Value(ModelMetadata<ModelT>.Instance, ModelMapper<ModelT>.GetArrayOfValues(model))
                        ).Last(),
                    model);
             }
@@ -92,7 +93,7 @@ namespace DataTools.Common
                     GetResultDynamic(
                         modelMetadata,
                         ds,
-                        new SqlInsert().Into(modelMetadata).Value((object[])DynamicMapper.GetMapper(modelMetadata).GetArrayOfValues(model))
+                        new SqlInsert().Into(modelMetadata).Value(modelMetadata, (object[])DynamicMapper.GetMapper(modelMetadata).GetArrayOfValues(model))
                         ).Last(),
                     model);
             }
@@ -112,7 +113,7 @@ namespace DataTools.Common
                     GetResultExact<ModelT>(
                         ds,
                         new SqlComposition(
-                            new SqlUpdate().From<ModelT>().Value(ModelMapper<ModelT>.GetArrayOfValues(model)).Where(sqlWhere),
+                            new SqlUpdate().From<ModelT>().Value(ModelMetadata<ModelT>.Instance, ModelMapper<ModelT>.GetArrayOfValues(model)).Where(sqlWhere),
                             new SqlSelect().From<ModelT>().Select<ModelT>().Where(sqlWhere)
                             )
                         ).Last(),
@@ -137,7 +138,7 @@ namespace DataTools.Common
                         modelMetadata,
                         ds,
                         new SqlComposition(
-                            new SqlUpdate().From(modelMetadata).Value((object[])mapper.GetArrayOfValues(model)).Where(sqlWhere),
+                            new SqlUpdate().From(modelMetadata).Value(modelMetadata, (object[])mapper.GetArrayOfValues(model)).Where(sqlWhere),
                             new SqlSelect().From(modelMetadata).Select(modelMetadata).Where(sqlWhere)
                             )
                         ).Last(),
@@ -208,7 +209,7 @@ namespace DataTools.Common
             }
         }
 
-        public IEnumerable<object[]> ExecuteWithResult(ISqlExpression query)=> ExecuteWithResult(query, null);
+        public IEnumerable<object[]> ExecuteWithResult(ISqlExpression query) => ExecuteWithResult(query, null);
         public IEnumerable<object[]> ExecuteWithResult(ISqlExpression query, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -225,14 +226,14 @@ namespace DataTools.Common
         public IEnumerable<ModelT> CallTableFunction<ModelT>
             (SqlFunction function)
             where ModelT : class, new()
-            => CallTableFunction<ModelT>(function,null);
+            => CallTableFunction<ModelT>(function, null);
         public IEnumerable<ModelT> CallTableFunction<ModelT>
             (SqlFunction function, params SqlParameter[] parameters)
             where ModelT : class, new()
             => Select<ModelT>(new SqlSelect().From(function, "f").Select(ModelMetadata<ModelT>.Instance), parameters);
         public IEnumerable<dynamic> CallTableFunction
             (IModelMetadata modelMetadata, SqlFunction function)
-            => CallTableFunction(modelMetadata,function,null);
+            => CallTableFunction(modelMetadata, function, null);
         public IEnumerable<dynamic> CallTableFunction
             (IModelMetadata modelMetadata, SqlFunction function, params SqlParameter[] parameters)
             => Select(modelMetadata, new SqlSelect().From(function, "f").Select(modelMetadata), parameters);
@@ -261,7 +262,7 @@ namespace DataTools.Common
         }
 
         public IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure)
-            => CallProcedure(modelMetadata,procedure,null);
+            => CallProcedure(modelMetadata, procedure, null);
         public IEnumerable<dynamic> CallProcedure(IModelMetadata modelMetadata, SqlProcedure procedure, params SqlParameter[] parameters)
         {
             var ds = this.GetDataSource();
@@ -292,7 +293,7 @@ namespace DataTools.Common
 
         protected IEnumerable<dynamic> GetResultDynamic
             (IModelMetadata modelMetadata, IDataSource ds, ISqlExpression query)
-            => GetResultDynamic(modelMetadata,ds,query,null);   
+            => GetResultDynamic(modelMetadata, ds, query, null);
         protected virtual IEnumerable<dynamic> GetResultDynamic(IModelMetadata modelMetadata, IDataSource ds, ISqlExpression query, params SqlParameter[] parameters)
         {
             var result = ds.ExecuteWithResult(query, parameters);
@@ -305,9 +306,9 @@ namespace DataTools.Common
                 yield return model;
             }
         }
-        protected IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query) 
+        protected IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query)
             where ModelT : class, new()
-            => GetResultExact<ModelT>(ds,query,null);   
+            => GetResultExact<ModelT>(ds, query, null);
         protected virtual IEnumerable<ModelT> GetResultExact<ModelT>(IDataSource ds, ISqlExpression query, params SqlParameter[] parameters) where ModelT : class, new()
         {
             var result = ds.ExecuteWithResult(query, parameters);

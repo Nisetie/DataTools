@@ -194,8 +194,8 @@ namespace DataTools.Deploy
                     modelField.ColumnDisplayName = colName;
                     modelField.FieldTypeName = netType.AssemblyQualifiedName;
 
-                    modelField.ColumnType = dbtypeParser(columnMetadata.DATA_TYPE);
-                    if (modelField.ColumnType == null) throw new NotSupportedException();
+                    modelField.ColumnDBType = dbtypeParser(columnMetadata.DATA_TYPE);
+                    if (modelField.ColumnDBType == null) throw new NotSupportedException();
                     modelField.FieldOrder = column.OrdinalPosition;
                     modelField.TextLength = columnMetadata.DATA_LENGTH;
                     modelField.NumericPrecision = columnMetadata.NUMERIC_PRECISION;
@@ -399,7 +399,7 @@ namespace DataTools.Deploy
                         }
 
                         modelCode.AppendLine($"\t\t[{nameof(ColumnNameAttribute)}(\"{colName}\")]");
-                        modelCode.AppendLine($"\t\t[{nameof(ColumnTypeAttribute)}(\"{modelField.ColumnType.Name}\")]");
+                        modelCode.AppendLine($"\t\t[{nameof(ColumnTypeAttribute)}(\"{modelField.ColumnDBType.Name}\")]");
                         modelCode.AppendLine($"\t\tpublic {fieldTypeName}{(modelField.IsNullable ? "?" : "")} {colName.Replace(' ', '_')} {{get; set;}}");
                     }
                     modelCode.AppendLine();

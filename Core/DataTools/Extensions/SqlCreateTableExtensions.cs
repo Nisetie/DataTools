@@ -30,14 +30,14 @@ namespace DataTools.Extensions
         {
             sqlCreateTable.Table(modelMetadata.FullObjectName);
 
-            List<SqlColumnDefinition> columns = new List<SqlColumnDefinition>();
+            List<SqlDDLColumnDefinition> columns = new List<SqlDDLColumnDefinition>();
             List<SqlTableConstraint> constraints = new List<SqlTableConstraint>();
             List<string> primaryKeys = new List<string>();
             Dictionary<string, List<string>> uniques = new Dictionary<string, List<string>>();
 
             foreach (var modelField in modelMetadata.Fields.OrderBy(f => f.FieldOrder))
             {
-                SqlColumnDefinition def = null;
+                SqlDDLColumnDefinition def = null;
                 if (modelField.IsForeignKey)
                 {
                     var fkConstraint = new SqlTableForeignKey(modelField.ForeignModel.FullObjectName, modelField.ColumnNames, modelField.ForeignColumnNames);
@@ -50,7 +50,7 @@ namespace DataTools.Extensions
                         IModelFieldMetadata foreignModelField = modelField.ForeignModel.GetColumn(foreignColumnName);
                         Type foreignModelFieldType = Type.GetType(foreignModelField.FieldTypeName);
 
-                        def = new SqlColumnDefinition().Name(new DML.SqlName(columnName)).Type(foreignModelField.ColumnType);
+                        def = new SqlDDLColumnDefinition().Name(new DML.SqlName(columnName)).Type(foreignModelField.ColumnDBType);
                         FillForeignColumnDefinition(def, modelField, foreignModelField, foreignModelFieldType);
                         columns.Add(def);
                         if (modelField.IsPrimaryKey) primaryKeys.Add(modelField.ColumnNames[i]);
@@ -65,7 +65,7 @@ namespace DataTools.Extensions
                 else
                 {
                     Type fieldType = Type.GetType(modelField.FieldTypeName);
-                    def = new SqlColumnDefinition().Name(new DML.SqlName(modelField.ColumnName)).Type(modelField.ColumnType);
+                    def = new SqlDDLColumnDefinition().Name(new DML.SqlName(modelField.ColumnName)).Type(modelField.ColumnDBType);
                     FillColumnDefinition(def, modelField, fieldType);
                     columns.Add(def);
                     if (modelField.IsPrimaryKey) primaryKeys.Add(modelField.ColumnName);
@@ -88,7 +88,7 @@ namespace DataTools.Extensions
             return sqlCreateTable;
         }
 
-        private static void FillColumnDefinition(SqlColumnDefinition def, IModelFieldMetadata modelField, Type fType)
+        private static void FillColumnDefinition(SqlDDLColumnDefinition def, IModelFieldMetadata modelField, Type fType)
         {
             List<SqlColumnConstraint> constraints = new List<SqlColumnConstraint>();
 
@@ -115,7 +115,7 @@ namespace DataTools.Extensions
         /// <param name="modelField"></param>
         /// <param name="foreignModelField"></param>
         /// <param name="fType"></param>
-        private static void FillForeignColumnDefinition(SqlColumnDefinition def, IModelFieldMetadata modelField, IModelFieldMetadata foreignModelField, Type fType)
+        private static void FillForeignColumnDefinition(SqlDDLColumnDefinition def, IModelFieldMetadata modelField, IModelFieldMetadata foreignModelField, Type fType)
         {
             List<SqlColumnConstraint> constraints = new List<SqlColumnConstraint>();
 

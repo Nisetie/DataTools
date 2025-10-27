@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using DataTools.DDL;
+using System.Collections.Generic;
 using System.Text;
 
 namespace DataTools.DML

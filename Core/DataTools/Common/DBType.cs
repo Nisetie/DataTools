@@ -11,8 +11,9 @@ namespace DataTools.Common
     {
         public Type Type { get; private set; }
         public bool HasLength { get; private set; }
-
         public bool IsNumber { get; private set; }
+        public bool IsText { get; private set; }
+
         public bool HasPrecision { get; private set; }
 
         private static int _iterator = 0;
@@ -42,11 +43,11 @@ namespace DataTools.Common
         public static DBType Money = new DBType(nameof(Money), typeof(decimal), hasPrecision: true, isNumber: true);
 
         // Character Types
-        public static DBType String = new DBType(nameof(String), typeof(string), hasLength: true, hasTypePriority: true);
-        public static DBType AnsiString = new DBType(nameof(AnsiString), typeof(string), hasLength: true);
-        public static DBType AnsiStringFixedLength = new DBType(nameof(AnsiStringFixedLength), typeof(string), hasLength: true);
-        public static DBType StringFixedLength = new DBType(nameof(StringFixedLength), typeof(string), hasLength: true);
-        public static DBType Char = new DBType(nameof(Char), typeof(char), hasTypePriority: true);
+        public static DBType String = new DBType(nameof(String), typeof(string), hasLength: true, hasTypePriority: true, isText: true);
+        public static DBType AnsiString = new DBType(nameof(AnsiString), typeof(string), hasLength: true, isText: true);
+        public static DBType AnsiStringFixedLength = new DBType(nameof(AnsiStringFixedLength), typeof(string), hasLength: true, isText: true);
+        public static DBType StringFixedLength = new DBType(nameof(StringFixedLength), typeof(string), hasLength: true, isText: true);
+        public static DBType Char = new DBType(nameof(Char), typeof(char), hasTypePriority: true, isText: true);
         //// XML
         public static DBType Xml = new DBType(nameof(Xml), typeof(string));
         //// JSON Types
@@ -73,7 +74,7 @@ namespace DataTools.Common
         /// <param name="hasLength">Тип (текстовый) может иметь фиксированную длину</param>
         /// <param name="hasPrecision">Тип (числовой) может иметь длину и точность</param>
         /// <param name="hasTypePriority">Приоритетное сопоставление для <paramref name="type"/></param>
-        public DBType(string name, Type type, bool isNumber = false, bool hasLength = false, bool hasPrecision = false, bool hasTypePriority = false)
+        public DBType(string name, Type type, bool isNumber = false, bool isText = false, bool hasLength = false, bool hasPrecision = false, bool hasTypePriority = false)
             : base(_GetId(), name)
         {
             _typeNames[Name] = this;
@@ -84,6 +85,7 @@ namespace DataTools.Common
             HasLength = hasLength;
             HasPrecision = hasPrecision;
             IsNumber = isNumber;
+            IsText = isText;
         }
 
         public override string ToString()

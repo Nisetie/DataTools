@@ -87,7 +87,7 @@ return (select * from SalesLT.SalesOrderDetail);
         public static ISqlExpression CreateCallFunction(IModelMetadata meta, string functionName)
         {
             List<SqlParameter> parameters = new List<SqlParameter>();
-            foreach (var f in meta.GetFilterableFields())
+            foreach (var f in meta.GetColumnsForFilterOrder())
             {
                 if (f.IsForeignKey)
                 {
@@ -115,7 +115,7 @@ return (select * from SalesLT.SalesOrderDetail);
         {
             var meta = ModelMetadata<ModelT>.Instance;
             List<SqlParameter> parameters = new List<SqlParameter>();
-            foreach (var f in meta.GetFilterableFields())
+            foreach (var f in meta.GetColumnsForFilterOrder())
             {
                 if (f.IsForeignKey)
                 {

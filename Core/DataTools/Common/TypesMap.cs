@@ -56,7 +56,7 @@ namespace DataTools.Common
         /// <param name="dbms"></param>
         /// <param name="dbtype"></param>
         /// <returns>string if exists else null</returns>
-        public static string GetSqlTypeFromDBType(E_DBMS dbms, DBType dbtype)
+        public static string GetSqlType(E_DBMS dbms, DBType dbtype)
         {
             if (_linksToSqlType.TryGetValue(dbms, out var links))
                 if (links.TryGetValue(dbtype.Id, out var sqltype))

@@ -50,7 +50,7 @@ namespace DataTools.SQLite
         public static string GetSqlType(DBType dbtype)
         {
             string sqltype;
-            sqltype = TypesMap.GetSqlTypeFromDBType(E_DBMS.SQLite, dbtype);
+            sqltype = TypesMap.GetSqlType(E_DBMS.SQLite, dbtype);
             return sqltype;
         }
         public static Type GetNetType(string sqlType)

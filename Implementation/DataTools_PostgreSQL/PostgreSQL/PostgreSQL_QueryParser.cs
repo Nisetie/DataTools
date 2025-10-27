@@ -3,8 +3,7 @@ using DataTools.DDL;
 using DataTools.DML;
 using DataTools.Interfaces;
 using System;
-using System.Text;
-using System.Xml.Linq;
+using System.Data.SqlTypes;
 
 namespace DataTools.PostgreSQL
 {
@@ -16,7 +15,6 @@ namespace DataTools.PostgreSQL
         {
 
         }
-
         protected override string StringifyValue(object value)
         {
             return PostgreSQL_TypesMapper.ToStringSQL(value);
@@ -121,7 +119,25 @@ namespace DataTools.PostgreSQL
                 _queryBuilder.Append("WHERE ");
                 ParseExpression(sqlDelete.Wheres);
             }
-            _queryBuilder.Append(";");
+            _queryBuilder.AppendLine(";");
+        }
+
+        protected override void Parse_SqlInsertConstant(SqlInsertConstant sqlInsertConstant)
+        {
+            _queryBuilder.Append($"(");
+            ParseExpression(sqlInsertConstant.Value);
+            var sqlType = PostgreSQL_TypesMapper.GetSqlType(sqlInsertConstant.ValueDBType);
+            _queryBuilder.Append($")::{sqlType}");
+            if (sqlInsertConstant.ValueDBType.HasLength && sqlType != "text" && sqlType != "bytea")
+            {
+                if (sqlInsertConstant.TextLength != null && sqlInsertConstant.TextLength > 0)
+                    _queryBuilder.Append($"({sqlInsertConstant.TextLength})");
+            }
+            else if (sqlInsertConstant.ValueDBType.HasPrecision && sqlType != "money")
+            {
+                if (sqlInsertConstant.NumericScale != null)
+                    _queryBuilder.Append($"({sqlInsertConstant.NumericPrecision},{sqlInsertConstant.NumericScale})");
+            }
         }
 
         protected override void Parse_SqlInsert(SqlInsert sqlInsert)
@@ -179,9 +195,7 @@ namespace DataTools.PostgreSQL
                 _queryBuilder.AppendLine("),");
             }
             _queryBuilder.Length -= 3;
-            _queryBuilder
-                .AppendLine()
-                .Append("returning *;");
+            _queryBuilder.AppendLine(";");
         }
 
         protected override void Parse_SqlUpdate(SqlUpdate sqlUpdate)
@@ -259,6 +273,47 @@ namespace DataTools.PostgreSQL
             else _queryBuilder.Append(name);
         }
 
+        protected override void Parse_SqlDDLColumnDefinition(SqlDDLColumnDefinition column)
+        {
+            Parse_SqlName(column.ColumnName);
+            _queryBuilder.Append(" ");
+
+            var colType = column.ColumnType;
+            var sqlType = PostgreSQL_TypesMapper.GetSqlType(colType);
+            if (sqlType == null) throw new NullReferenceException($"Unknown sql type of {nameof(Parse_SqlCreateTable)}: {column.ColumnName} {colType}.\r\n{_queryBuilder}");
+
+            if (colType.HasLength && sqlType != "text" && sqlType != "bytea")
+            {
+                var textLength = column.TextLength;
+                string textLengthString = string.Empty;
+                if (textLength != null)
+                {
+                    if (textLength > 0)
+                        textLengthString = $"({textLength})";
+                }
+                _queryBuilder.Append($"{sqlType}{textLengthString} ");
+            }
+            else
+            {
+                if (colType.Id == DBType.Decimal.Id)
+                {
+                    if (column.NumericPrecision != null && column.NumericScale != null)
+                        _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
+                    else
+                        _queryBuilder.Append($"{sqlType} ");
+                }
+                else
+                    _queryBuilder.Append($"{sqlType} ");
+            }
+
+            if (column.Constraints != null)
+                foreach (var constraint in column.Constraints)
+                {
+                    ParseExpression(constraint);
+                    _queryBuilder.Append(" ");
+                }
+        }
+
         protected override void Parse_SqlCreateTable(SqlCreateTable sqlCreateTable)
         {
             var name = sqlCreateTable.TableName.Name;
@@ -267,43 +322,7 @@ namespace DataTools.PostgreSQL
 
             foreach (var column in sqlCreateTable.Columns)
             {
-                Parse_SqlName(column.ColumnName);
-                _queryBuilder.Append(" ");
-
-                var colType = column.ColumnType;
-                var sqlType = PostgreSQL_TypesMapper.GetSqlType(colType);
-                if (sqlType == null) throw new NullReferenceException($"{nameof(PostgreSQL_QueryParser)}.{nameof(Parse_SqlCreateTable)}: {name}.{column.ColumnName} {colType}");
-
-                if (colType.HasLength && sqlType != "text" && sqlType != "bytea")
-                {
-                    var textLength = column.TextLength;
-                    string textLengthString = string.Empty;
-                    if (textLength != null)
-                    {
-                        if (textLength > 0)
-                            textLengthString = $"({textLength})";
-                    }
-                    _queryBuilder.Append($"{sqlType}{textLengthString} ");
-                }
-                else
-                {
-                    if (colType.Id == DBType.Decimal.Id)
-                    {
-                        if (column.NumericPrecision != null && column.NumericScale != null)
-                            _queryBuilder.Append($"{sqlType}({column.NumericPrecision},{column.NumericScale}) ");
-                        else
-                            _queryBuilder.Append($"{sqlType} ");
-                    }
-                    else
-                        _queryBuilder.Append($"{sqlType} ");
-                }
-
-                if (column.Constraints != null)
-                    foreach (var constraint in column.Constraints)
-                    {
-                        ParseExpression(constraint);
-                        _queryBuilder.Append(" ");
-                    }
+                Parse_SqlDDLColumnDefinition(column);
                 _queryBuilder.AppendLine(",");
             }
 

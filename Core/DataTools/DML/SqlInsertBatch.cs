@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataTools.DDL;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -64,7 +65,16 @@ namespace DataTools.DML
                 .AppendLine($"({string.Join(",", _columns)})")
                 .AppendLine("VALUES");
             foreach (var val in _values)
-                sb.AppendLine($"{string.Join($",{Environment.NewLine}", $"({string.Join(",", val)})")}");
+            {
+                sb.Append("(");
+                foreach (var col in val) {
+                    sb.Append(col.ToString());
+                    sb.Append(",");
+                }
+                sb.Length -= 1;
+                sb.Append($"),{Environment.NewLine}");
+            }
+            sb.Length -= $",{Environment.NewLine}".Length;                
 
             return sb.ToString();
         }

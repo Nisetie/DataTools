@@ -121,6 +121,7 @@ namespace DataTools.Deploy
                 else
                 {
                     Console.WriteLine($"The folder ({_savePath}) is already exists. Use -r for recreation this folder.");
+                    Environment.Exit(1);
                 }
             }
             if (_verbose)

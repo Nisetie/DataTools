@@ -14,7 +14,7 @@ namespace DataTools.Deploy
         public string FieldName { get; set; }
         public string ColumnName { get; set; }
         public string[] ColumnNames { get; set; }
-        public DBType ColumnType { get; set; } = null;
+        public DBType ColumnDBType { get; set; } = null;
         public string ColumnDisplayName { get; set; }
         public bool IsUnique { get; set; }
         public string UniqueConstraintName { get; set; }
@@ -39,7 +39,7 @@ namespace DataTools.Deploy
             this.FieldName = modelFieldMetadata.FieldName;
             this.ColumnName = modelFieldMetadata.ColumnName;
             this.ColumnNames = modelFieldMetadata.ColumnNames?.Clone() as string[] ?? new string[] { };
-            this.ColumnType = modelFieldMetadata.ColumnType;
+            this.ColumnDBType = modelFieldMetadata.ColumnDBType;
             this.ColumnDisplayName = modelFieldMetadata.ColumnDisplayName;
             this.IsUnique = modelFieldMetadata.IsUnique;
             this.UniqueConstraintName = modelFieldMetadata.UniqueConstraintName;
@@ -84,7 +84,7 @@ namespace DataTools.Deploy
                             case nameof(ModelFieldMetadataJSON.ColumnDisplayName): _mfm.ColumnDisplayName = reader.GetString(); break;
                             case nameof(ModelFieldMetadataJSON.ColumnName): _mfm.ColumnName = reader.GetString(); break;
                             case nameof(ModelFieldMetadataJSON.ColumnNames): _mfm.ColumnNames = reader.GetString().Split(','); break;
-                            case nameof(ModelFieldMetadataJSON.ColumnType): _mfm.ColumnType = DBType.GetDBTypeByName(reader.GetString()); break;
+                            case nameof(ModelFieldMetadataJSON.ColumnDBType): _mfm.ColumnDBType = DBType.GetDBTypeByName(reader.GetString()); break;
                             case nameof(ModelFieldMetadataJSON.FieldName): _mfm.FieldName = reader.GetString(); break;
                             case nameof(ModelFieldMetadataJSON.FieldTypeName): _mfm.FieldTypeName = reader.GetString(); break;
                             case nameof(ModelFieldMetadataJSON.ForeignColumnNames): _mfm.ForeignColumnNames = reader.GetString().Split(','); break;
@@ -121,7 +121,7 @@ namespace DataTools.Deploy
             writer.WriteString(nameof(ModelFieldMetadataJSON.ColumnDisplayName), value.ColumnDisplayName);
             writer.WriteString(nameof(ModelFieldMetadataJSON.ColumnName), value.ColumnName);
             writer.WriteString(nameof(ModelFieldMetadataJSON.ColumnNames), value.ColumnNames != null ? string.Join(",", value.ColumnNames) : string.Empty);
-            writer.WriteString(nameof(ModelFieldMetadataJSON.ColumnType), value.ColumnType?.ToString() ?? string.Empty);
+            writer.WriteString(nameof(ModelFieldMetadataJSON.ColumnDBType), value.ColumnDBType?.ToString() ?? string.Empty);
             writer.WriteString(nameof(ModelFieldMetadataJSON.FieldName), value.FieldName);
             writer.WriteString(nameof(ModelFieldMetadataJSON.FieldTypeName), value.FieldTypeName);
             writer.WriteString(nameof(ModelFieldMetadataJSON.ForeignColumnNames), value.ForeignColumnNames != null ? string.Join(",", value.ForeignColumnNames) : string.Empty);

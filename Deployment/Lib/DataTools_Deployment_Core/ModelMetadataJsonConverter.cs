@@ -63,17 +63,17 @@ namespace DataTools.Deploy
             throw new NotImplementedException();
         }
 
-        public IEnumerable<string> GetColumnsForSelect()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForSelect()
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<string> GetColumnsForInsertUpdate()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForInsertUpdate()
         {
             throw new NotImplementedException();
         }
 
-        public IEnumerable<string> GetColumnsForFilterOrder()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForFilterOrder()
         {
             throw new NotImplementedException();
         }

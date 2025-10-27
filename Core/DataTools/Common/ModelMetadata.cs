@@ -53,73 +53,35 @@ namespace DataTools.Meta
             if (_fieldsIndex.TryGetValue(fieldName, out IModelFieldMetadata fieldMetadata)) return fieldMetadata; return null;
         }
 
-        public IEnumerable<string> GetColumnsForSelect()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForSelect()
         {
             foreach (var f in _fields)
             {
-                if (f.IsForeignKey)
-                {
-                    if (f.ColumnNames != null)
-                        foreach (var col in f.ColumnNames)
-                            yield return col;
-                    else yield return f.ColumnName;
-                }
-                else
-                    yield return f.ColumnName;
+                yield return f;
             }
         }
 
-        public IEnumerable<string> GetColumnsForFilterOrder()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForFilterOrder()
         {
+            int i = 0;
             foreach (var f in _fields)
             {
                 if (!(f.IsPrimaryKey || f.IsAutoincrement || f.IsUnique)) continue;
-
-                if (f.IsForeignKey)
-                {
-                    if (f.ColumnNames != null)
-                        foreach (var col in f.ColumnNames)
-                            yield return col;
-                    else yield return f.ColumnName;
-                }
-                else
-                    yield return f.ColumnName;
-
+                i++;
+                yield return f;
             }
+            if (i == 0)
+                foreach (var f in _fields)
+                    yield return f;
         }
 
-        public IEnumerable<string> GetColumnsForInsertUpdate()
+        public IEnumerable<IModelFieldMetadata> GetColumnsForInsertUpdate()
         {
             foreach (var f in _fields)
             {
                 if (f.IgnoreChanges || f.IsAutoincrement) continue;
-
-                if (f.IsForeignKey)
-                {
-                    if (f.ColumnNames != null)
-                        foreach (var col in f.ColumnNames)
-                            yield return col;
-                    else yield return f.ColumnName;
-                }
-                else
-                    yield return f.ColumnName;
+                yield return f;
             }
-        }
-
-        public IEnumerable<IModelFieldMetadata> GetChangeableFields()
-        {
-            return from field
-                   in Fields
-                   where !(field.IgnoreChanges || field.IsAutoincrement)
-                   select field;
-        }
-
-        public IEnumerable<IModelFieldMetadata> GetFilterableFields()
-        {
-            return from field
-                   in Fields
-                   where field.IsPrimaryKey || field.IsAutoincrement || field.IsUnique
-                   select field;
         }
 
         public IModelMetadata Copy()

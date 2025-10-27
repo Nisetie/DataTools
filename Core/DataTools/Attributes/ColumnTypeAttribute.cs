@@ -14,7 +14,7 @@ namespace DataTools.Attributes
 
         public override void ProcessMetadata(PropertyInfo propertyInfo, IModelFieldMetadata metadata)
         {
-            metadata.ColumnType = ColumnType;
+            metadata.ColumnDBType = ColumnType;
         }
     }
 }
