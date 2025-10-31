@@ -93,11 +93,11 @@ as
             TestType((byte)1);
             TestType((short)1);
             TestType((long)1);
-            TestType((decimal)125.32m);
+            TestType(125.32m);
             TestType((float)125.32f);
             TestType((double)125.32);
-            TestType((string)"abc");
-            TestType((char)'a');
+            TestType("abc");
+            TestType('a');
             TestType(new byte[] { 1, 2, 3, 4 });
             TestType(DateTime.Parse("2025-08-07 15:27:36"));
             TestType(DateTimeOffset.Parse("2025-08-07 15:27:36"));

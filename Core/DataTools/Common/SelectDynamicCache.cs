@@ -1,6 +1,4 @@
-﻿using DataTools.Interfaces;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace DataTools.Common
 {

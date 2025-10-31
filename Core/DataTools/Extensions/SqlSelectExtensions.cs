@@ -4,7 +4,6 @@ using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
@@ -12,6 +11,12 @@ namespace DataTools.Extensions
 {
     public static class SqlSelectExtensions
     {
+        /// <summary>
+        /// Указать источник данных в блоке FROM
+        /// </summary>
+        /// <typeparam name="ModelT"></typeparam>
+        /// <param name="sqlSelect"></param>
+        /// <returns></returns>
         public static SqlSelect From<ModelT>(this SqlSelect sqlSelect) where ModelT : class, new() => From(sqlSelect, ModelMetadata<ModelT>.Instance);
         public static SqlSelect From(this SqlSelect sqlSelect, IModelMetadata metadata) => From(sqlSelect, objectName: metadata.FullObjectName);
         public static SqlSelect From(this SqlSelect sqlSelect, string objectName) => From(sqlSelect, new SqlName(objectName));

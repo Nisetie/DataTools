@@ -39,7 +39,7 @@ namespace DataTools.Interfaces
         void Delete(IModelMetadata modelMetadata, dynamic record);
     }
 
-    public interface IDataContext :ICRUD
+    public interface IDataContext : ICRUD
     {
         /// <summary>
         /// Получить объект источника данных для более гибкого обращения к данным.

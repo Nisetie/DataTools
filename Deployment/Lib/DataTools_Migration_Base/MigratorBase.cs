@@ -5,26 +5,28 @@ namespace DataTools.Deploy
 {
     public abstract class MigratorBase
     {
+        public abstract void SetupModel(IDataContext dataContext, IModelMetadata modelMetadata);
+
         /// <summary>
         /// Получить команду очистки таблицы.
         /// В разных СУБД это действие может выполняться по-разному. Где-то только через DELETE, где-то через TRUNCATE.
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata);
+        public abstract ISqlExpression GetClearTableQuery();
 
         /// <summary>
-        /// Подготовительные действия. Например, отключение автоинкрементов.
+        /// Подготовительные действия перед КАЖДОЙ порцией переносимых данных. Например, временное отключение работы автоинкрементов.
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract ISqlExpression BeforeMigration(IModelMetadata modelMetadata);
+        public abstract ISqlExpression GetBeforeMigrationQuery();
 
         /// <summary>
-        /// Действия после миграции данных. Например, включение автоинкрементов.
+        /// Финальные действия после миграции данных. Например, включение автоинкрементов.
         /// </summary>
         /// <param name="modelMetadata"></param>
         /// <returns></returns>
-        public abstract ISqlExpression AfterMigration(IModelMetadata modelMetadata);
+        public abstract ISqlExpression GetAfterMigrationQuery();
     }
 }

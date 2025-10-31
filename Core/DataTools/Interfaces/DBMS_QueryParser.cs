@@ -1,6 +1,7 @@
 ﻿using DataTools.DDL;
 using DataTools.DML;
 using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace DataTools.Interfaces
@@ -13,7 +14,7 @@ namespace DataTools.Interfaces
 
         public ISqlExpression SimplifyQuery(ISqlExpression query)
         {
-            return SimplifyQuery(query, null);  
+            return SimplifyQuery(query, null);
         }
         public ISqlExpression SimplifyQuery(ISqlExpression query, params SqlParameter[] sqlParameters)
         {
@@ -22,8 +23,7 @@ namespace DataTools.Interfaces
             ParseExpression(query);
             var q = _queryBuilder.ToString();
 
-            SqlComposition composition = new SqlComposition();
-            var compositionElements = composition.Elements;
+            List<ISqlExpression> expressions = new List<ISqlExpression>();
             int from = 0;
             int to = q.Length - 1;
             var pos = 0;
@@ -36,9 +36,9 @@ namespace DataTools.Interfaces
                 if (c == '<' && q[pos + 1] == '$' && qc == 0)
                 {
                     if (pos > from)
-                        compositionElements.Add(new SqlCustom(q.Substring(from, pos - from)));
+                        expressions.Add(new SqlCustom(q.Substring(from, pos - from)));
                     var parName = q.Substring(pos + 2, q.IndexOf('>', pos) - pos - 2);
-                    compositionElements.Add(new SqlParameter(parName));
+                    expressions.Add(new SqlParameter(parName));
                     pos += parName.Length + 3;
                     from = pos++;
                 }
@@ -56,12 +56,12 @@ namespace DataTools.Interfaces
             }
 
             if (from <= to)
-                compositionElements.Add(new SqlCustom(q.Substring(from)));
+                expressions.Add(new SqlCustom(q.Substring(from)));
 
-            if (composition.Elements.Count == 1)
-                return composition.Elements[0];
+            if (expressions.Count == 1)
+                return expressions[0];
             else
-                return composition;
+                return new SqlComposition(expressions.ToArray());
         }
 
         public string ToString(ISqlExpression query) => ToString(query, parameters: null);
@@ -205,7 +205,7 @@ namespace DataTools.Interfaces
                         _queryBuilder.Append(StringifyValue(par.Value));
                         return;
                     }
-                    
+
                 }
             _queryBuilder.Append($"<{sqlParameter}>");
         }

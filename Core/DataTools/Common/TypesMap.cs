@@ -8,12 +8,12 @@ namespace DataTools.Common
         private static Dictionary<E_DBMS, Dictionary<int, string>> _linksToSqlType = new Dictionary<E_DBMS, Dictionary<int, string>>();
 
         /// <summary>
-        /// Добавить прямую и обратные ассоциации между DBType и sql-типами
+        /// Добавить прямую и обратные ассоциации между DBType и sql-типами.
         /// </summary>
-        /// <param name="dbms"></param>
-        /// <param name="dbtype"></param>
-        /// <param name="sqlType"></param>
-        /// <param name="aliases"></param>
+        /// <param name="dbms">СУБД</param>
+        /// <param name="dbtype">Общий класс родственных типов данных sql.</param>
+        /// <param name="sqlType">Приоритетный для <see cref="DBType"/>> тип данных на стороне СУБД. Используется при преобразовании в тип на стороне СУБД.</param>
+        /// <param name="aliases">Альтернативные типы на стороне СУБД, связанные с конкретным <see cref="DBType"/>. Используются только для преобразования в C#-типы.</param>
         public static void AddTypeLink(E_DBMS dbms, DBType dbtype, string sqlType, params string[] aliases)
         {
             if (!_linksToDBType.TryGetValue(dbms, out var linksToDBType))

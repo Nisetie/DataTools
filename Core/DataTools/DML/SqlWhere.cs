@@ -2,7 +2,7 @@
 
 namespace DataTools.DML
 {
-    public class SqlWhere : ISqlExpression
+    public class SqlWhere : SqlExpression
     {
         private List<ISqlExpression> _nodes = new List<ISqlExpression>();
 
@@ -10,6 +10,7 @@ namespace DataTools.DML
         public SqlWhere AddNode(ISqlExpression expression)
         {
             _nodes.Add(expression);
+            PayloadLength += (expression?.PayloadLength ?? 0);
             return this;
         }
 
@@ -19,7 +20,7 @@ namespace DataTools.DML
 
         public SqlWhere(ISqlExpression expression)
         {
-            _nodes.Add(expression);
+            AddNode(expression);
         }
 
         public override bool Equals(object obj)
@@ -44,8 +45,13 @@ namespace DataTools.DML
         }
     }
 
-    public abstract class SqlLogicalOperator<T> : ISqlExpression
+    public abstract class SqlLogicalOperator<T> : SqlExpression
     {
+        public SqlLogicalOperator()
+        {
+            PayloadLength = ToString().Length;
+        }
+
         public override bool Equals(object obj)
         {
             if (obj is SqlLogicalOperator<T> sqlLogicalOperator)

@@ -1,10 +1,19 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlName : ISqlExpression
+    public class SqlName : SqlExpression
     {
         private string _name;
-        public string Name => _name;
-        public SqlName(string name) => _name = name.Trim();
+        public string Name
+        {
+            get => _name;
+            private set
+            {
+                _name = value;
+                PayloadLength = _name?.Length ?? 0;
+            }
+        }
+        public SqlName(string name) => Name = name.Trim();
+
 
         public override string ToString()
         {

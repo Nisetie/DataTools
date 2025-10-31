@@ -1,15 +1,16 @@
 ﻿using DataTools.Common;
 using DataTools.DML;
 using DataTools.SQLite;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.Sqlite;
 
 namespace DataTools.InMemory_SQLite
 {
     public sealed class InMemory_SQLite_DataSource : DBMS_DataSource, IDisposable
     {
         private const int CACHE_SIZE = 64;
+        private const int MAXIMUM_CACHED_QUERY_LENGTH = 1024;
         private LinkedList<(string, ISqlExpression)> _plans = new LinkedList<(string, ISqlExpression)>();
         private Dictionary<string, LinkedListNode<(string, ISqlExpression)>> _queryCache = new Dictionary<string, LinkedListNode<(string, ISqlExpression)>>();
         private SqliteConnection _conn = new SqliteConnection();
@@ -25,6 +26,8 @@ namespace DataTools.InMemory_SQLite
         }
         private ISqlExpression GetFromCache(ISqlExpression query)
         {
+            if (query.PayloadLength > MAXIMUM_CACHED_QUERY_LENGTH)
+                return query;
             string queryString = query.ToString();
             if (!_queryCache.TryGetValue(queryString, out var node))
             {

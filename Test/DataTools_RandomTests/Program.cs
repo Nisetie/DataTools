@@ -1,5 +1,4 @@
 ﻿using DataTools.Common;
-using DataTools.Deploy;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
@@ -9,8 +8,8 @@ namespace DataTools_RandomTests
 {
     internal class Program
     {
-        static string _mssqlConnectionString = "Data source=localhost\\sqlexpress;Database=AdventureWorksLT2012;Integrated security=true;Trust server certificate = true";
-        static void Main(string[] args)
+        private static string _mssqlConnectionString = "Data source=localhost\\sqlexpress;Database=AdventureWorksLT2012;Integrated security=true;Trust server certificate = true";
+        private static void Main(string[] args)
         {
             var ctx = new DataTools.MSSQL.MSSQL_DataContext();
             ctx.ConnectionString = _mssqlConnectionString;
@@ -34,7 +33,7 @@ namespace DataTools_RandomTests
             Console.Read();
         }
 
-        void TestReplacer()
+        private void TestReplacer()
         {
             var ctx = new DataTools.MSSQL.MSSQL_DataContext();
             ctx.ConnectionString = _mssqlConnectionString;

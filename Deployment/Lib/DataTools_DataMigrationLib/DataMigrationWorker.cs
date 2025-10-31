@@ -1,5 +1,4 @@
-﻿using DataTools.Attributes;
-using DataTools.Common;
+﻿using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
@@ -10,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime;
+using System.Threading.Tasks;
 
 namespace DataTools.Deploy
 {
@@ -146,22 +146,24 @@ namespace DataTools.Deploy
             if (!(Mode == DataMigrationMode.all || Mode == DataMigrationMode.only_data))
                 yield break;
 
+            // сначала очистить все таблица в порядке уменьшения внешних связей
             var metas = MetadataHelper.SortForUndeploy(Metadatas).ToArray();
             foreach (var meta in metas)
             {
                 if (meta.IsView) continue;
-                _toContext.Execute(_toMigrator.GetClearTableQuery(meta));
+                _toMigrator.SetupModel(_toContext, meta);
+                _toContext.Execute(_toMigrator.GetClearTableQuery());
             }
 
+            // потом перенести данные в порядке увеличения внешних связей
             metas = MetadataHelper.SortForDeploy(Metadatas).ToArray();
             foreach (var meta in metas)
             {
                 if (meta.IsView) continue;
 
+                _toMigrator.SetupModel(_toContext, meta);
+
                 yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.PREPARING, Metadata = meta };
-                var queryBefore = _toMigrator.BeforeMigration(meta);
-                if (!string.IsNullOrEmpty(queryBefore.ToString()))
-                    _toContext.Execute(queryBefore);
 
                 var fromMeta = meta;
                 IModelMetadata toMeta = null;
@@ -204,26 +206,31 @@ namespace DataTools.Deploy
 
                 selectQuery.OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(meta.GetColumnsForFilterOrder()));
 
-                var insertBatch = new SqlInsertBatch().Into(toMeta);
                 var results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
                 while (results.Length > 0)
                 {
-                    insertBatch.Value(toMeta, results);
-                    _toContext.Execute(new SqlComposition(queryBefore, insertBatch));
-
-                    startBound += rowsPerPage;
                     yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.MIGRATING, Metadata = meta, TotalRows = count, InsertedRows = startBound < count ? startBound : count };
+                    var insertBatch = new SqlInsertBatch().Into(toMeta);
+                    insertBatch.Value(toMeta, results);
 
+                    // заранее запросим очередную порцию, пока переносится текущая
+                    startBound += rowsPerPage;
                     offset.Value = startBound;
-                    results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
+                    var nextResultTask = Task.Run(() => _fromContext.ExecuteWithResult(selectQuery).ToArray());
 
+                    _toContext.Execute(new SqlComposition(_toMigrator.GetBeforeMigrationQuery(), insertBatch));
+
+                    results = nextResultTask.GetAwaiter().GetResult();
+
+                    GC.Collect();
                     GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
                     GC.Collect(2, GCCollectionMode.Forced, true, true);
                     GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
+                    GC.Collect(2, GCCollectionMode.Forced, true, false);
                 }
 
                 yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.FINALIZING, Metadata = meta };
-                var queryAfter = _toMigrator.AfterMigration(meta);
+                var queryAfter = _toMigrator.GetAfterMigrationQuery();
                 if (!string.IsNullOrEmpty(queryAfter.ToString()))
                     _toContext.Execute(queryAfter);
             }

@@ -99,7 +99,7 @@ namespace DataTools.Deploy
                 TableExcludeNameFilter = _tableNameExcludeFilter,
                 TableIncludeNameRegexFilter = _tableNameIncludeRegexFilter,
                 TableExcludeNameRegexFilter = _tableNameExcludeRegexFilter,
-                SchemaExcludeNameRegexFilter =_schemaNameExcludeRegexFilter,
+                SchemaExcludeNameRegexFilter = _schemaNameExcludeRegexFilter,
                 SchemaIncludeNameRegexFilter = _schemaNameIncludeRegexFilter
             };
 

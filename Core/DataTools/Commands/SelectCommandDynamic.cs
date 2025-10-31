@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace DataTools.Commands
 {
-    public class SelectCommandDynamic : ISqlExpression, ISqlSelect<SelectCommandDynamic>
+    public class SelectCommandDynamic : SqlExpression, ISqlSelect<SelectCommandDynamic>
     {
         public IDataContext DataContext { get; }
         public IModelMetadata Metadata { get; }
@@ -40,17 +40,20 @@ namespace DataTools.Commands
         public SelectCommandDynamic From(ISqlExpression objectName)
         {
             Query.From(objectName);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommandDynamic Limit(ISqlExpression limit)
         {
             Query.Limit(limit);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
 
         public SelectCommandDynamic Offset(ISqlExpression offset)
         {
             Query.Offset(offset);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommandDynamic OrderBy(params string[] columnNames)
@@ -65,6 +68,7 @@ namespace DataTools.Commands
         public SelectCommandDynamic OrderBy(params SqlOrderByClause[] order)
         {
             Query.OrderBy(order);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommandDynamic Select() => Select(Metadata);
@@ -77,6 +81,7 @@ namespace DataTools.Commands
         public SelectCommandDynamic Select(params ISqlExpression[] selects)
         {
             Query.Select(selects);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommandDynamic Where(string columnName, object value) => Where(new SqlWhere(new SqlName(columnName)).Eq(new SqlConstant(value)));
@@ -84,6 +89,7 @@ namespace DataTools.Commands
         public SelectCommandDynamic Where(SqlWhere where)
         {
             Query.Where(where);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
     }

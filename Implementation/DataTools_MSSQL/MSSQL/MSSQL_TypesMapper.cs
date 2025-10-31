@@ -9,7 +9,7 @@ namespace DataTools.MSSQL
     public unsafe class MSSQL_TypesMapper : TypesMapper
     {
         private static MSSQL_TypesMapper _instance;
-        private MSSQL_TypesMapper() :base() { }
+        private MSSQL_TypesMapper() : base() { }
 
         protected override void AddLinkBoolean() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Boolean, "bit");
         protected override void AddLinkBinary() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Binary, "varbinary", "binary", "image", "rowversion");
@@ -26,7 +26,7 @@ namespace DataTools.MSSQL
         protected override void AddLinkDouble() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Double, "float");
         protected override void AddLinkMoney() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Money, "money", "smallmoney");
         protected override void AddLinkDecimal() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Decimal, "decimal", "numeric");
-        protected override void AddLinkTimestamp() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime", "datetime2", "smalldatetime");
+        protected override void AddLinkTimestamp() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Timestamp, "datetime2", "datetime", "smalldatetime");
         protected override void AddLinkTimestampTz() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.TimestampTz, "datetimeoffset");
         protected override void AddLinkDate() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Date, "date");
         protected override void AddLinkTime() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Time, "time");
@@ -39,7 +39,7 @@ namespace DataTools.MSSQL
         protected override void AddLinkXml() => TypesMap.AddTypeLink(E_DBMS.MSSQL, DBType.Xml, "xml");
         static MSSQL_TypesMapper()
         {
-            _instance = new MSSQL_TypesMapper();            
+            _instance = new MSSQL_TypesMapper();
         }
         /// <summary>
         /// Получить название sql-типа в СУБД MSSQL для .NET типа данных.
@@ -91,12 +91,8 @@ namespace DataTools.MSSQL
             switch (value)
             {
                 case DateTime dt:
-                    if (dt.Year < 1900)
-                        dt = new DateTime(1900, 01, 01, 00, 00, 00, DateTimeKind.Unspecified);
                     return $"'{dt:yyyy-MM-ddTHH:mm:ss.fff}'";
                 case DateTimeOffset dto:
-                    if (dto.Year < 1970)
-                        dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
                     return $"'{dto:o}'";
                 case bool b:
                     return b ? "1" : "0";

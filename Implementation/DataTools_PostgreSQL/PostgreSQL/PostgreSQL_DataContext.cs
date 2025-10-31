@@ -1,7 +1,5 @@
 ﻿using DataTools.Common;
 using DataTools.Interfaces;
-using System;
-using System.Globalization;
 
 namespace DataTools.PostgreSQL
 {
@@ -15,7 +13,7 @@ namespace DataTools.PostgreSQL
         }
 
         public PostgreSQL_DataContext() : base()
-        {           
+        {
 
             // DateTimeOffset.Parse() возвращает UTC время так, как будто это время в локальном часовом поясе
             // поэтому пришлось применить этот костыль, чтобы получать все-таки UTC+0 формат

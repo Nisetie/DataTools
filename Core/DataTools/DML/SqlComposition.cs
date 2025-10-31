@@ -3,13 +3,30 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlComposition : ISqlExpression
+    public class SqlComposition : SqlExpression
     {
         private List<ISqlExpression> _list;
 
-        public List<ISqlExpression> Elements => _list;
+        public IEnumerable<ISqlExpression> Elements => _list;
 
-        public SqlComposition(params ISqlExpression[] elements) => _list = new List<ISqlExpression>(elements);
+        /// <summary>
+        /// Количество элементов в композиции
+        /// </summary>
+        public int Count => _list.Count;
+
+        public SqlComposition(params ISqlExpression[] elements)
+        {
+            _list = new List<ISqlExpression>(elements);
+            foreach (var element in _list)
+                PayloadLength += element?.PayloadLength ?? 0;
+        }
+
+        public SqlComposition Add(ISqlExpression sqlExpression)
+        {
+            _list.Add(sqlExpression);
+            PayloadLength += sqlExpression?.PayloadLength ?? 0;
+            return this;
+        }
 
         public override string ToString()
         {

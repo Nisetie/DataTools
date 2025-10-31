@@ -19,6 +19,7 @@ namespace DataTools.PostgreSQL
         static PostgreSQL_DataSource()
         {
             // чтобы timestamptz автоматически переводился в локальное время
+            // выключено, т.к. вроде бы и без этого хорошо работает
             //AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
         }
 
@@ -29,9 +30,9 @@ namespace DataTools.PostgreSQL
         }
         private ISqlExpression GetFromCache(ISqlExpression query)
         {
-            string queryString = query.ToString();
-            if (queryString.Length > MAXIMUM_CACHED_QUERY_LENGTH) 
+            if (query.PayloadLength > MAXIMUM_CACHED_QUERY_LENGTH)
                 return query;
+            string queryString = query.ToString();
             if (!_queryCache.TryGetValue(queryString, out var node))
             {
                 _queryCache[queryString] = node = _plans.AddFirst((queryString, _queryParser.SimplifyQuery(query)));

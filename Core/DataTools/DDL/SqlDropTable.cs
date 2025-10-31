@@ -2,11 +2,16 @@
 
 namespace DataTools.DDL
 {
-    public class SqlDropTable : ISqlExpression
+    public class SqlDropTable : SqlExpression
     {
         public SqlName TableName { get; private set; }
 
-        public SqlDropTable Table(SqlName tableName) { TableName = tableName; return this; }
+        public SqlDropTable Table(SqlName tableName)
+        {
+            TableName = tableName;
+            PayloadLength = ToString().Length;
+            return this;
+        }
 
         public override string ToString()
         {

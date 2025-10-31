@@ -1,10 +1,9 @@
-﻿using DataTools.DDL;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlInsert : ISqlExpression
+    public class SqlInsert : SqlExpression
     {
         protected SqlName _into;
         protected IEnumerable<SqlName> _columns;
@@ -16,17 +15,23 @@ namespace DataTools.DML
 
         public SqlInsert Into(SqlName objectName)
         {
+            PayloadLength -= _into?.PayloadLength ?? 0;
             _into = objectName;
+            PayloadLength += _into?.PayloadLength ?? 0;
             return this;
         }
         public SqlInsert Column(params SqlName[] columns)
         {
+            if (_columns != null) foreach (var c in _columns) PayloadLength -= c?.PayloadLength ?? 0;
             _columns = columns;
+            if (_columns != null) foreach (var c in _columns) PayloadLength += c?.PayloadLength ?? 0;
             return this;
         }
         public SqlInsert Value(params ISqlExpression[] values)
         {
+            if (_values != null) foreach (var c in _values) PayloadLength -= c?.PayloadLength ?? 0;
             _values = values;
+            if (_values != null) foreach (var c in _values) PayloadLength += c?.PayloadLength ?? 0;
             return this;
         }
 
@@ -51,7 +56,7 @@ namespace DataTools.DML
 
         public override string ToString()
         {
-            var sb = new StringBuilder();
+            var sb = new StringBuilder(256);
 
             sb
                 .AppendLine($"INSERT {_into}")

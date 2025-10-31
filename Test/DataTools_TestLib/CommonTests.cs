@@ -12,13 +12,9 @@ using DataTools.PostgreSQL;
 using DataTools.SQLite;
 using Newtonsoft.Json;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using System.Text.Json;
 
 
 namespace DataTools_Tests
@@ -59,21 +55,21 @@ namespace DataTools_Tests
         {
             var q = new SqlComposition();
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelChild>());
-            q.Elements.Add(new SqlDropTable().Table<TestModel>());
-            q.Elements.Add(new SqlDropTable().Table<TestModelExtra>());
+            q.Add(new SqlDropTable().Table<TestModelChild>());
+            q.Add(new SqlDropTable().Table<TestModel>());
+            q.Add(new SqlDropTable().Table<TestModelExtra>());
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelGuidChild>());
-            q.Elements.Add(new SqlDropTable().Table<TestModelGuidParent>());
+            q.Add(new SqlDropTable().Table<TestModelGuidChild>());
+            q.Add(new SqlDropTable().Table<TestModelGuidParent>());
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelSimple>());
+            q.Add(new SqlDropTable().Table<TestModelSimple>());
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelPrimaryKeyAsForeignKey>());
+            q.Add(new SqlDropTable().Table<TestModelPrimaryKeyAsForeignKey>());
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelChildCompositePrimaryKey>());
-            q.Elements.Add(new SqlDropTable().Table<TestModelParentCompositePrimaryKey>());
+            q.Add(new SqlDropTable().Table<TestModelChildCompositePrimaryKey>());
+            q.Add(new SqlDropTable().Table<TestModelParentCompositePrimaryKey>());
 
-            q.Elements.Add(new SqlDropTable().Table<TestModelCompositePrimaryKey>());
+            q.Add(new SqlDropTable().Table<TestModelCompositePrimaryKey>());
 
             DataContext.Execute(q);
         }
@@ -146,7 +142,7 @@ namespace DataTools_Tests
         public void TestTypes()
         {
             TestType(true);
-            TestType((int)123456);
+            TestType(123456);
             TestType((uint)123456);
             TestType((byte)255);
             TestType((sbyte)127);
@@ -154,11 +150,11 @@ namespace DataTools_Tests
             TestType((ushort)12345);
             TestType((long)123456);
             TestType((ulong)123456);
-            TestType((decimal)125.32m);
+            TestType(125.32m);
             TestType((float)125.32f);
             TestType((double)125.32);
-            TestType((string)"abc");
-            TestType((char)'a');
+            TestType("abc");
+            TestType('a');
             TestType(new byte[] { 1, 2, 3, 4 });
             TestType(DateTime.Parse("2025-08-07 15:27:36"));
             TestType(DateTimeOffset.Parse("2025-08-07 15:27:36"));
@@ -1278,12 +1274,12 @@ namespace DataTools_Tests
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
-        interface ITest
+        private interface ITest
         {
             int id { get; }
         }
 
-        class Test : ITest
+        private class Test : ITest
         {
             public int id { get; set; }
         }
@@ -1311,7 +1307,7 @@ namespace DataTools_Tests
             Assert.That(result.Length == 1 && result[0].Id == 1);
         }
 
-        class TestWhereExpression5Test
+        private class TestWhereExpression5Test
         {
             public int a = 1;
         }

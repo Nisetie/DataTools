@@ -3,13 +3,12 @@ using DataTools.DDL;
 using DataTools.DML;
 using DataTools.Interfaces;
 using System;
-using System.Data.SqlTypes;
 
 namespace DataTools.PostgreSQL
 {
     public class PostgreSQL_QueryParser : DBMS_QueryParser
     {
-        static PostgreSQL_QueryParser _instance;
+        private static PostgreSQL_QueryParser _instance;
         public static PostgreSQL_QueryParser Instance => _instance;
         static PostgreSQL_QueryParser()
         {

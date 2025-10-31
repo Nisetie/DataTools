@@ -153,7 +153,8 @@ namespace DataTools.Deploy
             catch (Exception e)
             {
                 var sb = new StringBuilder();
-                while (e != null) {
+                while (e != null)
+                {
                     sb.AppendLine(e.Message);
                     sb.AppendLine(e.StackTrace);
                     e = e.InnerException;

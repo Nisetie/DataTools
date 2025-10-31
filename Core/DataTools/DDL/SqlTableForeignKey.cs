@@ -11,6 +11,8 @@
             Columns = columns;
             ForeignColumns = foreignColumns;
             ForeignTableName = foreignTableName;
+
+            PayloadLength = ToString().Length;
         }
         public override string ToString() => $"FOREIGN KEY ({string.Join(",", Columns)}) REFERENCES {ForeignTableName}({string.Join(",", ForeignColumns)})";
     }

@@ -2,7 +2,7 @@
 
 namespace DataTools.DML
 {
-    public class SqlFunction : ISqlExpression
+    public class SqlFunction : SqlExpression
     {
         private static readonly ISqlExpression[] _emptyParameters = new ISqlExpression[0];
 
@@ -22,13 +22,17 @@ namespace DataTools.DML
 
         public SqlFunction Call(string functionName)
         {
+            PayloadLength -= _functionName?.Length ?? 0;
             _functionName = functionName;
+            PayloadLength += _functionName?.Length ?? 0;
             return this;
         }
 
         public SqlFunction Parameter(params ISqlExpression[] parameters)
         {
+            if (_parameters != null) foreach (var p in _parameters) PayloadLength -= (p?.PayloadLength ?? 0);
             _parameters = parameters;
+            if (_parameters != null) foreach (var p in _parameters) PayloadLength += (p?.PayloadLength ?? 0);
             return this;
         }
 
