@@ -7,70 +7,80 @@ namespace DataTools.Deploy
 {
     public class MSSQL_Migrator : MigratorBase
     {
-        public override ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
+        private IDataContext _dataContext = null;
+        private IModelMetadata _modelMetadata = null;
+
+        public override void SetupModel(IDataContext dataContext, IModelMetadata modelMetadata)
         {
+            _dataContext = dataContext;
+            _modelMetadata = modelMetadata;
+        }
+        
+        public override ISqlExpression GetClearTableQuery()
+        {
+            // TRUNCATE не работает, если у таблицы есть внешние связи. Стоит ли ради TRUNCATE писать логику их удаления и восстановления? Не думаю...
             var query = new SqlComposition(
                new SqlCustom($"DELETE FROM "),
-               new SqlName(modelMetadata.FullObjectName),
+               new SqlName(_modelMetadata.FullObjectName),
                new SqlCustom(";")
                );
 
-            return new MSSQL_QueryParser().SimplifyQuery(query);
+            return query;
         }
 
-        public override ISqlExpression BeforeMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression GetBeforeMigrationQuery()
         {
             IModelFieldMetadata field = null;
-            foreach (var f in modelMetadata.Fields)
+            foreach (var f in _modelMetadata.Fields)
                 if (f.IsAutoincrement)
                 {
                     field = f;
                     break;
                 }
             if (field == null)
-                return new SqlCustom("");
+                return new SqlCustom();
 
             var query = new SqlComposition(
                new SqlCustom($"SET IDENTITY_INSERT "),
-               new SqlName(modelMetadata.FullObjectName),
+               new SqlName(_modelMetadata.FullObjectName),
                new SqlCustom(" ON;")
                );
 
-            return new MSSQL_QueryParser().SimplifyQuery(query);
+            return query;
         }
 
-        public override ISqlExpression AfterMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression GetAfterMigrationQuery()
         {
             IModelFieldMetadata field = null;
-            foreach (var f in modelMetadata.Fields)
+            foreach (var f in _modelMetadata.Fields)
                 if (f.IsAutoincrement)
                 {
                     field = f;
                     break;
                 }
             if (field == null)
-                return new SqlCustom("");
+                return new SqlCustom();
 
             var composition = new SqlComposition(
                 new SqlCustom($"DECLARE @maxValue INT;{Environment.NewLine}"),
                 new SqlCustom($"SELECT @maxValue = coalesce(MAX("),
                 new SqlName(field.ColumnName),
                 new SqlCustom($"),0) + 1 FROM "),
-                new SqlName(modelMetadata.FullObjectName),
+                new SqlName(_modelMetadata.FullObjectName),
                 new SqlCustom($";{Environment.NewLine}"),
                 new SqlCustom($"DBCC CHECKIDENT ('"),
-                new SqlName(modelMetadata.FullObjectName),
+                new SqlName(_modelMetadata.FullObjectName),
                 new SqlCustom($"', RESEED, @maxValue);")
                 );
 
             var query = new SqlComposition(
                new SqlCustom($"SET IDENTITY_INSERT "),
-               new SqlName(modelMetadata.FullObjectName),
+               new SqlName(_modelMetadata.FullObjectName),
                new SqlCustom(" OFF;"),
                composition
                );
 
-            return new MSSQL_QueryParser().SimplifyQuery(query);
+            return query;
         }
     }
 }

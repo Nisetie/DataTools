@@ -7,6 +7,8 @@
         public SqlTableUnique(string[] columns)
         {
             Columns = columns;
+
+            PayloadLength = ToString().Length;
         }
         public override string ToString() => $"UNIQUE ({string.Join(",", Columns)})";
     }

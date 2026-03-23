@@ -2,184 +2,196 @@ using DataTools.Common;
 using DataTools.Deploy;
 using DataTools.DML;
 using DataTools.Extensions;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities.Serialization;
 using NUnit.Framework.Internal;
 
 namespace DataTools_Tests
 {
-    [TestFixture(
-        new E_DBMS[] { E_DBMS.MSSQL, E_DBMS.PostgreSQL, E_DBMS.SQLite },
-        new string[] {
-        $"Data Source=localhost\\sqlexpress;Database=test;Integrated Security=True;Trust server certificate=true",
-        "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test",
-        "Data Source=dbo;pooling=true"},
-        new string[] {
-        $"Data Source=localhost\\sqlexpress;Database=test1;Integrated Security=True;Trust server certificate=true",
-        "Username=postgres;Password=1qaz@WSX;Host=localhost;Database=test1",
-        "Data Source=dbo1;pooling=true"}
-        )]
-    public class MultiTest
-    {
-        private E_DBMS[] _types;
-        private string[] _fromConnectionStrings;
-        private string[] _toConnectionStrings;
+	[TestFixtureSource(nameof(FixtureData))]
+	public class MultiTest
+	{
+		private static IEnumerable<object[]> FixtureData()
+		{
+			yield return new object[] {
+				new E_DBMS[] { E_DBMS.MSSQL, E_DBMS.PostgreSQL, E_DBMS.SQLite },
+				new (string connectionString, string initScript)[] {
+					($"Data Source=127.0.0.1,1433;Database=master;User=sa;Password=1qaz@WSX;Trust server certificate=true",""),
+					("Host=127.0.0.1;Username=postgres;Password=1qaz@WSX;Port=5432;Database=test","create schema if not exists dbo;"),
+					("Data Source=dbo;pooling=true","")
+				}
+				,new (string connectionString, string initScript)[] {
+				($"Data Source=127.0.0.1,1440;Database=master;User=sa;Password=1qaz@WSX;Trust server certificate=true",""),
+				("Host=127.0.0.1;Username=postgres;Password=1qaz@WSX;Port=5433;Database=test1","create schema if not exists dbo;"),
+				("Data Source=dbo1;pooling=true","")
+				}
+			};
+		}
 
-        private TestData testdata = new TestData();
+		private E_DBMS[] _types;
+		private (string connectionString, string initScript)[] _fromConnectionStrings;
+		private (string connectionString, string initScript)[] _toConnectionStrings;
 
-        public MultiTest(E_DBMS[] types, string[] fromConnectionStrings, string[] toConnectionStrings)
-        {
-            _types = types;
-            _fromConnectionStrings = fromConnectionStrings;
-            _toConnectionStrings = toConnectionStrings;
-        }
+		private TestData testdata = new TestData();
 
-        [Test]
-        public void TestMigrations()
-        {
-            int i = 0;
-            foreach (var t in _types)
-            {
-                var deployerOptions = new DeployerOptions()
-                {
-                    DBMS = t,
-                    ConnectionString = _fromConnectionStrings[i],
-                    Metadatas = testdata.Metadatas,
-                    Mode = E_DEPLOY_MODE.REDEPLOY
-                };
-                var deployer = new DataTools.Deploy.DeployerWorker(deployerOptions);
-                deployer.Run();
-                TestContext.Out.WriteLine($"{deployerOptions.DBMS} deployed");
+		public MultiTest(E_DBMS[] types, (string connectionString, string initScript)[] fromConnectionStrings, (string connectionString, string initScript)[] toConnectionStrings)
+		{
+			_types = types;
+			_fromConnectionStrings = fromConnectionStrings;
+			_toConnectionStrings = toConnectionStrings;
+		}
 
-                testdata.InsertTestData(deployer.DataContext);
+		[Test]
+		public void TestMigrations()
+		{
+			int i = 0;
+			foreach (var t in _types)
+			{
+				var deployerOptions = new DeployerOptions()
+				{
+					DBMS = t,
+					ConnectionString = _fromConnectionStrings[i].connectionString,
+					Metadatas = testdata.Metadatas,
+					Mode = E_DEPLOY_MODE.REDEPLOY
+				};
+				var deployer = new DataTools.Deploy.DeployerWorker(deployerOptions);
+				if (!string.IsNullOrEmpty(_fromConnectionStrings[i].initScript))
+					deployer.DataContext.Execute(new SqlCustom(_fromConnectionStrings[i].initScript));
+				deployer.Run();
+				TestContext.Out.WriteLine($"{deployerOptions.DBMS} deployed");
 
-                var generatorOptions = new GeneratorOptions()
-                {
-                    DBMS = t,
-                    ConnectionString = _fromConnectionStrings[i],
-                    NamespaceName = "Test",
-                    SchemaIncludeNameFilter = "dbo",
-                    TableIncludeNameFilter = ""
-                };
-                var generator = new DataTools.Deploy.GeneratorWorker(generatorOptions);
-                var metadatas = generator.GetModelDefinitions().ToArray();
-                TestContext.Out.WriteLine($"{deployerOptions.DBMS} generated");
+				testdata.InsertTestData(deployer.DataContext);
 
-                int j = 0;
-                foreach (var tt in _types)
-                {
-                    var deployerOptions1 = new DeployerOptions()
-                    {
-                        DBMS = tt,
-                        ConnectionString = _toConnectionStrings[j],
-                        Metadatas = metadatas.Select(mt => mt.ModelMetadata),
-                        Mode = E_DEPLOY_MODE.REDEPLOY
-                    };
-                    var deployer1 = new DataTools.Deploy.DeployerWorker(deployerOptions1);
-                    deployer1.Run();
-                    TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} deployed");
+				var generatorOptions = new GeneratorOptions()
+				{
+					DBMS = t,
+					ConnectionString = _fromConnectionStrings[i].connectionString,
+					NamespaceName = "Test",
+					SchemaIncludeNameFilter = "dbo",
+					TableIncludeNameFilter = ""
+				};
+				var generator = new DataTools.Deploy.GeneratorWorker(generatorOptions);
+				var metadatas = generator.GetModelDefinitions().ToArray();
+				TestContext.Out.WriteLine($"{deployerOptions.DBMS} generated");
 
-                    var migratorOptions = new DataMigrationOptions()
-                    {
-                        FromDBMS = t,
-                        ToDBMS = tt,
-                        FromConnectionString = _fromConnectionStrings[i],
-                        ToConnectionString = _toConnectionStrings[j],
-                        IgnoreConstraints = true,
-                        Metadatas = metadatas.Select(mt => mt.ModelMetadata)
-                    };
-                    var migrator = new DataMigrationWorker(migratorOptions);
-                    migrator.Run();
-                    TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} migrated");
+				int j = 0;
+				foreach (var tt in _types)
+				{
+					var deployerOptions1 = new DeployerOptions()
+					{
+						DBMS = tt,
+						ConnectionString = _toConnectionStrings[j].connectionString,
+						Metadatas = metadatas.Select(mt => mt.ModelMetadata),
+						Mode = E_DEPLOY_MODE.REDEPLOY
+					};
+					var deployer1 = new DataTools.Deploy.DeployerWorker(deployerOptions1);
+					if (!string.IsNullOrEmpty(_toConnectionStrings[j].initScript))
+						deployer1.DataContext.Execute(new SqlCustom(_toConnectionStrings[j].initScript));
+					deployer1.Run();
+					TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} deployed");
 
-                    foreach (var meta in testdata.Metadatas)
-                    {
-                        TestContext.Out.WriteLine($"{meta.FullObjectName} compare start.");
+					var migratorOptions = new DataMigrationOptions()
+					{
+						FromDBMS = t,
+						ToDBMS = tt,
+						FromConnectionString = _fromConnectionStrings[i].connectionString,
+						ToConnectionString = _toConnectionStrings[j].connectionString,
+						IgnoreConstraints = true,
+						Metadatas = metadatas.Select(mt => mt.ModelMetadata)
+					};
+					var migrator = new DataMigrationWorker(migratorOptions);
+					migrator.Run();
+					TestContext.Out.WriteLine($"From {deployerOptions.DBMS} to {deployerOptions1.DBMS} migrated");
 
-                        var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty(nameof(ModelMapper<TestModel>.MapObjectArrayToModel));
+					foreach (var meta in testdata.Metadatas)
+					{
+						TestContext.Out.WriteLine($"{meta.FullObjectName} compare start.");
 
-                        var orderArray = meta.GetColumnsForFilterOrder().ToArray();
-                        if (orderArray.Length == 0)
-                            orderArray = meta.GetColumnsForSelect().ToArray();
+						var mapperMethod = typeof(ModelMapper<>).MakeGenericType(Type.GetType(meta.ModelTypeName)).GetProperty(nameof(ModelMapper<TestModel>.MapObjectArrayToModel));
 
-                        var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
-                        var leftModels = new object[leftData.Length];
-                        var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
-                        var rightModels = new object[rightData.Length];
+						var orderArray = meta.GetColumnsForFilterOrder().ToArray();
+						if (orderArray.Length == 0)
+							orderArray = meta.GetColumnsForSelect().ToArray();
 
-                        leftData = leftData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
-                        rightData = rightData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
+						var leftData = deployer.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
+						var leftModels = new object[leftData.Length];
+						var rightData = deployer1.DataContext.ExecuteWithResult(new SqlSelect().From(meta).Select(meta).OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(orderArray))).ToArray();
+						var rightModels = new object[rightData.Length];
+
+						leftData = leftData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
+						rightData = rightData.OrderBy(r => System.Text.Json.JsonSerializer.Serialize(r)).ToArray();
 
 
-                        Assert.That(leftData.Length == rightData.Length);
+						Assert.That(leftData.Length == rightData.Length);
 
-                        var sc = new SelectCache();
+						var sc = new SelectCache();
 
-                        Dictionary<Type, Func<object, object>> _customTypeConverters = new Dictionary<Type, Func<object, object>>();
+						Dictionary<Type, Func<object, object>> _customTypeConverters = new Dictionary<Type, Func<object, object>>();
 
-                        for (int i1 = 0; i1 < leftData.Length; i1++)
-                        {
-                            object[]? r = leftData[i1];
-                            object m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
-                            var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
-                            leftModels[i1] = m;
-                            object[]? rr = rightData[i1];
-                            m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
-                            o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
-                            rightModels[i1] = m;
-                        }
+						for (int i1 = 0; i1 < leftData.Length; i1++)
+						{
+							object[]? r = leftData[i1];
+							object m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
+							var o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
+							leftModels[i1] = m;
+							object[]? rr = rightData[i1];
+							m = Activator.CreateInstance(Type.GetType(meta.ModelTypeName));
+							o = (mapperMethod.GetValue(null) as Delegate).DynamicInvoke(new object[] { m, deployer.DataContext, _customTypeConverters, r, sc });
+							rightModels[i1] = m;
+						}
 
-                        for (int i1 = 0; i1 < leftData.Length; i1++)
-                        {
-                            var props = leftModels[i1].GetType().GetProperties();
-                            foreach (var pr in props)
-                            {
-                                var leftv = pr.GetValue(leftModels[i1]);
-                                var rightv = pr.GetValue(rightModels[i1]);
+						for (int i1 = 0; i1 < leftData.Length; i1++)
+						{
+							var props = leftModels[i1].GetType().GetProperties();
+							foreach (var pr in props)
+							{
+								var leftv = pr.GetValue(leftModels[i1]);
+								var rightv = pr.GetValue(rightModels[i1]);
 
-                                if (leftv == null && rightv == null)
-                                    Assert.That(true);
-                                else if (meta.GetField(pr.Name).IsForeignKey)
-                                {
-                                    for (int i2 = 0; i2 < meta.GetField(pr.Name).ForeignColumnNames.Length; i2++)
-                                    {
-                                        string? fc = meta.GetField(pr.Name).ForeignColumnNames[i2];
-                                        var leftfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(leftv);
-                                        var rightfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(rightv);
-                                        if (leftfv is byte[] bytea)
-                                            Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightfv as byte[]));
-                                        else if (leftfv is DateTime dateTime)
-                                            Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightfv).ToUniversalTime());
-                                        else if (leftfv is DateTimeOffset dateTimeOffset)
-                                            Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightfv).ToUniversalTime());
-                                        else
-                                            Assert.That(leftfv.Equals(rightfv));
-                                    }
-                                }
-                                else if (leftv is byte[] bytea)
-                                    Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightv as byte[]));
-                                else if (leftv is DateTime dateTime)
-                                    Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightv).ToUniversalTime());
-                                else if (leftv is DateTimeOffset dateTimeOffset)
-                                    Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightv).ToUniversalTime());
-                                else
-                                    Assert.That(leftv.Equals(rightv));
+								if (leftv == null && rightv == null)
+									Assert.That(true);
+								else if (meta.GetField(pr.Name).IsForeignKey)
+								{
+									for (int i2 = 0; i2 < meta.GetField(pr.Name).ForeignColumnNames.Length; i2++)
+									{
+										string? fc = meta.GetField(pr.Name).ForeignColumnNames[i2];
+										var leftfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(leftv);
+										var rightfv = Type.GetType(meta.GetField(pr.Name).ForeignModel.ModelTypeName).GetProperty(meta.GetField(pr.Name).ForeignModel.GetColumn(fc).FieldName).GetValue(rightv);
+										if (leftfv is byte[] bytea)
+											Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightfv as byte[]));
+										else if (leftfv is DateTime dateTime)
+											Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightfv).ToUniversalTime());
+										else if (leftfv is DateTimeOffset dateTimeOffset)
+											Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightfv).ToUniversalTime());
+										else
+											Assert.That(leftfv.Equals(rightfv));
+									}
+								}
+								else if (leftv is byte[] bytea)
+									Assert.That(BitConverter.ToString(bytea) == BitConverter.ToString(rightv as byte[]));
+								else if (leftv is DateTime dateTime)
+									Assert.That(dateTime.ToUniversalTime() == ((DateTime)rightv).ToUniversalTime());
+								else if (leftv is DateTimeOffset dateTimeOffset)
+									Assert.That(dateTimeOffset.ToUniversalTime() == ((DateTimeOffset)rightv).ToUniversalTime());
+								else
+									Assert.That(leftv.Equals(rightv));
 
-                            }
-                        }
-                        TestContext.Out.WriteLine($"{meta.FullObjectName} compare finish!");
-                    }
+							}
+						}
+						TestContext.Out.WriteLine($"{meta.FullObjectName} compare finish!");
+					}
 
-                    j++;
-                }
+					j++;
+				}
 
-                i++;
-            }
-        }
+				i++;
+			}
+		}
 
-        [TearDown]
-        public void Teardown()
-        {
+		[TearDown]
+		public void Teardown()
+		{
 
-        }
-    }
+		}
+	}
 }
 

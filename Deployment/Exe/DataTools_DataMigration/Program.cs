@@ -194,6 +194,7 @@ namespace DataTools_DataMigration
                         ConsoleWriteLine($"{p.Metadata.FullObjectName} {p.Progress} {p.InsertedRows}/{p.TotalRows}");
                     else
                         ConsoleWriteLine($"{p.Metadata.FullObjectName} {p.Progress}");
+                    GC.Collect(2, GCCollectionMode.Aggressive, true, true);
                 }
             else
                 _worker.Run();

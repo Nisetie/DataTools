@@ -1,11 +1,10 @@
-﻿using DataTools.DDL;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlInsertBatch : ISqlExpression
+    public class SqlInsertBatch : SqlExpression
     {
         protected SqlName _into;
         protected IEnumerable<SqlName> _columns;
@@ -17,17 +16,29 @@ namespace DataTools.DML
 
         public SqlInsertBatch Into(SqlName objectName)
         {
+            PayloadLength -= _into?.PayloadLength ?? 0;
             _into = objectName;
+            PayloadLength += _into?.PayloadLength ?? 0;
             return this;
         }
         public SqlInsertBatch Column(params SqlName[] columns)
         {
+            if (_columns != null) foreach (var c in _columns) PayloadLength -= c?.PayloadLength ?? 0;
             _columns = columns;
+            if (_columns != null) foreach (var c in _columns) PayloadLength += c?.PayloadLength ?? 0;
             return this;
         }
         public SqlInsertBatch Value(params ISqlExpression[][] values)
         {
+            if (_values != null) 
+                foreach (var vals in _values) 
+                    if (vals != null) 
+                        foreach (var v in vals) PayloadLength -= v?.PayloadLength ?? 0;
             _values = values;
+            if (_values != null)
+                foreach (var vals in _values)
+                    if (vals != null)
+                        foreach (var v in vals) PayloadLength += v?.PayloadLength ?? 0;
             return this;
         }
 
@@ -67,14 +78,15 @@ namespace DataTools.DML
             foreach (var val in _values)
             {
                 sb.Append("(");
-                foreach (var col in val) {
+                foreach (var col in val)
+                {
                     sb.Append(col.ToString());
                     sb.Append(",");
                 }
                 sb.Length -= 1;
                 sb.Append($"),{Environment.NewLine}");
             }
-            sb.Length -= $",{Environment.NewLine}".Length;                
+            sb.Length -= $",{Environment.NewLine}".Length;
 
             return sb.ToString();
         }

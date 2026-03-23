@@ -5,14 +5,12 @@ using DataTools.Meta;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace DataTools.Common
 {
     /// <summary>
     /// Объединяет в себе:
     /// - строку подключения к СУБД;
-    /// - произвольные мапперы моделей и базовых типов;
     /// - потокобезопасный пул объектов IDataSource.
     /// </summary>
     public abstract class DataContext : IDataContext

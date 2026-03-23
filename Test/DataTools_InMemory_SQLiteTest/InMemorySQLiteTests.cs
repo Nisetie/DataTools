@@ -29,7 +29,7 @@ namespace DataTools_Tests
         private void Insert<ModelT>(object[] values) where ModelT : class, new()
         {
             var model = new ModelT();
-            ModelMapper<ModelT>.MapObjectArrayToModel(model,DataContext, null, values, new SelectCache());
+            ModelMapper<ModelT>.MapObjectArrayToModel(model, DataContext, null, values, new SelectCache());
             DataContext.Insert<ModelT>(model);
         }
         public override void Setup()

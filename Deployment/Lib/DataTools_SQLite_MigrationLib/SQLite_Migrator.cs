@@ -6,26 +6,34 @@ namespace DataTools.Deploy
 {
     public class SQLite_Migrator : MigratorBase
     {
-        public override ISqlExpression GetClearTableQuery(IModelMetadata modelMetadata)
+        private IDataContext _dataContext = null;
+        private IModelMetadata _modelMetadata = null;
+        public override void SetupModel(IDataContext dataContext, IModelMetadata modelMetadata)
+        {
+            _dataContext = dataContext;
+            _modelMetadata = modelMetadata;
+        }
+
+        public override ISqlExpression GetClearTableQuery()
         {
             // в SQLite нет TRUNCATE
             var query = new SqlComposition(
                 new SqlCustom($"DELETE FROM "),
-                new SqlName(modelMetadata.FullObjectName),
+                new SqlName(_modelMetadata.FullObjectName),
                 new SqlCustom(";")
                 );
 
-            return new SQLite_QueryParser().SimplifyQuery(query);
+            return query;
         }
 
-        public override ISqlExpression BeforeMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression GetBeforeMigrationQuery()
         {
-            return new SqlCustom("");
+            return new SqlCustom();
         }
 
-        public override ISqlExpression AfterMigration(IModelMetadata modelMetadata)
+        public override ISqlExpression GetAfterMigrationQuery()
         {
-            return new SqlCustom("");
+            return new SqlCustom();
         }
     }
 }

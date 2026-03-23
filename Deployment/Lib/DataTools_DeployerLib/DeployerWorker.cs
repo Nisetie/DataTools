@@ -71,6 +71,8 @@ namespace DataTools.Deploy
 
         private IEnumerable<DeployInfo> ProcessDeploy()
         {
+            Metadatas = Metadatas.Where(m => m.IsView == false);
+
             if (IgnoreAllCostraints)
             {
                 foreach (var meta in Metadatas)

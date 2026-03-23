@@ -6,6 +6,7 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+		<EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
 		<DebugType>embedded</DebugType>
 		<BaseOutputPath>$(SolutionDir)bin\$(AssemblyName)</BaseOutputPath>
 	</PropertyGroup>

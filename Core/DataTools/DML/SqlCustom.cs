@@ -1,10 +1,17 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlCustom : ISqlExpression
+    public class SqlCustom : SqlExpression
     {
-        public string Query;
-        public SqlCustom() { Query = ""; }
-        public SqlCustom(string customQuery) : base() => Query = customQuery;
+        public string Query { get; private set; }
+        public SqlCustom() { SetCustomQuery(""); }
+        public SqlCustom(string customQuery) : base() => SetCustomQuery(customQuery);
+
+        public SqlCustom SetCustomQuery(string customQuery)
+        {
+            Query = customQuery;
+            PayloadLength = Query.Length;
+            return this;
+        }
 
         public override string ToString()
         {

@@ -7,7 +7,7 @@ using NUnit.Framework.Internal;
 
 namespace DataTools_Tests
 {
-    [TestFixture("postgresql", "Username=postgres;Password=1qaz@WSX;Host=localhost;")]
+    [TestFixture("postgresql", "Port=5432;Username=postgres;Password=1qaz@WSX;Host=127.0.0.1;")]
     public class PostgreSQLTests : CommonTests<PostgreSQL_DataContext>
     {
 

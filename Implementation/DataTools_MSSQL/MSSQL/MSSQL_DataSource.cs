@@ -23,9 +23,9 @@ namespace DataTools.MSSQL
         }
         private ISqlExpression GetFromCache(ISqlExpression query)
         {
-            string queryString = query.ToString();
-            if (queryString.Length > MAXIMUM_CACHED_QUERY_LENGTH)
+            if (query.PayloadLength > MAXIMUM_CACHED_QUERY_LENGTH)
                 return query;
+            string queryString = query.ToString();
             if (!_queryCache.TryGetValue(queryString, out var node))
             {
                 _queryCache[queryString] = node = _plans.AddFirst((queryString, _queryParser.SimplifyQuery(query)));
@@ -63,7 +63,7 @@ namespace DataTools.MSSQL
             try
             {
                 _command.CommandText = query;
-                _command.ExecuteNonQuery();                
+                _command.ExecuteNonQuery();
             }
             finally { _conn.Close(); }
         }

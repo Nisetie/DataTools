@@ -6,6 +6,11 @@ namespace DataTools.Deploy
 {
     public class MetadataHelper
     {
+        /// <summary>
+        /// Упорядочить таблицы так, чтобы при их удалении из БД не возникали ошибки из-за внешних связей.
+        /// </summary>
+        /// <param name="models">Метамодели таблиц, которые могут быть связаны друг с другом.</param>
+        /// <returns></returns>
         public static IEnumerable<IModelMetadata> SortForUndeploy(IEnumerable<IModelMetadata> models)
         {
             var alreadyDropped = new List<IModelMetadata>();
@@ -30,6 +35,11 @@ namespace DataTools.Deploy
             return false;
         }
 
+        /// <summary>
+        /// Упорядочить таблицы так, чтобы при их создании в БД не возникали ошибки из-за внешних связей.
+        /// </summary>
+        /// <param name="models">Метамодели таблиц, которые могут быть связаны друг с другом.</param>
+        /// <returns></returns>
         public static IEnumerable<IModelMetadata> SortForDeploy(IEnumerable<IModelMetadata> models)
         {
             var alreadyCreated = new List<IModelMetadata>();

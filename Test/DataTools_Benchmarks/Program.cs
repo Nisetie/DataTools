@@ -26,7 +26,7 @@ namespace DataTools_Benchmarks
 
             var sw = new Stopwatch();
             var b = new DataTools_Benchs();
-            
+
             b.Setup();
 
             while (true)

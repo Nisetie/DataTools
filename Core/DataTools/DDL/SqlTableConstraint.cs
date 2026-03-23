@@ -2,6 +2,6 @@
 
 namespace DataTools.DDL
 {
-    public abstract class SqlTableConstraint : ISqlExpression { }
+    public abstract class SqlTableConstraint : SqlExpression { }
 
 }

@@ -1,9 +1,9 @@
 using DataTools.DML;
+using DataTools.Extensions;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
 using System.Collections.Generic;
-using DataTools.Extensions;
 
 namespace DataTools_Tests
 {
@@ -357,7 +357,7 @@ namespace DataTools_Tests
             {
                 var q = new SqlComposition();
                 foreach (var m in models)
-                    q.Elements.Add(new SqlInsert().Into<ModelT>().Value(m));
+                    q.Add(new SqlInsert().Into<ModelT>().Value(m));
                 DataContext.Execute(q);
             }
          ;

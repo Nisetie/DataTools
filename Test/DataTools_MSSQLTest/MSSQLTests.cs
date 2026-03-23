@@ -8,7 +8,7 @@ using NUnit.Framework.Internal;
 
 namespace DataTools_Tests
 {
-    [TestFixture("mssql", $"Data Source=localhost\\sqlexpress;Database=AdventureWorksLT2012;Integrated Security=True;Trust server certificate=true")]
+    [TestFixture("mssql", $"Data Source=127.0.0.1,1433;Database=master;User=sa;Password=1qaz@WSX;Trust server certificate=true")]
     public class MSSQLTests : CommonTests<MSSQL_DataContext>
     {
 
@@ -93,11 +93,11 @@ as
             TestType((byte)1);
             TestType((short)1);
             TestType((long)1);
-            TestType((decimal)125.32m);
+            TestType(125.32m);
             TestType((float)125.32f);
             TestType((double)125.32);
-            TestType((string)"abc");
-            TestType((char)'a');
+            TestType("abc");
+            TestType('a');
             TestType(new byte[] { 1, 2, 3, 4 });
             TestType(DateTime.Parse("2025-08-07 15:27:36"));
             TestType(DateTimeOffset.Parse("2025-08-07 15:27:36"));

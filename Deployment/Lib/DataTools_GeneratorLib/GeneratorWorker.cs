@@ -49,9 +49,9 @@ namespace DataTools.Deploy
             }
 
             return _generator.GetModelDefinitions(
-                TableIncludeNameFilter, 
-                SchemaIncludeNameFilter, 
-                TableExcludeNameFilter, 
+                TableIncludeNameFilter,
+                SchemaIncludeNameFilter,
+                TableExcludeNameFilter,
                 SchemaExcludeNameFilter,
                 TableIncludeNameRegexFilter,
                 TableExcludeNameRegexFilter,

@@ -1,7 +1,6 @@
 ﻿using DataTools.Common;
 using DataTools.Interfaces;
 using System;
-using System.Data;
 using System.Linq;
 using System.Runtime.InteropServices;
 
@@ -28,8 +27,8 @@ namespace DataTools.PostgreSQL
         protected override void AddLinkUInt64() => TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.UInt64, "bigint");
         protected override void AddLinkSingle() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Single, "real", "float4");
         protected override void AddLinkDouble() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Double, "float", "double precision", "float8");
-        protected override void AddLinkMoney() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Money, "money");
-        protected override void AddLinkDecimal() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Decimal, "numeric", "decimal");
+        protected override void AddLinkMoney() => TypesMap.AddForwardLinkOnly(E_DBMS.PostgreSQL, DBType.Money, "decimal");
+        protected override void AddLinkDecimal() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Decimal, "numeric", "decimal", "money");
         protected override void AddLinkTimestamp() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Timestamp, "timestamp without time zone", "timestamp");
         protected override void AddLinkTimestampTz() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.TimestampTz, "timestamptz");
         protected override void AddLinkDate() => TypesMap.AddTypeLink(E_DBMS.PostgreSQL, DBType.Date, "date");
@@ -94,17 +93,14 @@ namespace DataTools.PostgreSQL
                 switch (value)
                 {
                     case DateTime dt:
-                        if (dt.Year < 1970)
-                            dt = new DateTime(1970, 01, 01, 00, 00, 00);
                         return $"('{dt:yyyy-MM-dd HH:mm:ss.fff}')::{sqlType}";
                     case DateTimeOffset dto:
-                        if (dto.Year < 1970)
-                            dto = new DateTimeOffset(1970, 01, 01, 00, 00, 00, TimeSpan.Zero);
                         return $"('{dto:o}')::{sqlType}";
                     case byte[] byteArray:
                         return $"({ByteArrayToHexViaLookup32UnsafeDirect(byteArray)})::bytea";
                     default:
-                        return $"('{value.ToString().Replace("'", "''").Replace("\0", "")}')::{sqlType}";
+                        value = value.ToString().Replace("'", "''").Replace("\0", "");
+                        return $"('{value}')::{sqlType}";
                 }
         }
 

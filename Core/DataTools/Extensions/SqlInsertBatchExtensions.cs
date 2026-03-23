@@ -1,9 +1,7 @@
-﻿using DataTools.DDL;
-using DataTools.DML;
+﻿using DataTools.DML;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace DataTools.Extensions
 {

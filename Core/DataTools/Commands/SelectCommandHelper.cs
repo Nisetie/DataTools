@@ -11,7 +11,7 @@ namespace DataTools.Commands
         public static ISqlExpression ProcessExpression(IModelMetadata modelMetadata, Expression expression)
         {
             var where = new SqlWhere();
-            
+
             switch (expression)
             {
                 case BinaryExpression binaryExpression:

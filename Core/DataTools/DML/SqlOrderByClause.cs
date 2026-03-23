@@ -1,15 +1,23 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlOrderByClause : ISqlExpression
+    public class SqlOrderByClause : SqlExpression
     {
         public enum E_ORDER { ASC, DESC }
 
-        public ISqlExpression OrderValue;
-        public E_ORDER Order;
+        public ISqlExpression OrderValue { get; private set; }
+        public E_ORDER Order { get; private set; }
 
         public SqlOrderByClause(ISqlExpression expression, E_ORDER order = E_ORDER.ASC)
         {
-            OrderValue = expression; Order = order;
+            OrderBy(expression, order);
+        }
+
+        public SqlOrderByClause OrderBy (ISqlExpression expression, E_ORDER order = E_ORDER.ASC)
+        {
+            OrderValue = expression; 
+            Order = order;
+            PayloadLength = (OrderValue?.PayloadLength ?? 0) + order.ToString().Length;
+            return this;
         }
 
         public override bool Equals(object obj)

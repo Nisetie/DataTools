@@ -1,5 +1,4 @@
-﻿using DataTools.Attributes;
-using DataTools.Common;
+﻿using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
@@ -10,223 +9,280 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace DataTools.Deploy
 {
 
-    public enum DataMigrationMode
-    {
-        all, create_schema, only_data
-    }
+	public enum DataMigrationMode
+	{
+		all, create_schema, only_data
+	}
 
-    public class DataMigrationOptions
-    {
-        public DataMigrationMode Mode { get; set; }
-        public E_DBMS FromDBMS { get; set; }
-        public E_DBMS ToDBMS { get; set; }
-        public string FromConnectionString { get; set; }
-        public string ToConnectionString { get; set; }
-        public IEnumerable<IModelMetadata> Metadatas { get; set; }
+	public class DataMigrationOptions
+	{
+		public DataMigrationMode Mode { get; set; }
+		public E_DBMS FromDBMS { get; set; }
+		public E_DBMS ToDBMS { get; set; }
+		public string FromConnectionString { get; set; }
+		public string ToConnectionString { get; set; }
+		public IEnumerable<IModelMetadata> Metadatas { get; set; }
 
-        /// <summary>
-        /// При переносе данных в операции INSERT игнорировать такие ограничения, как автоинкремент или вычисляемый столбец.
-        /// Иначе такие колонки будут пропущены.
-        /// </summary>
-        public bool IgnoreConstraints { get; set; }
-        public int RowsPerBatch { get; set; } = 1000;
-        public string SchemaIncludeNameFilter { get; set; } = "";
-        public string TableIncludeNameFilter { get; set; } = "";
-        public string SchemaExcludeNameFilter { get; set; } = "";
-        public string TableExcludeNameFilter { get; set; } = "";
-        public string TableIncludeNameRegexFilter { get; set; } = "";
-        public string TableExcludeNameRegexFilter { get; set; } = "";
-        public string SchemaIncludeNameRegexFilter { get; set; } = "";
-        public string SchemaExcludeNameRegexFilter { get; set; } = "";
-    }
+		/// <summary>
+		/// При переносе данных в операции INSERT игнорировать такие ограничения, как автоинкремент или вычисляемый столбец.
+		/// Иначе такие колонки будут пропущены.
+		/// </summary>
+		public bool IgnoreConstraints { get; set; }
+		public int RowsPerBatch { get; set; } = 1000;
+		public string SchemaIncludeNameFilter { get; set; } = "";
+		public string TableIncludeNameFilter { get; set; } = "";
+		public string SchemaExcludeNameFilter { get; set; } = "";
+		public string TableExcludeNameFilter { get; set; } = "";
+		public string TableIncludeNameRegexFilter { get; set; } = "";
+		public string TableExcludeNameRegexFilter { get; set; } = "";
+		public string SchemaIncludeNameRegexFilter { get; set; } = "";
+		public string SchemaExcludeNameRegexFilter { get; set; } = "";
+	}
 
-    public class DataMigrationWorker : DataMigrationOptions
-    {
-        private IDataContext _fromContext, _toContext;
+	public class DataMigrationWorker : DataMigrationOptions
+	{
+		private IDataContext _fromContext, _toContext;
 
-        private MigratorBase _toMigrator;
+		private MigratorBase _toMigrator;
 
-        public DataMigrationWorker(DataMigrationOptions options)
-        {
-            this.FromDBMS = options.FromDBMS;
-            this.ToDBMS = options.ToDBMS;
-            this.FromConnectionString = options.FromConnectionString;
-            this.ToConnectionString = options.ToConnectionString;
-            this.Metadatas = options.Metadatas;
-            this.IgnoreConstraints = options.IgnoreConstraints;
-            this.RowsPerBatch = options.RowsPerBatch;
-            this.Mode = options.Mode;
-            this.SchemaIncludeNameFilter = options.SchemaIncludeNameFilter;
-            this.SchemaExcludeNameFilter = options.SchemaExcludeNameFilter;
-            this.TableIncludeNameFilter = options.TableIncludeNameFilter;
-            this.TableExcludeNameFilter = options.TableExcludeNameFilter;
-            this.TableExcludeNameRegexFilter = options.TableExcludeNameRegexFilter;
-            this.TableIncludeNameRegexFilter = options.TableIncludeNameRegexFilter;
-            this.SchemaExcludeNameRegexFilter = options.SchemaExcludeNameRegexFilter;
-            this.SchemaIncludeNameRegexFilter = options.SchemaIncludeNameRegexFilter;
+		public DataMigrationWorker(DataMigrationOptions options)
+		{
+			this.FromDBMS = options.FromDBMS;
+			this.ToDBMS = options.ToDBMS;
+			this.FromConnectionString = options.FromConnectionString;
+			this.ToConnectionString = options.ToConnectionString;
+			this.Metadatas = options.Metadatas;
+			this.IgnoreConstraints = options.IgnoreConstraints;
+			this.RowsPerBatch = options.RowsPerBatch;
+			this.Mode = options.Mode;
+			this.SchemaIncludeNameFilter = options.SchemaIncludeNameFilter;
+			this.SchemaExcludeNameFilter = options.SchemaExcludeNameFilter;
+			this.TableIncludeNameFilter = options.TableIncludeNameFilter;
+			this.TableExcludeNameFilter = options.TableExcludeNameFilter;
+			this.TableExcludeNameRegexFilter = options.TableExcludeNameRegexFilter;
+			this.TableIncludeNameRegexFilter = options.TableIncludeNameRegexFilter;
+			this.SchemaExcludeNameRegexFilter = options.SchemaExcludeNameRegexFilter;
+			this.SchemaIncludeNameRegexFilter = options.SchemaIncludeNameRegexFilter;
 
-            switch (FromDBMS)
-            {
-                case E_DBMS.MSSQL: _fromContext = new MSSQL_DataContext(FromConnectionString); break;
-                case E_DBMS.PostgreSQL: _fromContext = new PostgreSQL_DataContext(FromConnectionString); break;
-                case E_DBMS.SQLite: _fromContext = new SQLite_DataContext(FromConnectionString); break;
-            }
+			switch (FromDBMS)
+			{
+				case E_DBMS.MSSQL: _fromContext = new MSSQL_DataContext(FromConnectionString); break;
+				case E_DBMS.PostgreSQL: _fromContext = new PostgreSQL_DataContext(FromConnectionString); break;
+				case E_DBMS.SQLite: _fromContext = new SQLite_DataContext(FromConnectionString); break;
+			}
 
-            switch (ToDBMS)
-            {
-                case E_DBMS.MSSQL:
-                    _toContext = new MSSQL_DataContext(ToConnectionString);
-                    _toMigrator = new MSSQL_Migrator();
-                    break;
-                case E_DBMS.PostgreSQL:
-                    _toContext = new PostgreSQL_DataContext(ToConnectionString);
-                    _toMigrator = new PostgreSQL_Migrator();
-                    break;
-                case E_DBMS.SQLite:
-                    _toContext = new SQLite_DataContext(ToConnectionString);
-                    _toMigrator = new SQLite_Migrator();
-                    break;
-            }
-        }
+			switch (ToDBMS)
+			{
+				case E_DBMS.MSSQL:
+					_toContext = new MSSQL_DataContext(ToConnectionString);
+					_toMigrator = new MSSQL_Migrator();
+					break;
+				case E_DBMS.PostgreSQL:
+					_toContext = new PostgreSQL_DataContext(ToConnectionString);
+					_toMigrator = new PostgreSQL_Migrator();
+					break;
+				case E_DBMS.SQLite:
+					_toContext = new SQLite_DataContext(ToConnectionString);
+					_toMigrator = new SQLite_Migrator();
+					break;
+			}
+		}
 
-        public void Run()
-        {
-            RunProgress().Last();
-        }
+		public void Run()
+		{
+			RunProgress().Last();
+		}
 
-        public enum E_MIGRATION_PROGRESS
-        {
-            PREPARING, MIGRATING, FINALIZING
-        }
+		public enum E_MIGRATION_PROGRESS
+		{
+			PREPARING, MIGRATING, FINALIZING
+		}
 
-        public class MigrationInfo
-        {
-            public E_MIGRATION_PROGRESS Progress;
-            public IModelMetadata Metadata;
-            public long TotalRows;
-            public long InsertedRows;
-        }
+		public class MigrationInfo
+		{
+			public E_MIGRATION_PROGRESS Progress;
+			public IModelMetadata Metadata;
+			public long TotalRows;
+			public long InsertedRows;
+		}
 
-        public IEnumerable<MigrationInfo> RunProgress()
-        {
-            if (Metadatas == null)
-            {
-                var generator = new GeneratorWorker(new GeneratorOptions()
-                {
-                    ConnectionString = this.FromConnectionString,
-                    DBMS = this.FromDBMS,
-                    SchemaExcludeNameFilter = this.SchemaExcludeNameFilter,
-                    SchemaIncludeNameFilter = this.SchemaIncludeNameFilter,
-                    TableExcludeNameFilter = this.TableExcludeNameFilter,
-                    TableIncludeNameFilter = this.TableIncludeNameFilter,
-                    TableIncludeNameRegexFilter = this.TableIncludeNameRegexFilter,
-                    TableExcludeNameRegexFilter = this.TableExcludeNameRegexFilter,
-                    SchemaExcludeNameRegexFilter = this.SchemaExcludeNameRegexFilter,
-                    SchemaIncludeNameRegexFilter = this.SchemaIncludeNameRegexFilter
-                });
-                Metadatas = generator.GetModelDefinitions().Select(md => md.ModelMetadata).ToArray();
-            }
+		public IEnumerable<MigrationInfo> RunProgress()
+		{
+			if (Metadatas == null)
+			{
+				var generator = new GeneratorWorker(new GeneratorOptions()
+				{
+					ConnectionString = this.FromConnectionString,
+					DBMS = this.FromDBMS
+				});
+				Metadatas = generator.GetModelDefinitions().Select(md => md.ModelMetadata).ToArray();
+			}
 
-            if (Mode == DataMigrationMode.all || Mode == DataMigrationMode.create_schema)
-            {
-                var deployer = new DeployerWorker(new DeployerOptions()
-                {
-                    ConnectionString = this.ToConnectionString,
-                    DBMS = this.ToDBMS,
-                    Metadatas = Metadatas,
-                    Mode = E_DEPLOY_MODE.REDEPLOY
-                });
-                deployer.Run();
-            }
+			Func<string, string, bool> commaSeparatedCheckMatch = (matched, pattern) =>
+			{
+				string[] patternArray = pattern.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+				for (int i = 0; i < patternArray.Length; i++)
+					if (matched == patternArray[i])
+						return true;
+				return false;
+			};
+			Func<string, string, bool> regexCheckMatch = (matched, pattern) =>
+			{
+				return Regex.Match(matched, pattern).Success;
+			};
 
-            if (!(Mode == DataMigrationMode.all || Mode == DataMigrationMode.only_data))
-                yield break;
+			// фильтрация метамоделей по схемам и именам
+			Metadatas = Metadatas.Where((meta) =>
+			{
+				if (!string.IsNullOrEmpty(meta.SchemaName))
+				{
+					if (!string.IsNullOrEmpty(SchemaIncludeNameFilter))
+						if (!commaSeparatedCheckMatch(meta.SchemaName, SchemaIncludeNameFilter))
+							return false;
+					if (!string.IsNullOrEmpty(SchemaIncludeNameRegexFilter))
+						if (!regexCheckMatch(meta.SchemaName, SchemaIncludeNameRegexFilter))
+							return false;
+					if (!string.IsNullOrEmpty(SchemaExcludeNameFilter))
+						if (commaSeparatedCheckMatch(meta.SchemaName, SchemaExcludeNameFilter))
+							return false;
+					if (!string.IsNullOrEmpty(SchemaIncludeNameRegexFilter))
+						if (Regex.Match(meta.SchemaName, SchemaExcludeNameRegexFilter).Success)
+							return false;
+				}
 
-            var metas = MetadataHelper.SortForUndeploy(Metadatas).ToArray();
-            foreach (var meta in metas)
-            {
-                if (meta.IsView) continue;
-                _toContext.Execute(_toMigrator.GetClearTableQuery(meta));
-            }
+				if (!string.IsNullOrEmpty(TableIncludeNameFilter))
+					if (!commaSeparatedCheckMatch(meta.ObjectName, TableIncludeNameFilter))
+						return false;
+				if (!string.IsNullOrEmpty(TableIncludeNameRegexFilter))
+					if (!regexCheckMatch(meta.ObjectName, TableIncludeNameRegexFilter))
+						return false;
+				if (!string.IsNullOrEmpty(TableExcludeNameFilter))
+					if (commaSeparatedCheckMatch(meta.ObjectName, TableExcludeNameFilter))
+						return false;
+				if (!string.IsNullOrEmpty(TableExcludeNameRegexFilter))
+					if (regexCheckMatch(meta.ObjectName, TableExcludeNameRegexFilter))
+						return false;
 
-            metas = MetadataHelper.SortForDeploy(Metadatas).ToArray();
-            foreach (var meta in metas)
-            {
-                if (meta.IsView) continue;
+				return true;
+			}).ToArray();
 
-                yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.PREPARING, Metadata = meta };
-                var queryBefore = _toMigrator.BeforeMigration(meta);
-                if (!string.IsNullOrEmpty(queryBefore.ToString()))
-                    _toContext.Execute(queryBefore);
+			if (Mode == DataMigrationMode.all || Mode == DataMigrationMode.create_schema)
+			{
+				var deployer = new DeployerWorker(new DeployerOptions()
+				{
+					ConnectionString = this.ToConnectionString,
+					DBMS = this.ToDBMS,
+					Metadatas = Metadatas,
+					Mode = E_DEPLOY_MODE.REDEPLOY
+				});
+				deployer.Run();
+			}
 
-                var fromMeta = meta;
-                IModelMetadata toMeta = null;
+			if (!(Mode == DataMigrationMode.all || Mode == DataMigrationMode.only_data))
+				yield break;
 
-                if (IgnoreConstraints)
-                {
-                    toMeta = meta.Copy();
-                    var fields = toMeta.Fields.ToArray();
-                    foreach (var field in fields)
-                    {
-                        field.IgnoreChanges = false;
-                        field.IsUnique = false;
-                        field.IsPrimaryKey = false;
-                        field.IsAutoincrement = false;
-                    }
-                }
-                else toMeta = meta;
+			// сначала очистить все таблица в порядке уменьшения внешних связей
+			var metas = MetadataHelper.SortForUndeploy(Metadatas).ToArray();
+			foreach (var meta in metas)
+			{
+				if (meta.IsView) continue;
+				_toMigrator.SetupModel(_toContext, meta);
+				_toContext.Execute(_toMigrator.GetClearTableQuery());
+			}
 
-                long count = 0;
+			// потом перенести данные в порядке увеличения внешних связей
+			metas = MetadataHelper.SortForDeploy(Metadatas).ToArray();
+			// снова убрать лишние модели, попавшие в коллекцию через внешние ключи
+			metas = metas.Where((meta) =>
+			{
+				return Metadatas.Any((meta1) =>
+				{
+					return meta.FullObjectName == meta1.FullObjectName;
+				});
+			}).ToArray();
+			foreach (var meta in metas)
+			{
+				if (meta.IsView) continue;
 
-                var selectCount = new SqlSelect().From(meta.FullObjectName).Select(new SqlCustom("count(*)"));
+				_toMigrator.SetupModel(_toContext, meta);
 
-                var scalarResult = _fromContext.ExecuteScalar(selectCount);
-                if (scalarResult is int)
-                    count = (int)scalarResult;
-                else if (scalarResult is long)
-                    count = (long)scalarResult;
+				yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.PREPARING, Metadata = meta };
 
-                long startBound = 0;
-                long rowsPerPage = RowsPerBatch;
-                long pages = count / rowsPerPage;
+				var fromMeta = meta;
+				IModelMetadata toMeta = null;
 
-                var offset = new SqlConstant(startBound);
+				if (IgnoreConstraints)
+				{
+					toMeta = meta.Copy();
+					var fields = toMeta.Fields.ToArray();
+					foreach (var field in fields)
+					{
+						field.IgnoreChanges = false;
+						field.IsUnique = false;
+						field.IsPrimaryKey = false;
+						field.IsAutoincrement = false;
+					}
+				}
+				else toMeta = meta;
 
-                var selectQuery = new SqlSelect()
-                    .From(meta)
-                    .Select(meta)
-                    .Limit(new SqlConstant(rowsPerPage))
-                    .Offset(offset);
+				long count = 0;
 
-                selectQuery.OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(meta.GetColumnsForFilterOrder()));
+				var selectCount = new SqlSelect().From(meta.FullObjectName).Select(new SqlCustom("count(*)"));
 
-                var insertBatch = new SqlInsertBatch().Into(toMeta);
-                var results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
-                while (results.Length > 0)
-                {
-                    insertBatch.Value(toMeta, results);
-                    _toContext.Execute(new SqlComposition(queryBefore, insertBatch));
+				var scalarResult = _fromContext.ExecuteScalar(selectCount);
+				if (scalarResult is int)
+					count = (int)scalarResult;
+				else if (scalarResult is long)
+					count = (long)scalarResult;
 
-                    startBound += rowsPerPage;
-                    yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.MIGRATING, Metadata = meta, TotalRows = count, InsertedRows = startBound < count ? startBound : count };
+				long startBound = 0;
+				long rowsPerPage = RowsPerBatch;
+				long pages = count / rowsPerPage;
 
-                    offset.Value = startBound;
-                    results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
+				var offset = new SqlConstant(startBound);
 
-                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-                    GC.Collect(2, GCCollectionMode.Forced, true, true);
-                    GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
-                }
+				var selectQuery = new SqlSelect()
+					.From(meta)
+					.Select(meta)
+					.Limit(new SqlConstant(rowsPerPage))
+					.Offset(offset);
 
-                yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.FINALIZING, Metadata = meta };
-                var queryAfter = _toMigrator.AfterMigration(meta);
-                if (!string.IsNullOrEmpty(queryAfter.ToString()))
-                    _toContext.Execute(queryAfter);
-            }
-        }
-    }
+				selectQuery.OrderBy(DataTools.Meta.MetadataHelper.GetOrderClausesFromColumnMetas(meta.GetColumnsForFilterOrder()));
+
+				var results = _fromContext.ExecuteWithResult(selectQuery).ToArray();
+				while (results.Length > 0)
+				{
+					yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.MIGRATING, Metadata = meta, TotalRows = count, InsertedRows = startBound < count ? startBound : count };
+					var insertBatch = new SqlInsertBatch().Into(toMeta);
+					insertBatch.Value(toMeta, results);
+
+					// заранее запросим очередную порцию, пока переносится текущая
+					startBound += rowsPerPage;
+					offset.Value = startBound;
+					var nextResultTask = Task.Run(() => _fromContext.ExecuteWithResult(selectQuery).ToArray());
+
+					_toContext.Execute(new SqlComposition(_toMigrator.GetBeforeMigrationQuery(), insertBatch));
+
+					results = nextResultTask.GetAwaiter().GetResult();
+
+					GC.Collect();
+					GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+					GC.Collect(2, GCCollectionMode.Forced, true, true);
+					GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.Default;
+					GC.Collect(2, GCCollectionMode.Forced, true, false);
+				}
+
+				yield return new MigrationInfo() { Progress = E_MIGRATION_PROGRESS.FINALIZING, Metadata = meta };
+				var queryAfter = _toMigrator.GetAfterMigrationQuery();
+				if (!string.IsNullOrEmpty(queryAfter.ToString()))
+					_toContext.Execute(queryAfter);
+			}
+		}
+	}
 }

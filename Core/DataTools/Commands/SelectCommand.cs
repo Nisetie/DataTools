@@ -1,18 +1,20 @@
-﻿using DataTools.Commands;
-using DataTools.Common;
+﻿using DataTools.Common;
 using DataTools.DML;
 using DataTools.Extensions;
 using DataTools.Interfaces;
 using DataTools.Meta;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
 namespace DataTools.Commands
 {
-    public class SelectCommand<ModelT> : ISqlExpression, ISqlSelect<SelectCommand<ModelT>> where ModelT : class, new()
+    /// <summary>
+    /// Паттерн "Команда", упрощающий подготовку команды Select и её вызов через переданный DataContext.
+    /// </summary>
+    /// <typeparam name="ModelT"></typeparam>
+    public class SelectCommand<ModelT> : SqlExpression, ISqlSelect<SelectCommand<ModelT>> where ModelT : class, new()
     {
         public IDataContext DataContext { get; }
         public SqlSelect Query { get; }
@@ -37,31 +39,40 @@ namespace DataTools.Commands
         public SelectCommand<ModelT> From(ISqlExpression objectName)
         {
             Query.From(objectName);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommand<ModelT> Limit(ISqlExpression limit)
         {
             Query.Limit(limit);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
 
         public SelectCommand<ModelT> Offset(ISqlExpression offset)
         {
             Query.Offset(offset);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommand<ModelT> OrderBy(params string[] columnNames)
-            => (columnNames == null || columnNames.Length == 0
-            ? this
-            : OrderBy(columnNames.Select(cn => new SqlOrderByClause(new SqlName(cn))).ToArray()));
+        {
+            return (columnNames == null || columnNames.Length == 0
+                    ? this
+                    : OrderBy(columnNames.Select(cn => new SqlOrderByClause(new SqlName(cn))).ToArray()));
+        }
 
         public SelectCommand<ModelT> OrderBy(params ISqlExpression[] custom)
-            => (custom == null || custom.Length == 0
-            ? this
-            : OrderBy(custom.Select(cn => new SqlOrderByClause(cn)).ToArray()));
+        {
+            return (custom == null || custom.Length == 0
+                    ? this
+                    : OrderBy(custom.Select(cn => new SqlOrderByClause(cn)).ToArray()));
+        }
+
         public SelectCommand<ModelT> OrderBy(params SqlOrderByClause[] order)
         {
             Query.OrderBy(order);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
         public SelectCommand<ModelT> Select() => Select(ModelMetadata<ModelT>.Instance);
@@ -95,6 +106,7 @@ namespace DataTools.Commands
         public SelectCommand<ModelT> Select(params ISqlExpression[] selects)
         {
             Query.Select(selects);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
 
@@ -111,6 +123,7 @@ namespace DataTools.Commands
         public SelectCommand<ModelT> Where(SqlWhere where)
         {
             Query.Where(where);
+            PayloadLength = Query.PayloadLength;
             return this;
         }
     }

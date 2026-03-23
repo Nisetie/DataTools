@@ -1,8 +1,8 @@
 ﻿using DataTools.Common;
 using DataTools.DML;
+using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
-using Microsoft.Data.Sqlite;
 
 namespace DataTools.SQLite
 {
@@ -25,9 +25,9 @@ namespace DataTools.SQLite
 
         private ISqlExpression GetFromCache(ISqlExpression query)
         {
-            string queryString = query.ToString();
-            if (queryString.Length > MAXIMUM_CACHED_QUERY_LENGTH)
+            if (query.PayloadLength > MAXIMUM_CACHED_QUERY_LENGTH)
                 return query;
+            string queryString = query.ToString();
             if (!_queryCache.TryGetValue(queryString, out var node))
             {
                 _queryCache[queryString] = node = _plans.AddFirst((queryString, _queryParser.SimplifyQuery(query)));

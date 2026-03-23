@@ -4,7 +4,6 @@ using DataTools.Extensions;
 using DataTools.Interfaces;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
@@ -285,7 +284,7 @@ namespace DataTools.Common
                     let DateTimeOffsetParseMethod = RealType.GetMethod("Parse", new Type[] { typeof(string), typeof(IFormatProvider), typeof(DateTimeStyles) })
                     let stringBuilderAppend = typeof(StringBuilder).GetMethod("Append", new Type[] { typeof(string) })
                     let IsParsable = ParseMethod != null
-                    let IsTrueNullable = f.IsNullable                    
+                    let IsTrueNullable = f.IsNullable
                     orderby f.FieldOrder
                     select Expression.Block(
                         Expression.Assign(var_value, Expression.ArrayIndex(param_dataRow, Expression.Constant(f.FieldOrder)))
@@ -303,7 +302,7 @@ namespace DataTools.Common
                                     Expression.Call(param_customTypeConverters, nameof(Dictionary<Type, Func<object, object>>.TryGetValue), null, Expression.Constant(RealType), var_customConverter)
                                     , GetModelPropertySetterExpressionFunction(param_m, f.FieldName, Expression.Convert(Expression.Invoke(var_customConverter, var_value), fieldType))
                                     , GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
-                                    GetValueConvertedExpression(fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
+                                    GetValueConvertedExpression(var_value, fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
                                     )
                                 )
                                 , isPrimaryKey
@@ -355,7 +354,7 @@ namespace DataTools.Common
                                 )
                             , Expression.Block(
                                 GetModelPropertySetterExpressionFunction(param_m, f.FieldName,
-                                GetValueConvertedExpression(fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
+                                GetValueConvertedExpression(var_value, fieldType, RealType, IsConvertible, ParseMethod, DateTimeOffsetParseMethod, IsParsable)
                                 )
                                 , isPrimaryKey
                                 ? Expression.Block(
@@ -529,7 +528,7 @@ namespace DataTools.Common
                 , block_prep
                 , blockForeignModels
                 );
-            
+
             return
                 Expression.Lambda<T>(
                 all_script,
@@ -539,48 +538,48 @@ namespace DataTools.Common
                 param_dataRow,
                 param_queryCache
                 ).Compile();
+        }
 
-            UnaryExpression GetValueConvertedExpression(Type fieldType, Type RealType, bool IsConvertible, System.Reflection.MethodInfo ParseMethod, System.Reflection.MethodInfo DateTimeOffsetParseMethod, bool IsParsable)
-            {
-                return
-                    RealType == typeof(DateTimeOffset)
-                    ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
-                    : RealType == typeof(Boolean)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToBoolean), null, var_value), fieldType)
-                    : RealType == typeof(Byte)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToByte), null, var_value), fieldType)
-                    : RealType == typeof(Int16)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt16), null, var_value), fieldType)
-                    : RealType == typeof(Int32)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt32), null, var_value), fieldType)
-                    : RealType == typeof(Int64)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt64), null, var_value), fieldType)
-                    : RealType == typeof(SByte)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSByte), null, var_value), fieldType)
-                    : RealType == typeof(UInt16)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt16), null, var_value), fieldType)
-                    : RealType == typeof(UInt32)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt32), null, var_value), fieldType)
-                    : RealType == typeof(UInt64)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt64), null, var_value), fieldType)
-                    : RealType == typeof(Single)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSingle), null, var_value), fieldType)
-                    : RealType == typeof(Double)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDouble), null, var_value), fieldType)
-                    : RealType == typeof(Decimal)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDecimal), null, var_value), fieldType)
-                    : RealType == typeof(String)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToString), null, var_value), fieldType)
-                    : RealType == typeof(Char)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToChar), null, var_value), fieldType)
-                    : RealType == typeof(DateTime)
-                    ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDateTime), null, var_value), fieldType)
-                    : IsConvertible
-                    ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
-                    : IsParsable
-                    ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
-                    : Expression.Convert(var_value, fieldType);
-            }
+        public static UnaryExpression GetValueConvertedExpression(ParameterExpression var_value, Type fieldType, Type RealType, bool IsConvertible, System.Reflection.MethodInfo ParseMethod, System.Reflection.MethodInfo DateTimeOffsetParseMethod, bool IsParsable)
+        {
+            return
+                RealType == typeof(DateTimeOffset)
+                ? Expression.Convert(Expression.Call(DateTimeOffsetParseMethod, Expression.Call(var_value, "ToString", null, null), Expression.Constant(null, typeof(IFormatProvider)), Expression.Constant(DateTimeStyles.AssumeUniversal)), fieldType)
+                : RealType == typeof(Boolean)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToBoolean), null, var_value), fieldType)
+                : RealType == typeof(Byte)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToByte), null, var_value), fieldType)
+                : RealType == typeof(Int16)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt16), null, var_value), fieldType)
+                : RealType == typeof(Int32)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt32), null, var_value), fieldType)
+                : RealType == typeof(Int64)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToInt64), null, var_value), fieldType)
+                : RealType == typeof(SByte)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSByte), null, var_value), fieldType)
+                : RealType == typeof(UInt16)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt16), null, var_value), fieldType)
+                : RealType == typeof(UInt32)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt32), null, var_value), fieldType)
+                : RealType == typeof(UInt64)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToUInt64), null, var_value), fieldType)
+                : RealType == typeof(Single)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToSingle), null, var_value), fieldType)
+                : RealType == typeof(Double)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDouble), null, var_value), fieldType)
+                : RealType == typeof(Decimal)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDecimal), null, var_value), fieldType)
+                : RealType == typeof(String)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToString), null, var_value), fieldType)
+                : RealType == typeof(Char)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToChar), null, var_value), fieldType)
+                : RealType == typeof(DateTime)
+                ? Expression.Convert(Expression.Call(typeof(Convert), nameof(Convert.ToDateTime), null, var_value), fieldType)
+                : IsConvertible
+                ? Expression.Convert(Expression.Call(typeof(Convert), "ChangeType", null, var_value, Expression.Constant(RealType)), fieldType)
+                : IsParsable
+                ? Expression.Convert(Expression.Call(ParseMethod, Expression.Call(var_value, "ToString", null, null)), fieldType)
+                : Expression.Convert(var_value, fieldType);
         }
     }
 }

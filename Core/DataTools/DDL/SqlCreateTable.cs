@@ -4,7 +4,7 @@ using System.Text;
 
 namespace DataTools.DDL
 {
-    public class SqlCreateTable : ISqlExpression
+    public class SqlCreateTable : SqlExpression
     {
         public SqlName TableName { get; set; } = null;
         public IEnumerable<SqlDDLColumnDefinition> Columns { get; set; } = null;
@@ -15,25 +15,31 @@ namespace DataTools.DDL
 
         public SqlCreateTable Table(SqlName tableName)
         {
+            PayloadLength -= TableName?.PayloadLength ?? 0;
             TableName = tableName;
+            PayloadLength += TableName?.PayloadLength ?? 0;
             return this;
         }
 
         public SqlCreateTable Column(params SqlDDLColumnDefinition[] columns)
         {
+            if (Columns != null) foreach (var c in Columns) PayloadLength -= c?.PayloadLength ?? 0;
             Columns = columns;
+            if (Columns != null) foreach (var c in Columns) PayloadLength += c?.PayloadLength ?? 0;
             return this;
         }
 
         public SqlCreateTable Constraint(params SqlTableConstraint[] constraints)
         {
+            if (Constraints != null) foreach (var c in Constraints) PayloadLength -= c?.PayloadLength ?? 0;
             Constraints = constraints;
+            if (Constraints != null) foreach (var c in Constraints) PayloadLength += c?.PayloadLength ?? 0;
             return this;
         }
 
         public override string ToString()
         {
-            var sb = new StringBuilder(128);
+            var sb = new StringBuilder(256);
             sb.AppendLine($"CREATE TABLE {TableName} (")
                 .AppendLine($"{(Columns != null ? string.Join(",", Columns) : "")}")
                 .AppendLine($"{(Constraints != null ? "," + string.Join(",", Constraints) : "")})");

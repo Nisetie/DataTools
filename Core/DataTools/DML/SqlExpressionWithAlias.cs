@@ -1,13 +1,20 @@
 ﻿namespace DataTools.DML
 {
-    public class SqlExpressionWithAlias : ISqlExpression
+    public class SqlExpressionWithAlias : SqlExpression
     {
-        public ISqlExpression SqlExpression;
-        public string Alias { get; set; }
+        public ISqlExpression SqlExpression { get; private set; }
+        public string Alias { get; private set; }
         public SqlExpressionWithAlias(ISqlExpression expression, string alias)
+        {
+            SetExpression(expression, alias);
+        }
+
+        public SqlExpressionWithAlias SetExpression(ISqlExpression expression, string alias)
         {
             SqlExpression = expression;
             Alias = alias;
+            PayloadLength = (SqlExpression?.PayloadLength ?? 0) + (alias?.Length ?? 0);
+            return this;
         }
 
         public override bool Equals(object obj)

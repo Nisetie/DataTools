@@ -2,7 +2,7 @@
 
 namespace DataTools.DML
 {
-    public class SqlDelete : ISqlExpression
+    public class SqlDelete : SqlExpression
     {
         protected ISqlExpression _from;
         protected SqlWhere _where;
@@ -12,13 +12,17 @@ namespace DataTools.DML
 
         public SqlDelete From(SqlName objectName)
         {
+            PayloadLength -= _from?.PayloadLength ?? 0;
             _from = objectName;
+            PayloadLength += _from?.PayloadLength ?? 0;
             return this;
         }
 
         public SqlDelete Where(SqlWhere where)
         {
+            PayloadLength -= _where?.PayloadLength ?? 0;
             _where = where;
+            PayloadLength += _where?.PayloadLength ?? 0;
             return this;
         }
 

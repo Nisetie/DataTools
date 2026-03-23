@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DataTools.DML
 {
-    public class SqlSelect : ISqlSelect<SqlSelect>
+    public class SqlSelect : SqlExpression, ISqlSelect<SqlSelect>
     {
         protected ISqlExpression _from;
         protected IEnumerable<ISqlExpression> _selects;
@@ -21,32 +21,44 @@ namespace DataTools.DML
 
         public SqlSelect Select(params ISqlExpression[] selects)
         {
+            if (_selects != null) foreach (var s in _selects) PayloadLength -= s?.PayloadLength ?? 0;
             _selects = selects;
+            if (_selects != null) foreach (var s in _selects) PayloadLength += s?.PayloadLength ?? 0;
             return this;
         }
         public SqlSelect From(ISqlExpression objectName)
         {
+            PayloadLength -= _from?.PayloadLength ?? 0;
             _from = objectName;
+            PayloadLength += _from?.PayloadLength ?? 0;
             return this;
         }
         public SqlSelect Where(SqlWhere where)
         {
+            PayloadLength -= _where?.PayloadLength ?? 0;
             _where = where;
+            PayloadLength += _where?.PayloadLength ?? 0;
             return this;
         }
         public SqlSelect OrderBy(params SqlOrderByClause[] order)
         {
+            if (_orders != null) foreach (var o in _orders) PayloadLength -= o?.PayloadLength ?? 0;
             _orders = order;
+            if (_orders != null) foreach (var o in _orders) PayloadLength += o?.PayloadLength ?? 0;
             return this;
         }
         public SqlSelect Offset(ISqlExpression offset)
         {
+            PayloadLength -= _offset?.PayloadLength ?? 0;
             _offset = offset;
+            PayloadLength += _offset?.PayloadLength ?? 0;
             return this;
         }
         public SqlSelect Limit(ISqlExpression limit)
         {
+            PayloadLength -= _limit?.PayloadLength ?? 0;
             _limit = limit;
+            PayloadLength += _limit?.PayloadLength ?? 0;
             return this;
         }
         public override bool Equals(object obj)
@@ -82,7 +94,7 @@ namespace DataTools.DML
             //DISTINCT clause.
             //ORDER BY clause.
             //LIMIT and / or OFFSET clause.
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(256);
             if (_from != null)
                 sb
                     .Append("FROM ")
